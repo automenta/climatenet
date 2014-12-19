@@ -17,4 +17,37 @@ public class GeoServer {
     
     
     //http://docs.geotools.org/latest/userguide/unsupported/geojson.html
+    //http://docs.codehaus.org/display/GEOTOOLS/How+to+use+a+PostGISDataStore
+    //http://geojson.org/geojson-spec.html
+    
+    /*
+    embedded postgis setup:
+        1. install postgres, postgis
+        2. create db/
+        3. in db, run: initdb
+        4. edit postgresql.conf
+            unix_socket_directories = './run'       # comma-separated list of directories
+    
+        5. run with: postgres -D .
+    
+        add data source,
+            host (localhost), port, username = 'me' (system username that created the db)
+
+    
+        6. converting KML to geoJSON
+            1. convert to (flattened) KML with climatenet importer
+            2. convert KML to geoJSON with ogr2ogr [this will be automated with importer]
+                ogr2ogr -f "GeoJSON" output.json input.kml
+    
+    
+        7. load geoJSON to postgis
+        ogr2ogr -overwrite -f "PostGreSQL" PG:"host=localhost user=me dbname=cv" cvr01.json 
+
+        x. load KML to postgis (doesnt work yet)
+                ogr2ogr -update -append -f "PostGreSQL" PG:"host=localhost user=me dbname=cv" ccr01.kml
+    
+    
+
+    
+    */
 }
