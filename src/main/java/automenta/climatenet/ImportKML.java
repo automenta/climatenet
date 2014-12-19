@@ -119,9 +119,15 @@ public class ImportKML {
                 //System.out.println(gisObj);
             }
         }
+        
+        
+        
 // get list of network links that were retrieved from step above
         
         List<URI> networkLinks = reader.getNetworkLinks();
+        
+        reader.close();
+        
         if (!networkLinks.isEmpty()) {
             
   // Now import features from all referenced network links.
@@ -158,8 +164,8 @@ public class ImportKML {
             kos.close();
         }
         
-        System.out.println("finished");
-        System.exit(0);
+        //System.out.println("finished");
+        //System.exit(0);
     }
 
     public ImportKML() throws Exception {
@@ -187,7 +193,13 @@ public class ImportKML {
                 String layer = x.get("layer").textValue();
                 String url = x.get("kml").textValue();
                 System.out.println(currentSection + " " + x);
-                transformKML(layer, url, false, true);
+                
+                try {
+                    transformKML(layer, url, false, true);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();;
+                }
             }
         }
     }
