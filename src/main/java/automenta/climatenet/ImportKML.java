@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.io.IOUtils;
 import org.opensextant.giscore.DocumentType;
 import org.opensextant.giscore.GISFactory;
 import org.opensextant.giscore.events.ContainerStart;
@@ -83,16 +84,29 @@ public class ImportKML {
             shpos.write(schema);
         }
         
-        KmlOutputStream kos = null;
+        KmlOutputStream kout = null;
+        String kmlFile = p + "/" + layer + ".kml";
         if (kml) {
-            String outputFile = p + "/" + layer + ".kml";
             
-            FileOutputStream out = new FileOutputStream(new File(outputFile));
-            kos = new KmlOutputStream(out, "UTF-8");
+            //String geojsonoutput = p + "/" + layer + ".geojson";
             
+            FileOutputStream fout = new FileOutputStream(new File(kmlFile));
+            
+            //String cmd = "ogr2ogr -F GeoJSON " + geojsonoutput + " /vsistdin/";
+             //ogr2ogr -update -append -f "PostGreSQL" PG:"host=localhost user=me dbname=cv" ccr01.kml
+            //String cmd = "ogr2ogr -update -append -skipFailures -F \"PostGreSQL\" PG:\"host=localhost user=me dbname=cv\" /vsistdin/";
+            //String[] cmdParm = { "/bin/sh", "-c", cmd };
+            
+            
+            //jsonproc = Runtime.getRuntime().exec(cmdParm);            
+            
+                        
+            kout = new KmlOutputStream(fout, "UTF-8");
+    
             //TODO
             //tee out to a pipe that executes:
-            //  {cat cvr01.kml |} ogr2ogr -F GeoJSON cvr01.json /vsistdin/
+            //  {cat cvr01.kml } | ogr2ogr -F GeoJSON cvr01.json /vsistdin/
+            //     | ogr2ogr -update -append -f "PostGreSQL" PG:"host=localhost user=me dbname=cv" /vsistdin/
         }
         
         
@@ -113,8 +127,9 @@ public class ImportKML {
                 
                 if (esri)
                     shpos.write(f);  
-                if (kml)
-                    kos.write(f);
+                if (kml) {
+                    kout.write(f);
+                }
                 
                 //System.out.println(gisObj);
             }
@@ -127,6 +142,8 @@ public class ImportKML {
         List<URI> networkLinks = reader.getNetworkLinks();
         
         reader.close();
+
+        
         
         if (!networkLinks.isEmpty()) {
             
@@ -160,12 +177,20 @@ public class ImportKML {
             esriOut.flush();
             esriOut.close();	
         }
-        if (kml) {
-            kos.close();
+        if (kml) {            
+            kout.close();
         }
+
+        //convert to GeoJSON and import to postgis with ogr2ogr using KML as input:
+        String cmd = "ogr2ogr -update -append -skipFailures -f \"PostGreSQL\" PG:\"host=localhost user=me dbname=cv\" " + kmlFile;
+        String[] cmdParm = { "/bin/sh", "-c", cmd };
+           
+        Process proc = Runtime.getRuntime().exec(cmdParm);            
+        IOUtils.copy(proc.getInputStream(), System.out);
+        IOUtils.copy(proc.getErrorStream(), System.err);
+        proc.waitFor();
         
-        //System.out.println("finished");
-        //System.exit(0);
+        
     }
 
     public ImportKML() throws Exception {

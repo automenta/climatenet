@@ -18,7 +18,10 @@ public class GeoServer {
     
     //http://docs.geotools.org/latest/userguide/unsupported/geojson.html
     //http://docs.codehaus.org/display/GEOTOOLS/How+to+use+a+PostGISDataStore
+    
     //http://geojson.org/geojson-spec.html
+    //http://wiki.openstreetmap.org/wiki/Geojson_CSS
+    //https://github.com/mapbox/simplestyle-spec
     
     /*
     embedded postgis setup:
@@ -28,7 +31,10 @@ public class GeoServer {
         4. edit postgresql.conf
             unix_socket_directories = './run'       # comma-separated list of directories
     
-        5. run with: postgres -D .
+        5.  start postgis server with: postgres -D .
+            start postgres client: psql -p 5432 -h localhost -dcv
+                command:
+                    \d - prints tables
     
         add data source,
             host (localhost), port, username = 'me' (system username that created the db)
