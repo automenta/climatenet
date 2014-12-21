@@ -51,6 +51,7 @@ public class ImportKML {
 
     String basePath = "data";
     String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
+    int n = 1;
     
     public void transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
@@ -159,6 +160,7 @@ public class ImportKML {
                     
                     XContentBuilder builder = jsonBuilder().startObject();
                     builder.field("name", f.getName());
+                    builder.field("layer", layer);
                     if (f.getDescription()!=null)
                         builder.field("description", f.getDescription());
                     if (f.getSnippet()!=null)
@@ -167,6 +169,7 @@ public class ImportKML {
                         builder.field("startTime", f.getStartTime().getTime());
                     if (f.getEndTime()!=null)
                         builder.field("endTime", f.getEndTime().getTime());
+                    
                     Geometry g = f.getGeometry();
                     if (g!=null) {
                         if (g instanceof Point) {
@@ -176,14 +179,20 @@ public class ImportKML {
                             float lon = (float)c.getLongitudeAsDegrees();
                             
                             //http://geojson.org/
-                            builder.field("point", new float[] { lat, lon } );
+                            builder.startObject("geom").field("type", "point").field("coordinates", new float[] { lon, lat } ).endObject();
                                     
                         }
+                        /*else if (g instanceof Line) {
+                            
+                        }*/
                         //TODO other types
                     }
+                    if (f.getStyleUrl()!=null)
+                        builder.field("styleUrl", f.getStyleUrl());
+                    
                     //f.getStyleUrl()
                     
-                    st.add(layer, "feature", builder.endObject());
+                    st.add("feature", Integer.toString(n++), builder.endObject());
                 }
             }
             
@@ -319,7 +328,7 @@ public class ImportKML {
     
     public void loadLayers() throws Exception {
         
-        ElasticSpacetime st = new ElasticSpacetime();
+        ElasticSpacetime st = new ElasticSpacetime("cv");
         
         if (!Files.exists(Paths.get(basePath)))
             Files.createDirectory(Paths.get(basePath));
