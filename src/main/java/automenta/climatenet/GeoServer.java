@@ -10,8 +10,12 @@ package automenta.climatenet;
  * @author me
  */
 public class GeoServer {
+    
     //http://stackoverflow.com/questions/25187937/loading-geojson-layers-from-geoserver-to-leaflet-map-based-on-the-current-boundi
     //http://www.gaiaresources.com.au/json-with-geoserver-and-leaflet/
+    //http://blog.georepublic.info/2012/leaflet-example-with-wfs-t/
+    //  https://github.com/Georepublic/leaflet-wfs/blob/master/index.html#L137
+    
     //http://docs.geoserver.org/latest/en/user/production/container.html
     //http://docs.geoserver.org/latest/en/user/production/config.html
     

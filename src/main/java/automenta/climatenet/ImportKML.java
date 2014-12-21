@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -23,12 +22,15 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.opensextant.giscore.DocumentType;
 import org.opensextant.giscore.GISFactory;
+import org.opensextant.giscore.events.ContainerEnd;
 import org.opensextant.giscore.events.ContainerStart;
 import org.opensextant.giscore.events.DocumentStart;
+import org.opensextant.giscore.events.Element;
 import org.opensextant.giscore.events.Feature;
 import org.opensextant.giscore.events.IGISObject;
 import org.opensextant.giscore.events.Schema;
 import org.opensextant.giscore.events.SimpleField;
+import org.opensextant.giscore.events.SimpleField.Type;
 import org.opensextant.giscore.input.kml.KmlReader;
 import org.opensextant.giscore.input.kml.UrlRef;
 import org.opensextant.giscore.output.IGISOutputStream;
@@ -63,6 +65,12 @@ public class ImportKML {
         
         IGISOutputStream shpos = null;
         ZipOutputStream esriOut = null;
+
+        SimpleField layerfield = new SimpleField("layer", Type.STRING);
+        layerfield.setLength(32);
+        SimpleField descriptionField = new SimpleField("description", Type.STRING);
+        SimpleField addressField = new SimpleField("address", Type.STRING);
+        
         
         if (esri) {
             String outputFile = p + "/" + layer + ".shape.zip";
@@ -75,12 +83,11 @@ public class ImportKML {
             System.out.println("  ESRI Shapefile: Output file: " + outputFile);
             System.out.println("  ESRI Shapefile: Temporary folder: " + temp);
         
-            Schema schema = new Schema(new URI("urn:test"));
-            SimpleField id = new SimpleField(layer);
-            id.setLength(10);
-            schema.put(id);
+            Schema schema = new Schema(new URI("urn:climateviewer"));
+            schema.put(layerfield);
             DocumentStart ds = new DocumentStart(DocumentType.Shapefile);
             shpos.write(ds);
+            
             ContainerStart cs = new ContainerStart("Folder");
             cs.setName(layer);
             shpos.write(cs);
@@ -125,22 +132,47 @@ public class ImportKML {
         
         for (IGISObject gisObj; (gisObj = reader.read()) != null;) {
   // do something with the gis object; e.g. check for placemark, NetworkLink, etc.
-            if (gisObj instanceof Feature) {
-                Feature f = (Feature)gisObj;                
-                
-                //System.out.println(f.getElements());
-                //System.out.println(f.getFields() + " " + schema.getFields());
-                
-                //f.putData(null, kout);
-                
-                
-                //System.out.println(gisObj);
-            }
-            if (esri)
-                    shpos.write(gisObj);  
-                if (kml) {
-                    kout.write(gisObj);
+
+            
+            if (esri) {
+                if (gisObj instanceof Feature) {
+                    Feature f = (Feature)gisObj;                
+
+                    if (!f.getFields().isEmpty()) {
+                        System.out.println("Fields: " + f.getFields());
+                    }
+                    if (!f.getExtendedElements().isEmpty()) {
+                        System.out.println("Extended Elements: " + f.getExtendedElements());
+                    }
+                    for (Element e : f.getElements()) {
+                        String n = e.getName();
+                        switch (n) {
+                            case "address":
+                                f.putData(addressField, e.getText());
+                                break;
+                            default:
+                                System.err.println("Unknown element: " + e);
+                                break;
+                        }
+
+                    }
+                    String x = f.getDescription();
+                    if (x!=null)
+                        f.putData(descriptionField, x);
+
+
+                    //f.putData(null, kout);
+                    //System.out.println(gisObj);
+                }                
+                else {
+                    //System.err.println(gisObj.getClass() + " not handled");                     
                 }
+                
+                shpos.write(gisObj);  
+            }
+            if (kml) {
+                kout.write(gisObj);
+            }
         }
         
         
@@ -180,17 +212,20 @@ public class ImportKML {
         }
         
         if (esri) {
-            shpos.close();
+            ContainerEnd ce = new ContainerEnd();            
+            shpos.write(ce);
+            
+            //shpos.close();
 
             esriOut.flush();
             esriOut.close();	
         }
         if (kml) {            
             kout.close();
+            toGeoJSON(kmlFile, geojsonFile);
+            toPostgres(layer, geojsonFile, "localhost", "me", "cv");
         }
 
-        toGeoJSON(kmlFile, geojsonFile);
-        toPostgres(layer, geojsonFile, "localhost", "me", "cv");
         
 
 
@@ -219,8 +254,11 @@ public class ImportKML {
         exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
     }
 
-    public ImportKML() throws Exception {
-
+    public ImportKML()  {
+    }
+    
+    public void loadLayers() throws Exception {
+        
         if (!Files.exists(Paths.get(basePath)))
             Files.createDirectory(Paths.get(basePath));
         
@@ -246,7 +284,7 @@ public class ImportKML {
                 System.out.println(currentSection + " " + x);
                 
                 try {
-                    transformKML(layer, url, false, true);
+                    transformKML(layer, url, true, false);
                 }
                 catch (Exception e) {
                     e.printStackTrace();;
@@ -258,6 +296,6 @@ public class ImportKML {
 
     
     public static void main(String[] args) throws Exception {
-        new ImportKML();
+        new ImportKML().loadLayers();
     }
 }
