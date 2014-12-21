@@ -20,8 +20,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import org.opensextant.geodesy.Geodetic2DPoint;
 import org.opensextant.giscore.DocumentType;
-import org.opensextant.giscore.GISFactory;
+import org.opensextant.giscore.data.DocumentTypeRegistration;
+import org.opensextant.giscore.data.FactoryDocumentTypeRegistry;
 import org.opensextant.giscore.events.ContainerEnd;
 import org.opensextant.giscore.events.ContainerStart;
 import org.opensextant.giscore.events.DocumentStart;
@@ -31,10 +35,13 @@ import org.opensextant.giscore.events.IGISObject;
 import org.opensextant.giscore.events.Schema;
 import org.opensextant.giscore.events.SimpleField;
 import org.opensextant.giscore.events.SimpleField.Type;
+import org.opensextant.giscore.geometry.Geometry;
+import org.opensextant.giscore.geometry.Point;
 import org.opensextant.giscore.input.kml.KmlReader;
 import org.opensextant.giscore.input.kml.UrlRef;
 import org.opensextant.giscore.output.IGISOutputStream;
 import org.opensextant.giscore.output.kml.KmlOutputStream;
+import org.opensextant.giscore.output.shapefile.ShapefileOutputStream;
 
 /**
  * @see https://github.com/OpenSextant/giscore/wiki
@@ -45,7 +52,7 @@ public class ImportKML {
     String basePath = "data";
     String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
     
-    public void transformKML(String layer, String urlString, boolean esri, boolean kml) throws Exception {
+    public void transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
         
         KmlReader reader = new KmlReader(url);
@@ -77,14 +84,26 @@ public class ImportKML {
             if (Files.exists(Paths.get(outputFile)))
                 Files.delete(Paths.get(outputFile));
             esriOut = new ZipOutputStream(new FileOutputStream(outputFile));
+            
+            DocumentTypeRegistration docreg = FactoryDocumentTypeRegistry.get(DocumentType.Shapefile);
+            
+            shpos = new ShapefileOutputStream(esriOut, new Object[] { temp }) {
 
+                
+            };
+            
 
-            shpos = GISFactory.getOutputStream(DocumentType.Shapefile, esriOut, temp);
+            //shpos = GISFactory.getOutputStream(DocumentType.Shapefile, esriOut, temp);
+            
+            
             System.out.println("  ESRI Shapefile: Output file: " + outputFile);
             System.out.println("  ESRI Shapefile: Temporary folder: " + temp);
         
             Schema schema = new Schema(new URI("urn:climateviewer"));
             schema.put(layerfield);
+            schema.put(addressField);
+            schema.put(descriptionField);
+            
             DocumentStart ds = new DocumentStart(DocumentType.Shapefile);
             shpos.write(ds);
             
@@ -133,6 +152,40 @@ public class ImportKML {
         for (IGISObject gisObj; (gisObj = reader.read()) != null;) {
   // do something with the gis object; e.g. check for placemark, NetworkLink, etc.
 
+            if (st!=null) {
+                if (gisObj instanceof Feature) {
+                    Feature f = (Feature)gisObj;                
+                    
+                    
+                    XContentBuilder builder = jsonBuilder().startObject();
+                    builder.field("name", f.getName());
+                    if (f.getDescription()!=null)
+                        builder.field("description", f.getDescription());
+                    if (f.getSnippet()!=null)
+                        builder.field("snippet", f.getSnippet());
+                    if (f.getStartTime()!=null)
+                        builder.field("startTime", f.getStartTime().getTime());
+                    if (f.getEndTime()!=null)
+                        builder.field("endTime", f.getEndTime().getTime());
+                    Geometry g = f.getGeometry();
+                    if (g!=null) {
+                        if (g instanceof Point) {
+                            Point pp = (Point)g;
+                            Geodetic2DPoint c = pp.getCenter();
+                            float lat = (float)c.getLatitudeAsDegrees();
+                            float lon = (float)c.getLongitudeAsDegrees();
+                            
+                            //http://geojson.org/
+                            builder.field("point", new float[] { lat, lon } );
+                                    
+                        }
+                        //TODO other types
+                    }
+                    //f.getStyleUrl()
+                    
+                    st.add(layer, "feature", builder.endObject());
+                }
+            }
             
             if (esri) {
                 if (gisObj instanceof Feature) {
@@ -157,8 +210,9 @@ public class ImportKML {
 
                     }
                     String x = f.getDescription();
-                    if (x!=null)
+                    if (x!=null) {
                         f.putData(descriptionField, x);
+                    }
 
 
                     //f.putData(null, kout);
@@ -215,7 +269,13 @@ public class ImportKML {
             ContainerEnd ce = new ContainerEnd();            
             shpos.write(ce);
             
-            //shpos.close();
+            
+            try {
+                shpos.close();
+            }
+            catch (Exception e) {
+                System.err.println(e);
+            }
 
             esriOut.flush();
             esriOut.close();	
@@ -259,6 +319,8 @@ public class ImportKML {
     
     public void loadLayers() throws Exception {
         
+        ElasticSpacetime st = new ElasticSpacetime();
+        
         if (!Files.exists(Paths.get(basePath)))
             Files.createDirectory(Paths.get(basePath));
         
@@ -284,7 +346,7 @@ public class ImportKML {
                 System.out.println(currentSection + " " + x);
                 
                 try {
-                    transformKML(layer, url, true, false);
+                    transformKML(layer, url, st, false, false);
                 }
                 catch (Exception e) {
                     e.printStackTrace();;

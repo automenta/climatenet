@@ -15,6 +15,8 @@ public class GeoServer {
     //http://www.gaiaresources.com.au/json-with-geoserver-and-leaflet/
     //http://blog.georepublic.info/2012/leaflet-example-with-wfs-t/
     //  https://github.com/Georepublic/leaflet-wfs/blob/master/index.html#L137
+    //https://wiki.state.ma.us/confluence/display/massgis/GeoServer+-+WFS+-+Examples
+    //http://localhost:8080/WS/wfs/sdfs?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature&TYPENAME=cvr01
     
     //http://docs.geoserver.org/latest/en/user/production/container.html
     //http://docs.geoserver.org/latest/en/user/production/config.html
