@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet.unused;
+package automenta.climatenet;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class DBRead {
                                 
             if (pgDatastore == null) throw new RuntimeException("Can not connect to database: " + params);
             
-            String layer = "ogrgeojson";
+            String layer = "cvr01";
             
             
             System.out.println(pgDatastore.getSchema(layer));

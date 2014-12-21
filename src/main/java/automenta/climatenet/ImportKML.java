@@ -11,11 +11,14 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.opensextant.giscore.DocumentType;
@@ -86,9 +89,11 @@ public class ImportKML {
         
         KmlOutputStream kout = null;
         String kmlFile = p + "/" + layer + ".kml";
+        String geojsonFile = p + "/" + layer + ".geojson";
+        
         if (kml) {
             
-            //String geojsonoutput = p + "/" + layer + ".geojson";
+            
             
             FileOutputStream fout = new FileOutputStream(new File(kmlFile));
             
@@ -103,6 +108,7 @@ public class ImportKML {
                         
             kout = new KmlOutputStream(fout, "UTF-8");
     
+            
             //TODO
             //tee out to a pipe that executes:
             //  {cat cvr01.kml } | ogr2ogr -F GeoJSON cvr01.json /vsistdin/
@@ -125,14 +131,16 @@ public class ImportKML {
                 //System.out.println(f.getElements());
                 //System.out.println(f.getFields() + " " + schema.getFields());
                 
-                if (esri)
-                    shpos.write(f);  
-                if (kml) {
-                    kout.write(f);
-                }
+                //f.putData(null, kout);
+                
                 
                 //System.out.println(gisObj);
             }
+            if (esri)
+                    shpos.write(gisObj);  
+                if (kml) {
+                    kout.write(gisObj);
+                }
         }
         
         
@@ -181,16 +189,34 @@ public class ImportKML {
             kout.close();
         }
 
-        //convert to GeoJSON and import to postgis with ogr2ogr using KML as input:
-        String cmd = "ogr2ogr -update -append -skipFailures -f \"PostGreSQL\" PG:\"host=localhost user=me dbname=cv\" " + kmlFile;
-        String[] cmdParm = { "/bin/sh", "-c", cmd };
-           
-        Process proc = Runtime.getRuntime().exec(cmdParm);            
-        IOUtils.copy(proc.getInputStream(), System.out);
-        IOUtils.copy(proc.getErrorStream(), System.err);
-        proc.waitFor();
+        toGeoJSON(kmlFile, geojsonFile);
+        toPostgres(layer, geojsonFile, "localhost", "me", "cv");
         
+
+
         
+    }
+    
+    public static void exec(String cmd) {
+        try {
+            String[] cmdParm = { "/bin/sh", "-c", cmd };
+            
+            Process proc = Runtime.getRuntime().exec(cmdParm);
+            IOUtils.copy(proc.getInputStream(), System.out);
+            IOUtils.copy(proc.getErrorStream(), System.err);        
+            proc.waitFor();
+        } catch (Exception ex) {
+            Logger.getLogger(ImportKML.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    public static void toPostgres(String layerName, String inputFile, String host, String user, String db) {
+        exec("ogr2ogr -update -append -skipFailures -f \"PostgreSQL\" PG:\"host=" + host + " user=" + user + " dbname=" + db + "\" " + inputFile + " -nln " + layerName);
+    }
+    
+    public static void toGeoJSON(String inputFile, String outputFile){
+//        ogr2ogr -f "GeoJSON" output.json input.kml
+        exec("rm -f " + outputFile);
+        exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
     }
 
     public ImportKML() throws Exception {

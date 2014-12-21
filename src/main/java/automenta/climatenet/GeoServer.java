@@ -19,6 +19,8 @@ public class GeoServer {
     //http://docs.geotools.org/latest/userguide/unsupported/geojson.html
     //http://docs.codehaus.org/display/GEOTOOLS/How+to+use+a+PostGISDataStore
     
+    //http://www.gdal.org/drv_libkml.html
+    
     //http://geojson.org/geojson-spec.html
     //http://wiki.openstreetmap.org/wiki/Geojson_CSS
     //https://github.com/mapbox/simplestyle-spec
@@ -32,7 +34,11 @@ public class GeoServer {
             unix_socket_directories = './run'       # comma-separated list of directories
     
         5.  start postgis server with: postgres -D .
-            start postgres client: psql -p 5432 -h localhost -dcv
+    
+        5. create db (while server is running): createdb -p 5432 -h localhost  cv
+
+    
+        5. start postgres client: psql -p 5432 -h localhost -dcv
                 command:
                     \d - prints tables
     
