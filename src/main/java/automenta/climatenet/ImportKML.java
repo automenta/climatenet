@@ -5,8 +5,8 @@
  */
 package automenta.climatenet;
 
+import automenta.climatenet.proxy.ProxyServer;
 import automenta.knowtention.Core;
-import climatenet.proxy.ProxyCache;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -20,10 +20,10 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.opensextant.geodesy.Geodetic2DPoint;
@@ -57,6 +57,7 @@ public class ImportKML {
     String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
     int n = 1;
     
+    
     public Deque<XContentBuilder> groups = new ArrayDeque();
     private final Proxy proxy;
     
@@ -64,6 +65,8 @@ public class ImportKML {
     public void transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
         
+        Logger.getLogger("org.opensextant.giscore.input.kml.KmlInputStream").setLevel(Level.WARN);
+
         KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
         
@@ -152,7 +155,9 @@ public class ImportKML {
         
         
         
-                
+        if (st!=null) {
+            st.bulkStart();
+        }
 	
         
         
@@ -295,6 +300,10 @@ public class ImportKML {
                     });
 
         }
+
+        if (st!=null) {
+            st.bulkEnd();
+        }
         
         if (esri) {
             ContainerEnd ce = new ContainerEnd();            
@@ -332,7 +341,7 @@ public class ImportKML {
             IOUtils.copy(proc.getErrorStream(), System.err);        
             proc.waitFor();
         } catch (Exception ex) {
-            Logger.getLogger(ImportKML.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
         }
     }
     public static void toPostgres(String layerName, String inputFile, String host, String user, String db) {
@@ -386,14 +395,16 @@ public class ImportKML {
                 }
             }
         }
+        
+        st.close();
     }
     
 
     
     public static void main(String[] args) throws Exception {
         
-        ProxyCache cache = new ProxyCache(16000);
-        new Thread(cache).start();
+        ProxyServer cache = new ProxyServer(16000);
+        
         
         new ImportKML(cache.proxy).loadLayers();
     }

@@ -25,15 +25,19 @@ public class HttpResponse {
     int bytesRead;
 
     /** Read response from server. */
-    public HttpResponse(DataInputStream fromServer) {
+    public HttpResponse(DataInputStream fromServer) throws IOException {
 	/* Length of the object */
 	int length = -1;
 	boolean gotStatusLine = false;
-
+        BufferedReader d
+               = new BufferedReader(new InputStreamReader(fromServer));
+        
+        
 	/* First read status line and response headers */
 	try {
-	    String line =fromServer.readLine(); /* Ler inputstream do servidor */
-	    while (line.length() != 0) {
+            
+	    String line;
+	    while (((line = d.readLine()).length() > 0)) {
 		if (!gotStatusLine) {
 		    statusLine = line;
 		    gotStatusLine = true;
@@ -52,10 +56,15 @@ public class HttpResponse {
 		    String[] tmp = line.split(" ");
 		    length = Integer.parseInt(tmp[1]);
 		}
-		line = fromServer.readLine();
+        System.out.println(headers);
+                
 	    }
 	} catch (IOException e) {
+            e.printStackTrace();
+            throw e;
 	}
+
+        
 
 	try {
 	    bytesRead = 0;
