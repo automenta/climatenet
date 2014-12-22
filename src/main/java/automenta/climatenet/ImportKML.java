@@ -12,14 +12,20 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.math.BigInteger;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Base64;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
@@ -48,6 +54,12 @@ import org.opensextant.giscore.output.kml.KmlOutputStream;
 import org.opensextant.giscore.output.shapefile.ShapefileOutputStream;
 
 /**
+ * 
+ * TODO 
+ *  - remove null descriptions
+ *  - store HTML content separately so it does not get indexed
+ *  - max token size
+ * 
  * @see https://github.com/OpenSextant/giscore/wiki
  * @author me
  */
@@ -55,18 +67,23 @@ public class ImportKML {
 
     String basePath = "data";
     String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
-    int n = 1;
     
     
-    public Deque<XContentBuilder> groups = new ArrayDeque();
     private final Proxy proxy;
     
+    public static String getSerial(String layer, int serial ) {
+        return (Base64.getEncoder().encodeToString(BigInteger.valueOf( serial ).add( BigInteger.valueOf(layer.hashCode()).shiftLeft(32) ).toByteArray()));        
+    }
     
     public void transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
+        Deque<String> groups = new ArrayDeque();
+        String[] g = null;
         
-        Logger.getLogger("org.opensextant.giscore.input.kml.KmlInputStream").setLevel(Level.WARN);
-
+        Logger.getLogger(org.opensextant.giscore.input.kml.KmlInputStream.class).setLevel(Level.OFF);
+Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setLevel(Level.OFF);
+        
+        
         KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
         
@@ -90,6 +107,7 @@ public class ImportKML {
         SimpleField descriptionField = new SimpleField("description", Type.STRING);
         SimpleField addressField = new SimpleField("address", Type.STRING);
         
+        int serial = 1;
         
         if (esri) {
             String outputFile = p + "/" + layer + ".shape.zip";
@@ -162,108 +180,139 @@ public class ImportKML {
         
         
         
+        do {
         
-        for (IGISObject go; (go = reader.read()) != null;) {
+        //for (IGISObject go; (go = reader.read()) != null;) {
   // do something with the gis object; e.g. check for placemark, NetworkLink, etc.
+            try {
+                IGISObject go = reader.read();
+                if (go == null)
+                    break;
 
-            if (st!=null) {
-                if (go instanceof DocumentStart) {
-                    DocumentStart ds = (DocumentStart)go;
-                    //System.out.println("Document " + ds.getType().name());
-                    groups.add(jsonBuilder().startObject().field("url", urlString).endObject());
-                }
-                else if (go instanceof ContainerEnd) {
-                    groups.pop();  
-                }
-                else if (go instanceof ContainerStart) {
-                    ContainerStart cs = (ContainerStart)go;
-                    //TODO startTime?
-                    //System.out.println(cs + " " + cs.getId());
-                    groups.add(jsonBuilder().startObject().field("name", cs.getName()).field("description", cs.getDescription()).endObject());
-                }
-                else if (go instanceof Feature) {
-                    Feature f = (Feature)go;                
-                    
-                    
-                    XContentBuilder builder = jsonBuilder().startObject();
-                    builder.field("name", f.getName());
-                    builder.field("layer", layer);
-                    if (f.getDescription()!=null)
-                        builder.field("description", f.getDescription());
-                    if (f.getSnippet()!=null)
-                        builder.field("snippet", f.getSnippet());
-                    if (f.getStartTime()!=null)
-                        builder.field("startTime", f.getStartTime().getTime());
-                    if (f.getEndTime()!=null)
-                        builder.field("endTime", f.getEndTime().getTime());
-                    
-                    Geometry g = f.getGeometry();
-                    if (g!=null) {
-                        if (g instanceof Point) {
-                            Point pp = (Point)g;
-                            Geodetic2DPoint c = pp.getCenter();
-                            float lat = (float)c.getLatitudeAsDegrees();
-                            float lon = (float)c.getLongitudeAsDegrees();
-                            
-                            //http://geojson.org/
-                            builder.startObject("geom").field("type", "point").field("coordinates", new float[] { lon, lat } ).endObject();
-                                    
+                if (st!=null) {
+                    if (go instanceof DocumentStart) {
+                        DocumentStart ds = (DocumentStart)go;
+                        XContentBuilder d;
+
+                        //System.out.println("Document " + ds.getType().name());
+                        d = jsonBuilder().startObject().field("url", urlString);
+                        d.endObject();
+
+                        st.add("layer", layer, d);
+
+                        groups.clear();
+                        g = groups.toArray(new String[groups.size()]);
+
+                    }                
+                    else if (go instanceof ContainerEnd) {
+                        groups.pop();  
+                        g = groups.toArray(new String[groups.size()]);
+                    }
+                    else if (go instanceof ContainerStart) {
+                        ContainerStart cs = (ContainerStart)go;
+                        //TODO startTime?
+                        //System.out.println(cs + " " + cs.getId());
+                        String i = getSerial(layer, serial++);
+
+                        XContentBuilder d;
+                        d = jsonBuilder().startObject().field("name", cs.getName()).field("description", cs.getDescription()).field("path", g).field("layer", layer).endObject();
+
+                        groups.add(i);
+
+                        g = groups.toArray(new String[groups.size()]);
+
+                        st.add("layer", i, d);
+
+                    }
+                    else if (go instanceof Feature) {
+                        Feature f = (Feature)go;                
+
+
+                        XContentBuilder builder = jsonBuilder().startObject();
+                        builder.field("name", f.getName());
+                        builder.field("layer", layer);
+                        if (f.getDescription()!=null)
+                            builder.field("description", f.getDescription());
+                        if (f.getSnippet()!=null)
+                            builder.field("snippet", f.getSnippet());
+                        if (f.getStartTime()!=null)
+                            builder.field("startTime", f.getStartTime().getTime());
+                        if (f.getEndTime()!=null)
+                            builder.field("endTime", f.getEndTime().getTime());
+
+                        Geometry geo = f.getGeometry();
+                        if (geo!=null) {
+                            if (geo instanceof Point) {
+                                Point pp = (Point)geo;
+                                Geodetic2DPoint c = pp.getCenter();
+                                float lat = (float)c.getLatitudeAsDegrees();
+                                float lon = (float)c.getLongitudeAsDegrees();
+
+                                //http://geojson.org/
+                                builder.startObject("geom").field("type", "point").field("coordinates", new float[] { lon, lat } ).endObject();
+
+                            }
+                            /*else if (g instanceof Line) {
+
+                            }*/
+                            //TODO other types
                         }
-                        /*else if (g instanceof Line) {
-                            
-                        }*/
-                        //TODO other types
-                    }
-                    if (f.getStyleUrl()!=null)
-                        builder.field("styleUrl", f.getStyleUrl());
-                    
-                    //f.getStyleUrl()
-                    
-                    st.add("feature", layer + Integer.toString(n++), builder.endObject());
-                }
-            }
-            
-            if (esri) {
-                if (go instanceof Feature) {
-                    Feature f = (Feature)go;                
+                        if (f.getStyleUrl()!=null)
+                            builder.field("styleUrl", f.getStyleUrl());
 
-                    if (!f.getFields().isEmpty()) {
-                        System.out.println("Fields: " + f.getFields());
+                        builder.field("path", g);
+                        //f.getStyleUrl()
+
+                        String fid = getSerial(layer, serial++);
+                        st.add("feature", fid, builder.endObject());
                     }
-                    if (!f.getExtendedElements().isEmpty()) {
-                        System.out.println("Extended Elements: " + f.getExtendedElements());
-                    }
-                    for (Element e : f.getElements()) {
-                        String n = e.getName();
-                        switch (n) {
-                            case "address":
-                                f.putData(addressField, e.getText());
-                                break;
-                            default:
-                                System.err.println("Unknown element: " + e);
-                                break;
+                }
+
+                if (esri) {
+                    if (go instanceof Feature) {
+                        Feature f = (Feature)go;                
+
+                        if (!f.getFields().isEmpty()) {
+                            System.out.println("Fields: " + f.getFields());
+                        }
+                        if (!f.getExtendedElements().isEmpty()) {
+                            System.out.println("Extended Elements: " + f.getExtendedElements());
+                        }
+                        for (Element e : f.getElements()) {
+                            String n = e.getName();
+                            switch (n) {
+                                case "address":
+                                    f.putData(addressField, e.getText());
+                                    break;
+                                default:
+                                    System.err.println("Unknown element: " + e);
+                                    break;
+                            }
+
+                        }
+                        String x = f.getDescription();
+                        if (x!=null) {
+                            f.putData(descriptionField, x);
                         }
 
-                    }
-                    String x = f.getDescription();
-                    if (x!=null) {
-                        f.putData(descriptionField, x);
+
+                        //f.putData(null, kout);
+                        //System.out.println(gisObj);
+                    }                
+                    else {
+                        //System.err.println(gisObj.getClass() + " not handled");                     
                     }
 
-
-                    //f.putData(null, kout);
-                    //System.out.println(gisObj);
-                }                
-                else {
-                    //System.err.println(gisObj.getClass() + " not handled");                     
+                    shpos.write(go);  
                 }
-                
-                shpos.write(go);  
+                if (kml) {
+                    kout.write(go);
+                }
             }
-            if (kml) {
-                kout.write(go);
+            catch (Throwable t) {
+                System.err.println(t);
             }
-        }
+        } while (true);
         
         
         
@@ -273,7 +322,7 @@ public class ImportKML {
         
         reader.close();
 
-        
+        final Set<UrlRef> visited = new HashSet();
         
         if (!networkLinks.isEmpty()) {
             
@@ -282,13 +331,19 @@ public class ImportKML {
             // of the list and processed one after another. The handleEvent() callback method
             // below will be called with each feature (i.e. Placemark, GroundOverlay, etc.)
             // as it is processed in the target KML resources.
+            
             reader.importFromNetworkLinks(
                     new KmlReader.ImportEventHandler() {
                         public boolean handleEvent(UrlRef ref, IGISObject gisObj) {
+                            
             // if gisObj instanceOf Feature, GroundOverlay, etc.
                             // do something with the gisObj
                             // return false to abort the recursive network link parsing
+                            if (visited.contains(ref))
+                                return false;
+                            
                             System.out.println("Loading NetworkLink: " + ref);
+                            visited.add(ref);
                             return true;
                         }
 
@@ -354,14 +409,26 @@ public class ImportKML {
         exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
     }
 
-    public ImportKML(Proxy p)  {
+    public ImportKML(Proxy p) throws Exception {
         this.proxy = p;
+        
         
     }
     
-    public void loadLayers() throws Exception {
+    
+    
+    public void loadLayers(int threads, final long postDelay) throws Exception {
         
-        ElasticSpacetime st = new ElasticSpacetime("cv");
+        ExecutorService executor = 
+                
+                threads == 1 ?
+                Executors.newSingleThreadExecutor() :
+                Executors.newFixedThreadPool(threads);
+        
+        ElasticSpacetime stInit = new ElasticSpacetime("cv", true);
+        stInit.close();
+            
+          
         
         if (!Files.exists(Paths.get(basePath)))
             Files.createDirectory(Paths.get(basePath));
@@ -383,20 +450,51 @@ public class ImportKML {
             } else if (!x.isObject() && !x.has("layer")) {
                 System.err.println("Unrecognized item: " + x);
             } else {
-                String layer = x.get("layer").textValue();
-                String url = x.get("kml").textValue();
-                System.out.println(currentSection + " " + x);
+                final String layer = x.get("layer").textValue();
+                final String url = x.get("kml").textValue();
                 
-                try {
-                    transformKML(layer, url, st, false, false);
-                }
-                catch (Exception e) {
-                    e.printStackTrace();;
-                }
+                System.out.println(currentSection + " " + x);
+                                      
+                executor.submit(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            System.out.println("START: " + layer);
+                            final ElasticSpacetime st = new ElasticSpacetime("cv");
+                            transformKML(layer, url, st, false, false);
+                            
+                            st.close();
+                            System.out.println("FINISH: " + layer);
+                            
+                        }
+                        catch (Throwable e) {
+                            //e.printStackTrace();;
+                            System.err.println(e);
+                        }
+                        
+                        try {
+                            Thread.sleep(postDelay);
+                        } catch (InterruptedException ex) {
+
+                        }
+                        
+                    }
+                    
+                });
+            
             }
         }
         
-        st.close();
+        
+        executor.shutdown();
+        while (!executor.isTerminated()) {
+        }        
+
+        
+        
+                
+        
     }
     
 
@@ -406,6 +504,6 @@ public class ImportKML {
         ProxyServer cache = new ProxyServer(16000);
         
         
-        new ImportKML(cache.proxy).loadLayers();
+        new ImportKML(cache.proxy).loadLayers(1, 5000);
     }
 }

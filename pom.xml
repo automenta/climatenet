@@ -94,7 +94,23 @@
 	<artifactId>async-http-client</artifactId>
 	<version>1.9.3</version>
 </dependency>
+<dependency>
+    <groupId>com.spatial4j</groupId>
+    <artifactId>spatial4j</artifactId>
+    <version>0.4.1</version>                        
+</dependency>
 
+<dependency>
+    <groupId>com.vividsolutions</groupId>
+    <artifactId>jts</artifactId>
+    <version>1.13</version>                         
+    <exclusions>
+        <exclusion>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
 
 
     </dependencies>
