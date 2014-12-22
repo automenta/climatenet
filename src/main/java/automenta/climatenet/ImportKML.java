@@ -6,15 +6,19 @@
 package automenta.climatenet;
 
 import automenta.knowtention.Core;
+import climatenet.proxy.ProxyCache;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,10 +57,14 @@ public class ImportKML {
     String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
     int n = 1;
     
+    public Deque<XContentBuilder> groups = new ArrayDeque();
+    private final Proxy proxy;
+    
+    
     public void transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
         
-        KmlReader reader = new KmlReader(url);
+        KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
         
         
@@ -150,12 +158,26 @@ public class ImportKML {
         
         
         
-        for (IGISObject gisObj; (gisObj = reader.read()) != null;) {
+        for (IGISObject go; (go = reader.read()) != null;) {
   // do something with the gis object; e.g. check for placemark, NetworkLink, etc.
 
             if (st!=null) {
-                if (gisObj instanceof Feature) {
-                    Feature f = (Feature)gisObj;                
+                if (go instanceof DocumentStart) {
+                    DocumentStart ds = (DocumentStart)go;
+                    //System.out.println("Document " + ds.getType().name());
+                    groups.add(jsonBuilder().startObject().field("url", urlString).endObject());
+                }
+                else if (go instanceof ContainerEnd) {
+                    groups.pop();  
+                }
+                else if (go instanceof ContainerStart) {
+                    ContainerStart cs = (ContainerStart)go;
+                    //TODO startTime?
+                    //System.out.println(cs + " " + cs.getId());
+                    groups.add(jsonBuilder().startObject().field("name", cs.getName()).field("description", cs.getDescription()).endObject());
+                }
+                else if (go instanceof Feature) {
+                    Feature f = (Feature)go;                
                     
                     
                     XContentBuilder builder = jsonBuilder().startObject();
@@ -192,13 +214,13 @@ public class ImportKML {
                     
                     //f.getStyleUrl()
                     
-                    st.add("feature", Integer.toString(n++), builder.endObject());
+                    st.add("feature", layer + Integer.toString(n++), builder.endObject());
                 }
             }
             
             if (esri) {
-                if (gisObj instanceof Feature) {
-                    Feature f = (Feature)gisObj;                
+                if (go instanceof Feature) {
+                    Feature f = (Feature)go;                
 
                     if (!f.getFields().isEmpty()) {
                         System.out.println("Fields: " + f.getFields());
@@ -231,10 +253,10 @@ public class ImportKML {
                     //System.err.println(gisObj.getClass() + " not handled");                     
                 }
                 
-                shpos.write(gisObj);  
+                shpos.write(go);  
             }
             if (kml) {
-                kout.write(gisObj);
+                kout.write(go);
             }
         }
         
@@ -323,7 +345,9 @@ public class ImportKML {
         exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
     }
 
-    public ImportKML()  {
+    public ImportKML(Proxy p)  {
+        this.proxy = p;
+        
     }
     
     public void loadLayers() throws Exception {
@@ -367,6 +391,10 @@ public class ImportKML {
 
     
     public static void main(String[] args) throws Exception {
-        new ImportKML().loadLayers();
+        
+        ProxyCache cache = new ProxyCache(16000);
+        new Thread(cache).start();
+        
+        new ImportKML(cache.proxy).loadLayers();
     }
 }

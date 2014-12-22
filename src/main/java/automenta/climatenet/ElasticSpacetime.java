@@ -78,11 +78,11 @@ http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index
     }
 
     public void add(String type, String id, XContentBuilder n) {
-        try {
+        /*try {
             System.out.println(index + " " + type + " " + n.string());
         } catch (IOException ex) {
             Logger.getLogger(ElasticSpacetime.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        }*/
         
         
         IndexResponse response = client.prepareIndex(index, type, id)                

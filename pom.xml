@@ -60,7 +60,7 @@
         </dependency>
 
 
- 
+ <!--
         <dependency>
             <groupId>org.geotoolkit</groupId>
             <artifactId>geotk-logging-log4j</artifactId>
@@ -83,6 +83,7 @@
             <artifactId>geotk-client-osm</artifactId>
             <version>${geotk.version}</version>    
         </dependency>
+        -->
     </dependencies>
 
     <!-- ================================================================== -->
