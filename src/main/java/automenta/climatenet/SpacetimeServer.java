@@ -58,7 +58,7 @@ public class SpacetimeServer extends PathHandler {
                 new FileResourceManager(new File(clientPath), 100)).
                     setDirectoryListingEnabled(true));
                 
-        addPrefixPath("geom", new HttpHandler() {
+        addPrefixPath("/geoCircle", new HttpHandler() {
 
             @Override
             public void handleRequest(final HttpServerExchange ex) throws Exception 
@@ -67,9 +67,28 @@ public class SpacetimeServer extends PathHandler {
                 
                 //   Deque<String> deque = reqParams.get("attrName");
                 //Deque<String> dequeVal = reqParams.get("value");
+                Deque<String> lats = reqParams.get("lat");
+                Deque<String> lons = reqParams.get("lon");
+                Deque<String> rads = reqParams.get("radiusM");
                 
-                ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                ex.getResponseSender().send("Hello World");
+                if (lats!=null && lons!=null && rads!=null) {
+                    //System.out.println(lats.getFirst() + "  "+ lons.getFirst() + " "+ rads.getFirst());
+                    double lat = Double.parseDouble(lats.getFirst());
+                    double lon = Double.parseDouble(lons.getFirst());
+                    double rad = Double.parseDouble(rads.getFirst());
+                    
+                    SearchHits result = get(lat, lon, rad);
+                    String b = "[";
+                    for (SearchHit h : result) {
+                        b += h.sourceAsString() + ",";
+                    }
+                    b = b.substring(0, b.length()-1);
+                    b += "]";                    
+                    
+                    ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+                    ex.getResponseSender().send(b);
+                }
+
             }
 
         });
@@ -111,12 +130,9 @@ public class SpacetimeServer extends PathHandler {
     }
 
     public static void main(String[] args) throws Exception {
-        SpacetimeServer s = new SpacetimeServer(8080, "cv");
+        SpacetimeServer s = new SpacetimeServer(9090, "cv");
 
-        for (SearchHit h : s.get(35, -79, 100000).getHits()) {
-
-            System.out.println(h.sourceAsString());
-        }
+ 
 
     }
 }
