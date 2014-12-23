@@ -33,6 +33,8 @@ and open the template in the editor.
                 maxZoom: 18
             }).addTo(map);
 
+            var features = { };
+            
             var geojsonMarkerOptions = {
                 radius: 8,
                 fillColor: "#ff7800",
@@ -57,24 +59,51 @@ and open the template in the editor.
                 }
             };
             
-
+            function addFeature(id, f) {
+                if (!f.geom)  return;
+                if (features[id]) return;
+                
+                f.type = "Feature";
+                f.geometry = f.geom;
+                
+                
+                if (f.geom.type === "point")
+                    f.geometry.type = "Point";
+                var layer = L.geoJson(f, {
+                    /*style: function (feature) {
+                        return {color: feature.properties.color};
+                    },*/
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.description);
+                    }
+                });
+                features[id] = layer;
+                layer.addTo(map);
+            }
+            
+            function removeFeature(i) {
+                features[i].removeFrom(map);
+                delete features[i];
+            }
+            
             function updateGeoJSONFeatures(r) {
                 
-                gj.clearLayers();
-                for (var i = 0; i < r.length; i++) {
+                for (var i in features) {
+                    if (!r[i]) {
+                        removeFeature(i);
+                    }
+                }
+                
+                for (var i in r) {
                     var f = r[i];
-                    f.type = "Feature";
-                    f.geometry = f.geom;
-                    if (f.geom.type === "point")
-                        f.geometry.type = "Point";
-                    gj.addData(f);
+                    addFeature(i, f);
                 }
             }
 
             var updateBounds = _.throttle(function (e) {
                 var b = map.getBounds();
 
-                var radiusMeters = b.getSouthEast().distanceTo(b.getNorthWest());
+                var radiusMeters = b.getSouthEast().distanceTo(b.getNorthWest()) / 2.0;
                 var lon = b.getCenter().lng;
                 var lat = b.getCenter().lat;
 
@@ -90,7 +119,7 @@ and open the template in the editor.
                         .fail(function (v, m) {
                             console.log('err', v, m);
                         });
-            });
+            }, updatePeriodMS);
 
             map.on('viewreset', updateBounds);
             map.on('move', updateBounds);

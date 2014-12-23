@@ -15,12 +15,15 @@ import io.undertow.util.Headers;
 import java.io.File;
 import java.util.Deque;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.geo.builders.CircleBuilder;
 import org.elasticsearch.common.geo.builders.EnvelopeBuilder;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
 import org.elasticsearch.search.SearchHit;
@@ -77,16 +80,37 @@ public class SpacetimeServer extends PathHandler {
                     double lon = Double.parseDouble(lons.getFirst());
                     double rad = Double.parseDouble(rads.getFirst());
                     
-                    SearchHits result = get(lat, lon, rad);
-                    String b = "[";
+                    SearchHits result = get(lat, lon, rad, 60);
+                    
+                    XContentBuilder d = jsonBuilder().startObject();
+                    
                     for (SearchHit h : result) {
-                        b += h.sourceAsString() + ",";
+                        
+                                
+                        Map<String, Object> s = h.getSource();
+
+                        Object pp = s.get("path");
+                        Object[] path = new Object[] { s.get("layer"), pp };
+                        
+                        //System.out.println(h.getId() + " " + s);
+                        
+                        d.startObject(h.getId())
+                                .field("path", path)
+                                .field("name", s.get("name"))
+                                .field("description", s.get("description"))
+                                .field("geom", s.get("geom"));
+                        d.endObject();
+                        
                     }
-                    b = b.substring(0, b.length()-1);
-                    b += "]";                    
+                    d.endObject();
+                 
+                    ex.startBlocking();
                     
                     ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                    ex.getResponseSender().send(b);
+                    
+                    ex.getResponseSender().send(d.bytes().toChannelBuffer().toByteBuffer());
+                    
+                    
                 }
 
             }
@@ -113,7 +137,7 @@ public class SpacetimeServer extends PathHandler {
         return response.getHits();
     }
 
-    public SearchHits get(double lat, double lon, double radiusMeters) {
+    public SearchHits get(double lat, double lon, double radiusMeters, int max) {
 
         CircleBuilder shape = ShapeBuilder.newCircleBuilder().center(lon, lat).radius(radiusMeters, DistanceUnit.METERS);
 
@@ -122,8 +146,9 @@ public class SpacetimeServer extends PathHandler {
         //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
         SearchResponse response = spacetime.client.prepareSearch(spacetime.index)
                 .setTypes("feature")
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(qb).setFrom(0).setSize(60).setExplain(true)
+                .setSearchType(SearchType.DEFAULT)
+                .setExplain(false)
+                .setQuery(qb).setFrom(0).setSize(max)
                 .execute()
                 .actionGet();
         return response.getHits();
