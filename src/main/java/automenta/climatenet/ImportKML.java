@@ -75,7 +75,7 @@ public class ImportKML {
         return (Base64.getEncoder().encodeToString(BigInteger.valueOf( serial ).add( BigInteger.valueOf(layer.hashCode()).shiftLeft(32) ).toByteArray()));        
     }
     
-    public void transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
+    public void transformKML(String layer, String name, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
         Deque<String> groups = new ArrayDeque();
         String[] g = null;
@@ -195,12 +195,14 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                         XContentBuilder d;
 
                         //System.out.println("Document " + ds.getType().name());
-                        d = jsonBuilder().startObject().field("url", urlString);
+                        d = jsonBuilder().startObject().
+                                field("url", urlString);
+                        d.field("name", name);
                         d.endObject();
 
                         st.add("layer", layer, d);
 
-                        groups.clear();
+                        //groups.clear();
                         g = groups.toArray(new String[groups.size()]);
 
                     }                
@@ -452,8 +454,9 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
             } else {
                 final String layer = x.get("layer").textValue();
                 final String url = x.get("kml").textValue();
+                final String name = x.get("name").textValue();
                 
-                System.out.println(currentSection + " " + x);
+                System.out.println(currentSection + " " + name + " " + x);
                                       
                 executor.submit(new Runnable() {
 
@@ -462,7 +465,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                         try {
                             System.out.println("START: " + layer);
                             final ElasticSpacetime st = new ElasticSpacetime("cv");
-                            transformKML(layer, url, st, false, false);
+                            transformKML(layer, name, url, st, false, false);
                             
                             st.close();
                             System.out.println("FINISH: " + layer);

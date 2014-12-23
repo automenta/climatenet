@@ -19,9 +19,26 @@ and open the template in the editor.
     </head>
     <body>
         <style>
-            #map { height: 500px; }
+            #map { position: fixed; left: 0; top: 0; height: 100%; width: 100% }
+            
+            .panel {
+                background-color: black;
+                color: white;
+            }
+            
+            #layermenu { 
+                position: fixed; left: 1em; bottom: 1em; width: 25%; height: 25%; 
+                overflow-y: scroll; 
+                opacity: 0.85;
+            }
+            body {
+                font-family: arial;
+                
+            }
         </style>
         <div id="map"></div>
+        <div id="layermenu" class="panel"></div>
+        
         <script>
 
             var updatePeriodMS = 500;
@@ -34,6 +51,7 @@ and open the template in the editor.
             }).addTo(map);
 
             var features = { };
+            var layer = { };
             
             var geojsonMarkerOptions = {
                 radius: 8,
@@ -77,6 +95,7 @@ and open the template in the editor.
                         layer.bindPopup(feature.description);
                     }
                 });
+                layer.data = f;
                 features[id] = layer;
                 layer.addTo(map);
             }
@@ -98,6 +117,94 @@ and open the template in the editor.
                     var f = r[i];
                     addFeature(i, f);
                 }
+                
+                var unknownLayers = { };
+                
+                visibleLayers = { };
+                for (var i in features) {
+                    var f = features[i].data;
+                    var p = f.path;
+                    
+                    if (!p) continue;
+                    if (p.length > 1) {
+                        if (Array.isArray(p[1])) {
+                            var head = p[0];
+                            p = p[1];
+                            p.splice(0,0,head);
+                        }
+                    }
+                    
+                    
+                    var l = visibleLayers;
+                    for (var i = 0; i < p.length; i++) {
+                        var e = p[i];
+                        if (l[e]) {                            
+                            l = l[e];
+                            l.count = l.count + 1;
+                        }
+                        else {
+                            l = l[e] = { count: 1 };    
+                            if (!layer[e]) {
+                                unknownLayers[e] = true;
+                                layer[e] = {name: '?' };
+                            }
+                            
+                        }
+                        
+                            
+                    }
+                    
+                    
+                }
+                
+                unknownLayers = _.map(_.keys(unknownLayers), 
+                    function(l) { return encodeURIComponent(l); });
+                    
+                if (unknownLayers.length > 0)
+                    updateLayers(unknownLayers, renderLayerSelect);
+                else
+                    renderLayerSelect();
+            }
+            
+            function renderLayerSelect() {
+                console.log(JSON.stringify(visibleLayers, null, 4));
+                
+                var nh = $('<div/>');
+                var nu = $('<ul/>').appendTo(nh);
+                
+                _.each(visibleLayers, function(v, k) {
+                    var layerdata = layer[k];
+                    var name = layerdata.name;
+                    var count = visibleLayers[k].count;
+                    nu.append('<li>' + name + ' ' + count + '</li>');
+                });
+
+                $('#layermenu').html(nh);
+            }
+            
+            function updateLayerMetadata(r) {
+                for (var i in r) {
+                    var l = r[i];
+                    layer[i] = l;
+                }
+                console.log(layer);
+            }
+            
+            function updateLayers(layerIDs, callback) {
+                $.getJSON('/layer/meta', {id: JSON.stringify(layerIDs) })
+
+                        .done(function (r) {
+                            //console.log('received');
+                            //console.log(r);
+                            updateLayerMetadata(r);
+                            
+                            if (callback)
+                                callback();
+                        })
+                        .fail(function (v, m) {
+                            console.log('err', v, m);
+                        });
+                        
             }
 
             var updateBounds = _.throttle(function (e) {

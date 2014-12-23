@@ -5,6 +5,9 @@
  */
 package automenta.climatenet;
 
+import automenta.knowtention.Core;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import static io.undertow.Handlers.resource;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
@@ -15,7 +18,6 @@ import io.undertow.util.Headers;
 import java.io.File;
 import java.util.Deque;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.geo.builders.CircleBuilder;
@@ -25,6 +27,7 @@ import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -61,6 +64,66 @@ public class SpacetimeServer extends PathHandler {
                 new FileResourceManager(new File(clientPath), 100)).
                     setDirectoryListingEnabled(true));
                 
+        addPrefixPath("/layer/meta", new HttpHandler() {
+
+            @Override
+            public void handleRequest(HttpServerExchange ex) throws Exception {
+                Map<String, Deque<String>> reqParams = ex.getQueryParameters();
+                
+                //   Deque<String> deque = reqParams.get("attrName");
+                //Deque<String> dequeVal = reqParams.get("value");
+                Deque<String> idArray = reqParams.get("id");
+                
+                System.out.println(idArray);
+                
+                ArrayNode a = Core.json.readValue(idArray.getFirst(), ArrayNode.class);
+                
+                
+                String[] ids = new String[a.size()];
+                int j = 0;
+                for (JsonNode x : a) {
+                    ids[j++] = x.textValue();
+                }
+                QueryBuilder qb = QueryBuilders.termsQuery("_id", ids);
+                SearchResponse response = spacetime.client.prepareSearch(spacetime.index)
+                //.setTypes("type1", "type2")
+                    .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                    .setQuery(qb).setFrom(0).setSize(60).setExplain(true)
+                    .execute()
+                    .actionGet();
+                
+                SearchHits result = response.getHits();
+                
+                XContentBuilder d = jsonBuilder().startObject();
+                    
+                for (SearchHit h : result) {
+
+
+                    Map<String, Object> s = h.getSource();
+                    
+//                    Object pp = s.get("path");
+//                    Object[] path = new Object[] { s.get("layer"), pp };
+
+                    //System.out.println(h.getId() + " " + s);
+
+                    d.startObject(h.getId())
+//                            .field("path", path)
+                            .field("name", s.get("name"));
+                    Object desc = s.get("description");
+                    if (desc!=null)
+                            d.field("description", s.get("description"));
+                    d.endObject();
+
+                }
+                
+                d.endObject();
+                 
+                send(ex, d);
+                             
+            }
+            
+        });
+
         addPrefixPath("/geoCircle", new HttpHandler() {
 
             @Override
@@ -104,16 +167,13 @@ public class SpacetimeServer extends PathHandler {
                     }
                     d.endObject();
                  
-                    ex.startBlocking();
-                    
-                    ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                    
-                    ex.getResponseSender().send(d.bytes().toChannelBuffer().toByteBuffer());
+                    send(ex, d);
                     
                     
                 }
 
             }
+
 
         });
     }
@@ -160,4 +220,14 @@ public class SpacetimeServer extends PathHandler {
  
 
     }
+
+            public static  void send(HttpServerExchange ex, XContentBuilder d) {
+                    ex.startBlocking();
+                    
+                    ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+                    
+                    ex.getResponseSender().send(d.bytes().toChannelBuffer().toByteBuffer());
+            }
+
+
 }
