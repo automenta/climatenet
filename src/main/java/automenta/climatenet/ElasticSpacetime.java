@@ -20,7 +20,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  *
  * @author me
  */
-public class ElasticSpacetime extends ElasticSpacetimeReadOnly implements Spacetime {
+public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
     //private final Node node;
     /*
      me:  http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-geo-shape-type.html elastic search and solr are competitors

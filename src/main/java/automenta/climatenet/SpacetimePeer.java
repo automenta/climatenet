@@ -5,27 +5,72 @@
  */
 package automenta.climatenet;
 
+import automenta.climatenet.p2p.TomPeer;
+import automenta.climatenet.p2p.TomPeer.Answering;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.collect.ImmutableList;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.futures.FutureDiscover;
+import net.tomp2p.p2p.PeerBuilder;
+import net.tomp2p.peers.Number160;
+import net.tomp2p.peers.PeerAddress;
 
 /**
  *
  * @author me
  */
-public class SpacetimeP2P {
+public class SpacetimePeer {
 
+    //public final Spacetime index;
+    public final TomPeer peer;
+    
+    public SpacetimePeer(String peerID, int port) throws IOException {
+        
+        peer = new TomPeer(
+                new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(port).start()).start());
+        
+        //peer.add(index);        
+        
+    }
+
+    public void addPeer(String hostPort) {
+        String[] hp = hostPort.split(":");
+        if (hp.length!=2)
+            throw new RuntimeException("Invalid 'host:port' peer address: " + hostPort);
+        
+        String h = hp[0];
+        int port = Integer.parseInt(hp[1]);
+        
+        try {
+            FutureDiscover s = peer.connect(h, port);
+            s.await(5000);
+            System.out.println(hostPort + " " + s.isSuccess() + " " + s.peerAddress());
+        } catch (Exception ex) {
+            Logger.getLogger(SpacetimePeer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }    
     
     
     
-    
-    public static void main(String[] args) {
-        new SpacetimeP2P();
+    public static void main(String[] args) throws IOException {
+        String hosts[] = new String[] { "localhost:9091" };
+        
+        SpacetimePeer p = new SpacetimePeer("abc", 9696);
+        for (String h : hosts)
+            p.addPeer(h);
+        
+        p.peer.ask("layer", 5000, new Answering() {
+
+            @Override
+            public void onAnswer(Map<PeerAddress, Object> x) {
+                System.out.println(x);
+            }
+            
+        });
     }
 
 
@@ -77,5 +122,7 @@ public class SpacetimeP2P {
 //            
 //        }
 //    }
+
+
 
 }

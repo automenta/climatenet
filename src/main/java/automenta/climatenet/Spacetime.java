@@ -9,6 +9,6 @@ package automenta.climatenet;
  *
  * @author me
  */
-interface Spacetime {
+public interface Spacetime {
     
 }

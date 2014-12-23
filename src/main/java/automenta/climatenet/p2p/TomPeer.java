@@ -5,10 +5,10 @@
  */
 package automenta.climatenet.p2p;
 
-import automenta.climatenet.ElasticSpacetime;
+import automenta.climatenet.ElasticSpacetimeRO;
+import automenta.climatenet.Spacetime;
 import static automenta.climatenet.p2p.TestP2PDHT.RND;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
@@ -37,8 +37,9 @@ public class TomPeer {
     
     final int defaultSearchResults = 64;
     
-    public List<ElasticSpacetime> indices = new CopyOnWriteArrayList<>();
+    public List<Spacetime> indices = new CopyOnWriteArrayList<>();
 
+    
     public TomPeer(final PeerDHT peer) {
         this.peer = peer;
         
@@ -70,7 +71,7 @@ public class TomPeer {
         return f.isSuccess();
     }
     
-    public void add(ElasticSpacetime e) {
+    public void add(Spacetime e) {
         indices.add(e);
     }
             
@@ -83,12 +84,16 @@ public class TomPeer {
             QueryBuilder qb = QueryBuilders.queryString((String)request);
                         
             Map<String, Object> results = new HashMap();
-            for (ElasticSpacetime e : indices) {
-                SearchResponse r = e.search(qb, 0, defaultSearchResults);
-                for (SearchHit s : r.getHits()) {
-                    Object existing = results.put(s.getId(), s.sourceAsString());
-                    if (existing!=null) {
-                        //TODO handle duplicate values from multiple indices
+            for (Spacetime i : indices) {
+                if (i instanceof ElasticSpacetimeRO) {
+                    ElasticSpacetimeRO e = (ElasticSpacetimeRO) i;
+                    
+                    SearchResponse r = e.search(qb, 0, defaultSearchResults);
+                    for (SearchHit s : r.getHits()) {
+                        Object existing = results.put(s.getId(), s.sourceAsString());
+                        if (existing!=null) {
+                            //TODO handle duplicate values from multiple indices
+                        }
                     }
                 }
                     
@@ -120,7 +125,7 @@ public class TomPeer {
         public void onAnswer(Map<PeerAddress,Object> x);
     }
     
-    void ask(String query, long timeout, final Answering a) {
+    public void ask(String query, long timeout, final Answering a) {
         FutureSend f = send(query);
         f.addListener(new BaseFutureListener<FutureSend>() {
 

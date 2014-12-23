@@ -5,6 +5,7 @@
  */
 package automenta.climatenet;
 
+import automenta.climatenet.p2p.TomPeer;
 import automenta.knowtention.Core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -18,6 +19,10 @@ import io.undertow.util.Headers;
 import java.io.File;
 import java.util.Deque;
 import java.util.Map;
+import java.util.UUID;
+import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.p2p.PeerBuilder;
+import net.tomp2p.peers.Number160;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.geo.builders.CircleBuilder;
@@ -36,16 +41,16 @@ import org.elasticsearch.search.SearchHits;
  *
  * @author me
  */
-public class SpacetimeServer extends PathHandler {
+public class SpacetimeWebServer extends PathHandler  {
 
-    final ElasticSpacetimeReadOnly spacetime;
+    final ElasticSpacetimeRO spacetime;
     final String clientPath = "./src/web";
     
-    public SpacetimeServer(int port, String indexName) throws Exception {
+    public SpacetimeWebServer(int port, String indexName) throws Exception {
         this("localhost", port, indexName);
     }
 
-    public SpacetimeServer(String host, int port, String indexName) throws Exception {
+    public SpacetimeWebServer(String host, int port, String indexName) throws Exception {
         spacetime = new ElasticSpacetime(indexName);
 
         Undertow server = Undertow.builder()
@@ -210,8 +215,14 @@ public class SpacetimeServer extends PathHandler {
     }
 
     public static void main(String[] args) throws Exception {
-        SpacetimeServer s = new SpacetimeServer(9090, "cv");
+        int webPort = 9090;
+        int p2pPort = 9091;
+        String peerID = UUID.randomUUID().toString();
+        SpacetimeWebServer s = new SpacetimeWebServer(webPort, "cv");
 
+        TomPeer peer = new TomPeer(
+                new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
+        peer.add(s.spacetime);
  
 
     }

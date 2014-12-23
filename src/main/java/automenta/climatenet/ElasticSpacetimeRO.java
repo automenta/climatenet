@@ -17,14 +17,14 @@ import org.elasticsearch.index.query.QueryBuilder;
  *
  * @author me
  */
-class ElasticSpacetimeReadOnly {
+public class ElasticSpacetimeRO implements Spacetime {
  
     protected final Client client;
     protected final String index;
     protected BulkRequestBuilder bulkRequest;
     protected boolean debug = false;
     
-    public ElasticSpacetimeReadOnly(String indexName) {
+    public ElasticSpacetimeRO(String indexName) {
         //this.node = nodeBuilder().client(true).local(true).node();;
         //this.client = node.client();;
         this.index = indexName;
