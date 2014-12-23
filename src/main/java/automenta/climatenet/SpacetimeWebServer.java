@@ -41,178 +41,133 @@ import org.elasticsearch.search.SearchHits;
  *
  * @author me
  */
-public class SpacetimeWebServer extends PathHandler  {
+public class SpacetimeWebServer extends PathHandler {
 
-    final ElasticSpacetimeRO spacetime;
+    final ElasticSpacetimeRO index;
     final String clientPath = "./src/web";
-    
+
     public SpacetimeWebServer(int port, String indexName) throws Exception {
         this("localhost", port, indexName);
     }
 
     public SpacetimeWebServer(String host, int port, String indexName) throws Exception {
-        spacetime = new ElasticSpacetime(indexName);
+        index = new ElasticSpacetime(indexName);
 
         Undertow server = Undertow.builder()
                 .addHttpListener(port, host)
-                .setIoThreads(4)
-                
+                .setIoThreads(8)
                 .setHandler(this)
                 .build();
         server.start();
 
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
-        
                 //addPrefixPath("/ws", websocket(new WebSocketConnector(core)).addExtension(new PerMessageDeflateHandshake()))
-                        
         addPrefixPath("/", resource(
                 new FileResourceManager(new File(clientPath), 100)).
-                    setDirectoryListingEnabled(true));
-                
+                setDirectoryListingEnabled(false));
+
         addPrefixPath("/layer/meta", new HttpHandler() {
 
             @Override
             public void handleRequest(HttpServerExchange ex) throws Exception {
                 Map<String, Deque<String>> reqParams = ex.getQueryParameters();
-                
+
                 //   Deque<String> deque = reqParams.get("attrName");
                 //Deque<String> dequeVal = reqParams.get("value");
                 Deque<String> idArray = reqParams.get("id");
-                
-                
+
                 ArrayNode a = Core.json.readValue(idArray.getFirst(), ArrayNode.class);
-                
-                
+
                 String[] ids = new String[a.size()];
                 int j = 0;
                 for (JsonNode x : a) {
                     ids[j++] = x.textValue();
                 }
                 QueryBuilder qb = QueryBuilders.termsQuery("_id", ids);
-                
-                SearchResponse response = spacetime.search(qb, 0, 60);
-                
+
+                SearchResponse response = index.search(qb, 0, 60);
+
                 SearchHits result = response.getHits();
                 
+                if (result.totalHits() == 0) {
+                    ex.getResponseSender().send("");
+                    return;
+                }
+
+
                 XContentBuilder d = jsonBuilder().startObject();
-                    
+
                 for (SearchHit h : result) {
 
-
                     Map<String, Object> s = h.getSource();
-                    
-//                    Object pp = s.get("path");
-//                    Object[] path = new Object[] { s.get("layer"), pp };
 
-                    //System.out.println(h.getId() + " " + s);
 
                     d.startObject(h.getId())
-//                            .field("path", path)
                             .field("name", s.get("name"));
                     Object desc = s.get("description");
-                    if (desc!=null)
-                            d.field("description", s.get("description"));
+                    if (desc != null) {
+                        d.field("description", s.get("description"));
+                    }
                     d.endObject();
 
                 }
-                
+
                 d.endObject();
-                 
+
                 send(ex, d);
-                             
+
             }
-            
+
         });
 
         addPrefixPath("/geoCircle", new HttpHandler() {
 
             @Override
-            public void handleRequest(final HttpServerExchange ex) throws Exception 
-            {
+            public void handleRequest(final HttpServerExchange ex) throws Exception {
                 Map<String, Deque<String>> reqParams = ex.getQueryParameters();
-                
+
                 //   Deque<String> deque = reqParams.get("attrName");
                 //Deque<String> dequeVal = reqParams.get("value");
                 Deque<String> lats = reqParams.get("lat");
                 Deque<String> lons = reqParams.get("lon");
                 Deque<String> rads = reqParams.get("radiusM");
-                
-                if (lats!=null && lons!=null && rads!=null) {
+
+                if (lats != null && lons != null && rads != null) {
                     //System.out.println(lats.getFirst() + "  "+ lons.getFirst() + " "+ rads.getFirst());
                     double lat = Double.parseDouble(lats.getFirst());
                     double lon = Double.parseDouble(lons.getFirst());
                     double rad = Double.parseDouble(rads.getFirst());
-                    
-                    SearchHits result = get(lat, lon, rad, 60);
-                    
+
+                    SearchHits result = index.search(lat, lon, rad, 60);
+
                     XContentBuilder d = jsonBuilder().startObject();
-                    
+
                     for (SearchHit h : result) {
-                        
-                                
+
                         Map<String, Object> s = h.getSource();
 
-                        Object pp = s.get("path");
-                        Object[] path = new Object[] { s.get("layer"), pp };
-                        
+
                         //System.out.println(h.getId() + " " + s);
-                        
                         d.startObject(h.getId())
-                                .field("path", path)
+                                .field("path", s.get("path"))
                                 .field("name", s.get("name"))
                                 .field("description", s.get("description"))
                                 .field("geom", s.get("geom"));
                         d.endObject();
-                        
+
                     }
                     d.endObject();
-                 
+
                     send(ex, d);
-                    
-                    
+
                 }
+                ex.getResponseSender().send("");
 
             }
-
 
         });
     }
 
-    public SearchHits get(double minLat, double minLon, double maxLat, double maxLon) {
-
-        //NOT WORKING YET
-        EnvelopeBuilder envelope = ShapeBuilder.newEnvelope().topLeft(
-                Math.max(minLon, maxLon), Math.max(minLat, maxLat))
-                .bottomRight(Math.min(minLon, maxLon), Math.min(minLat, maxLat));
-
-        QueryBuilder qb = geoShapeQuery("geom", envelope);
-
-        //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
-        SearchResponse response = spacetime.client.prepareSearch(spacetime.index)
-                //.setTypes("type1", "type2")
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(qb).setFrom(0).setSize(60).setExplain(true)
-                .execute()
-                .actionGet();
-        return response.getHits();
-    }
-
-    public SearchHits get(double lat, double lon, double radiusMeters, int max) {
-
-        CircleBuilder shape = ShapeBuilder.newCircleBuilder().center(lon, lat).radius(radiusMeters, DistanceUnit.METERS);
-
-        QueryBuilder qb = geoShapeQuery("geom", shape);
-
-        //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
-        SearchResponse response = spacetime.client.prepareSearch(spacetime.index)
-                .setTypes("feature")
-                .setSearchType(SearchType.DEFAULT)
-                .setExplain(false)
-                .setQuery(qb).setFrom(0).setSize(max)
-                .execute()
-                .actionGet();
-        return response.getHits();
-    }
 
     public static void main(String[] args) throws Exception {
         int webPort = 9090;
@@ -222,18 +177,17 @@ public class SpacetimeWebServer extends PathHandler  {
 
         TomPeer peer = new TomPeer(
                 new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
-        peer.add(s.spacetime);
- 
+        peer.add(s.index);
 
     }
 
-            public static  void send(HttpServerExchange ex, XContentBuilder d) {
-                    ex.startBlocking();
-                    
-                    ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
-                    
-                    ex.getResponseSender().send(d.bytes().toChannelBuffer().toByteBuffer());
-            }
+    public static void send(HttpServerExchange ex, XContentBuilder d) {
+        ex.startBlocking();
 
+        ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+
+        ex.getResponseSender().send(d.bytes().toChannelBuffer().toByteBuffer());
+        ex.getResponseSender().close();
+    }
 
 }

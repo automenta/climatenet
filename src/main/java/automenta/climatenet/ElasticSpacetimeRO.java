@@ -10,8 +10,14 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.geo.builders.CircleBuilder;
+import org.elasticsearch.common.geo.builders.EnvelopeBuilder;
+import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.QueryBuilder;
+import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
+import org.elasticsearch.search.SearchHits;
 
 /**
  *
@@ -42,4 +48,41 @@ public class ElasticSpacetimeRO implements Spacetime {
             .actionGet();
         return response;
     }
+    
+    public SearchHits search(double minLat, double minLon, double maxLat, double maxLon) {
+
+        //NOT WORKING YET
+        EnvelopeBuilder envelope = ShapeBuilder.newEnvelope().topLeft(
+                Math.max(minLon, maxLon), Math.max(minLat, maxLat))
+                .bottomRight(Math.min(minLon, maxLon), Math.min(minLat, maxLat));
+
+        QueryBuilder qb = geoShapeQuery("geom", envelope);
+
+        //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
+        SearchResponse response = client.prepareSearch(index)
+                //.setTypes("type1", "type2")
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(qb).setFrom(0).setSize(60).setExplain(true)
+                .execute()
+                .actionGet();
+        return response.getHits();
+    }
+
+    public SearchHits search(double lat, double lon, double radiusMeters, int max) {
+
+        CircleBuilder shape = ShapeBuilder.newCircleBuilder().center(lon, lat).radius(radiusMeters, DistanceUnit.METERS);
+
+        QueryBuilder qb = geoShapeQuery("geom", shape);
+
+        //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
+        SearchResponse response = client.prepareSearch(index)
+                .setTypes("feature")
+                .setSearchType(SearchType.DEFAULT)
+                .setExplain(false)
+                .setQuery(qb).setFrom(0).setSize(max)
+                .execute()
+                .actionGet();
+        return response.getHits();
+    }
+    
 }

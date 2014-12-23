@@ -45,21 +45,22 @@ public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
 
     public ElasticSpacetime(String indexName, boolean initIndex) throws Exception {
         super(indexName);
-        
+
+        boolean existsIndex = true;
+         final IndicesExistsResponse res = client.admin().indices().prepareExists(indexName).execute().actionGet();
+            if (!res.isExists()) {
+                initIndex = true;
+                existsIndex = false;
+            }
+    
         if (initIndex) {
-            
 
-
-
-            final IndicesExistsResponse res = client.admin().indices().prepareExists(indexName).execute().actionGet();
-            if (res.isExists()) {
+            if (existsIndex) {
+                //delete existing
+                
                 final DeleteIndexRequestBuilder delIdx = client.admin().indices().prepareDelete(indexName);
                 delIdx.execute().actionGet();
-            }            
-            
-            
- 
-
+            }   
 
             final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(indexName);
 
@@ -86,17 +87,19 @@ public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
                     //TODO no analyzer for path and other meta fields
 
                     .startObject("properties")
-                    
-                        .startObject("description")
-                    //max_token_length
+                        .startObject("path")
                             .field("type","string")
+                            .field("index","no")
+                        .endObject()
+                        .startObject("description")
+                            .field("type","string")
+                            .field("analyzer", "html")
                             //.field("type","attachment")
-                            //.field("analyzer", "html_strip")
                         .endObject()
                         .startObject("geom")
                             .field("type", "geo_shape")
                             .field("tree", "quadtree")
-                            .field("precision", "5m")
+                            .field("precision", "5m")                    
                         .endObject()
                         //http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-core-types.html
                         .startObject("startTime")
@@ -121,7 +124,7 @@ public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
     }
 
     public void bulkEnd() {
-        System.out.println("Elasticsearch:" + bulkRequest.numberOfActions() + " actions");
+        System.out.println("  FINISH:" + bulkRequest.numberOfActions() + " ElasticSearch actions");
         BulkResponse bulkResponse = bulkRequest.execute().actionGet();
         
  

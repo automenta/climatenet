@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
+import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
@@ -26,9 +27,11 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
@@ -71,17 +74,30 @@ public class ImportKML {
     String basePath = "data";
     String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
     
+    static final HtmlCompressor compressor = new HtmlCompressor();
     
     private final Proxy proxy;
     
+    public static void main(String[] args) throws Exception {
+        
+        ProxyServer cache = new ProxyServer(16000);
+        
+        
+        new ImportKML(cache.proxy).loadLayers(false, true, 1, 3);
+    }
+        
+    
     public static String getSerial(String layer, int serial ) {
-        return (Base64.getEncoder().encodeToString(BigInteger.valueOf( serial ).add( BigInteger.valueOf(layer.hashCode()).shiftLeft(32) ).toByteArray()));        
+        return (Base64.getEncoder().encodeToString(BigInteger.valueOf( serial ).add( BigInteger.valueOf(layer.hashCode()).shiftRight(32) ).toByteArray()));        
+    }
+    
+    public String[] getPath(Deque<String> p) {
+        return p.toArray(new String[p.size()]);
     }
     
     public int transformKML(String layer, String name, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
-        Deque<String> groups = new ArrayDeque();
-        String[] g = null;
+        Deque<String> path = new ArrayDeque();
         
         Logger.getLogger(org.opensextant.giscore.input.kml.KmlInputStream.class).setLevel(Level.OFF);
 Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setLevel(Level.OFF);
@@ -181,7 +197,8 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         }
 	
         
-        
+        final AtomicInteger exceptions = new AtomicInteger();
+        final Set<Class> exceptionClass = new HashSet();
         
         do {
         
@@ -198,20 +215,19 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                         XContentBuilder d;
 
                         //System.out.println("Document " + ds.getType().name());
-                        d = jsonBuilder().startObject().
-                                field("url", urlString);
-                        d.field("name", name);
+                        d = jsonBuilder().startObject()
+                                .field("url", urlString)
+                                .field("name", name);
                         d.endObject();
 
                         st.add("layer", layer, d);
+                        
+                        path.add(layer);
 
-                        //groups.clear();
-                        g = groups.toArray(new String[groups.size()]);
 
                     }                
                     else if (go instanceof ContainerEnd) {
-                        groups.pop();  
-                        g = groups.toArray(new String[groups.size()]);
+                        path.removeLast();  
                     }
                     else if (go instanceof ContainerStart) {
                         ContainerStart cs = (ContainerStart)go;
@@ -220,11 +236,20 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                         String i = getSerial(layer, serial++);
 
                         XContentBuilder d;
-                        d = jsonBuilder().startObject().field("name", cs.getName()).field("description", cs.getDescription()).field("path", g).field("layer", layer).endObject();
+                        d = jsonBuilder().startObject().field("name", cs.getName());
+                        
+                        String desc = cs.getDescription();
+                        if ((desc!=null) && (desc.length() > 0)) {
+                            //filter 
+                            desc = filterHTML(desc);
+                            if (desc.length() > 0)
+                                d.field("description", desc);
+                        }
+                        
+                        d.field("path", getPath(path)).endObject();
 
-                        groups.add(i);
+                        path.add(i);
 
-                        g = groups.toArray(new String[groups.size()]);
 
                         st.add("layer", i, d);
 
@@ -233,17 +258,23 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                         Feature f = (Feature)go;                
 
 
-                        XContentBuilder builder = jsonBuilder().startObject();
-                        builder.field("name", f.getName());
-                        builder.field("layer", layer);
-                        if (f.getDescription()!=null)
-                            builder.field("description", f.getDescription());
+                        XContentBuilder fb = jsonBuilder().startObject();
+                        fb.field("name", f.getName());
+                        
+                        String desc = f.getDescription();
+                        if ((desc!=null) && (desc.length() > 0)) {
+                            //filter 
+                            desc = filterHTML(desc);
+                            if (desc.length() > 0)
+                                fb.field("description", desc);
+                        }
+                        
                         if (f.getSnippet()!=null)
-                            builder.field("snippet", f.getSnippet());
+                            fb.field("snippet", f.getSnippet());
                         if (f.getStartTime()!=null)
-                            builder.field("startTime", f.getStartTime().getTime());
+                            fb.field("startTime", f.getStartTime().getTime());
                         if (f.getEndTime()!=null)
-                            builder.field("endTime", f.getEndTime().getTime());
+                            fb.field("endTime", f.getEndTime().getTime());
 
                         Geometry geo = f.getGeometry();
                         if (geo!=null) {
@@ -254,7 +285,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                                 float lon = (float)c.getLongitudeAsDegrees();
 
                                 //http://geojson.org/
-                                builder.startObject("geom").field("type", "point").field("coordinates", new float[] { lon, lat } ).endObject();
+                                fb.startObject("geom").field("type", "point").field("coordinates", new float[] { lon, lat } ).endObject();
 
                             }
                             /*else if (g instanceof Line) {
@@ -263,13 +294,13 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                             //TODO other types
                         }
                         if (f.getStyleUrl()!=null)
-                            builder.field("styleUrl", f.getStyleUrl());
+                            fb.field("styleUrl", f.getStyleUrl());
 
-                        builder.field("path", g);
+                        fb.field("path", getPath(path));
                         //f.getStyleUrl()
 
                         String fid = getSerial(layer, serial++);
-                        st.add("feature", fid, builder.endObject());
+                        st.add("feature", fid, fb.endObject());
                         numFeatures++;
                     }
                 }
@@ -316,7 +347,8 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                 }
             }
             catch (Throwable t) {
-                System.err.println(t);
+                exceptions.incrementAndGet();
+                exceptionClass.add(t.getClass());            
             }
         } while (true);
         
@@ -355,11 +387,16 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
 
                         @Override
                         public void handleError(URI uri, Exception excptn) {
-                            System.err.println(uri + ": "+ excptn);
+                            exceptions.incrementAndGet();
+                            exceptionClass.add(excptn.getClass());
                         }
                         
                     });
 
+        }
+        
+        if (exceptions.get() > 0) {
+            System.err.println("  Exceptions: " + exceptions + " of " + exceptionClass );
         }
 
         if (st!=null) {
@@ -453,7 +490,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         ArrayList<JsonNode> la = Lists.newArrayList(n);
                 
         if (shuffle) {
-            Collections.shuffle(la);
+            Collections.shuffle(la, new Random());
         }
         
         for (JsonNode x : la) {
@@ -480,7 +517,6 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                             int features = transformKML(layer, name, url, st, false, false);
                             
                             st.close();
-                            System.out.println("FINISH: " + layer);
                             
                         
                             if (postDelay > 0) {
@@ -517,11 +553,37 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
     
 
     
-    public static void main(String[] args) throws Exception {
+
+    static {
+        //https://code.google.com/p/htmlcompressor/wiki/Documentation#Using_HTML_Compressor_from_Java_API
         
-        ProxyServer cache = new ProxyServer(16000);
+        compressor.setRemoveComments(true);            //if false keeps HTML comments (default is true)
+compressor.setRemoveMultiSpaces(true);         //if false keeps multiple whitespace characters (default is true)
+compressor.setRemoveIntertagSpaces(true);      //removes iter-tag whitespace characters
+compressor.setRemoveQuotes(true);              //removes unnecessary tag attribute quotes
+compressor.setSimpleDoctype(true);             //simplify existing doctype
+compressor.setRemoveScriptAttributes(true);    //remove optional attributes from script tags
+
+compressor.setRemoveLinkAttributes(true);      //remove optional attributes from link tags
+compressor.setRemoveJavaScriptProtocol(true);      //remove optional attributes from link tags
+compressor.setRemoveHttpProtocol(true);        //replace "http://" with "//" inside tag attributes
+compressor.setRemoveHttpsProtocol(true);       //replace "https://" with "//" inside tag attributes
+compressor.setRemoveSurroundingSpaces("br,p"); //remove spaces around provided tags
+compressor.setCompressCss(true);               //compress inline css 
+
+    }
+
+    private String filterHTML(String html) {
         
         
-        new ImportKML(cache.proxy).loadLayers(false, true, 1, 4);
+        try {
+            String compressedHtml = compressor.compress(html);
+
+            return compressedHtml;
+        }
+        catch (Exception e) {
+            return html;
+        }
+        
     }
 }

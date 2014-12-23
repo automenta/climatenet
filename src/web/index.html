@@ -125,15 +125,7 @@ and open the template in the editor.
                     var f = features[i].data;
                     var p = f.path;
                     
-                    if (!p) continue;
-                    if (p.length > 1) {
-                        if (Array.isArray(p[1])) {
-                            var head = p[0];
-                            p = p[1];
-                            p.splice(0,0,head);
-                        }
-                    }
-                    
+                    if (!p) continue;                 
                     
                     var l = visibleLayers;
                     for (var i = 0; i < p.length; i++) {
