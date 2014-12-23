@@ -16,13 +16,37 @@
     
 
     <dependencies>
+        
+        
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>1.4.2</version>
         </dependency>
+        <dependency>
+            <groupId>io.searchbox</groupId>
+            <artifactId>jest</artifactId>
+            <version>0.1.4</version>        
+        </dependency>
+        
+        <dependency>
+	<groupId>org.jsoup</groupId>
+	<artifactId>jsoup</artifactId>
+	<version>1.8.1</version>
+</dependency>
 
 
+<dependency>
+  <groupId>net.tomp2p</groupId>
+  <artifactId>tomp2p-core</artifactId>
+  <version>5.0-Beta1</version>
+</dependency>
+<dependency>
+  <groupId>net.tomp2p</groupId>
+  <artifactId>tomp2p-all</artifactId>
+  <version>5.0-Beta1</version>
+</dependency>
+                
         <dependency>
             <groupId>org.opensextant</groupId>
             <artifactId>giscore</artifactId>
@@ -84,33 +108,33 @@
             <version>${geotk.version}</version>    
         </dependency>
         -->
-<dependency>
-	<groupId>org.jvnet.ogc</groupId>
-	<artifactId>sensorml-common</artifactId>
-	<version>1.1.0</version>
-</dependency>
-<dependency>
-	<groupId>com.ning</groupId>
-	<artifactId>async-http-client</artifactId>
-	<version>1.9.3</version>
-</dependency>
-<dependency>
-    <groupId>com.spatial4j</groupId>
-    <artifactId>spatial4j</artifactId>
-    <version>0.4.1</version>                        
-</dependency>
+        <dependency>
+            <groupId>org.jvnet.ogc</groupId>
+            <artifactId>sensorml-common</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ning</groupId>
+            <artifactId>async-http-client</artifactId>
+            <version>1.9.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.spatial4j</groupId>
+            <artifactId>spatial4j</artifactId>
+            <version>0.4.1</version>                        
+        </dependency>
 
-<dependency>
-    <groupId>com.vividsolutions</groupId>
-    <artifactId>jts</artifactId>
-    <version>1.13</version>                         
-    <exclusions>
-        <exclusion>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-        </exclusion>
-    </exclusions>
-</dependency>
+        <dependency>
+            <groupId>com.vividsolutions</groupId>
+            <artifactId>jts</artifactId>
+            <version>1.13</version>                         
+            <exclusions>
+                <exclusion>
+                    <groupId>xerces</groupId>
+                    <artifactId>xercesImpl</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
 
     </dependencies>
@@ -147,5 +171,18 @@
             <name>Geotk repository</name>
             <url>http://maven.geotoolkit.org</url>
         </repository>
+        
+        <!--
+<repository>
+  <id>hive2hive.org</id>
+  <url>http://repo.hive2hive.org</url>
+</repository>
+        -->
+        
+        <repository>
+            <id>tomp2p.net</id>
+            <url>http://tomp2p.net/dev/mvn/</url>
+        </repository>
+  
     </repositories>    
 </project>

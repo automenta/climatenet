@@ -10,6 +10,7 @@ import automenta.knowtention.Core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
@@ -19,7 +20,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -75,7 +78,7 @@ public class ImportKML {
         return (Base64.getEncoder().encodeToString(BigInteger.valueOf( serial ).add( BigInteger.valueOf(layer.hashCode()).shiftLeft(32) ).toByteArray()));        
     }
     
-    public void transformKML(String layer, String name, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
+    public int transformKML(String layer, String name, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
         Deque<String> groups = new ArrayDeque();
         String[] g = null;
@@ -87,7 +90,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
         
-        
+        int numFeatures = 0;
         
         
         File temp = Files.createTempDirectory("kml" + layer).toFile();
@@ -267,6 +270,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
 
                         String fid = getSerial(layer, serial++);
                         st.add("feature", fid, builder.endObject());
+                        numFeatures++;
                     }
                 }
 
@@ -384,7 +388,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         }
 
         
-
+        return numFeatures;
 
         
     }
@@ -419,7 +423,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
     
     
     
-    public void loadLayers(int threads, final long postDelay) throws Exception {
+    public void loadLayers(boolean initialize, boolean shuffle, int threads, final long postDelay) throws Exception {
         
         ExecutorService executor = 
                 
@@ -427,7 +431,7 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                 Executors.newSingleThreadExecutor() :
                 Executors.newFixedThreadPool(threads);
         
-        ElasticSpacetime stInit = new ElasticSpacetime("cv", true);
+        ElasticSpacetime stInit = new ElasticSpacetime("cv", initialize);
         stInit.close();
             
           
@@ -444,7 +448,15 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         ObjectNode j = Core.fromJSON(layers);
         ArrayNode n = (ArrayNode) j.get("cv");
         String currentSection = "Unknown";
-        for (JsonNode x : n) {
+        
+        
+        ArrayList<JsonNode> la = Lists.newArrayList(n);
+                
+        if (shuffle) {
+            Collections.shuffle(la);
+        }
+        
+        for (JsonNode x : la) {
             if (x.isTextual()) {
                 currentSection = x.textValue();
             } else if (x.isObject() && x.has("section")) {
@@ -465,22 +477,25 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
                         try {
                             System.out.println("START: " + layer);
                             final ElasticSpacetime st = new ElasticSpacetime("cv");
-                            transformKML(layer, name, url, st, false, false);
+                            int features = transformKML(layer, name, url, st, false, false);
                             
                             st.close();
                             System.out.println("FINISH: " + layer);
                             
+                        
+                            if (postDelay > 0) {
+                                try {
+                                    Thread.sleep(postDelay * features);
+                                } catch (InterruptedException ex) {
+
+                                }                            
+                            }
                         }
                         catch (Throwable e) {
                             //e.printStackTrace();;
                             System.err.println(e);
                         }
-                        
-                        try {
-                            Thread.sleep(postDelay);
-                        } catch (InterruptedException ex) {
 
-                        }
                         
                     }
                     
@@ -507,6 +522,6 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         ProxyServer cache = new ProxyServer(16000);
         
         
-        new ImportKML(cache.proxy).loadLayers(1, 5000);
+        new ImportKML(cache.proxy).loadLayers(false, true, 1, 4);
     }
 }

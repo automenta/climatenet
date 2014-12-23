@@ -12,8 +12,7 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -21,7 +20,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  *
  * @author me
  */
-public class ElasticSpacetime extends ElasticSpacetimeReadOnly {
+public class ElasticSpacetime extends ElasticSpacetimeReadOnly implements Spacetime {
     //private final Node node;
     /*
      me:  http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-geo-shape-type.html elastic search and solr are competitors
@@ -34,6 +33,9 @@ public class ElasticSpacetime extends ElasticSpacetimeReadOnly {
     
         bin/plugin -i elasticsearch/elasticsearch-mapper-attachments/2.4.1
     
+    Marvel: http://www.elasticsearch.org/blog/building-marvel/
+        ./bin/plugin -i elasticsearch/marvel/latest
+    
      */
 
 
@@ -45,18 +47,44 @@ public class ElasticSpacetime extends ElasticSpacetimeReadOnly {
         super(indexName);
         
         if (initIndex) {
+            
+
+
+
             final IndicesExistsResponse res = client.admin().indices().prepareExists(indexName).execute().actionGet();
             if (res.isExists()) {
                 final DeleteIndexRequestBuilder delIdx = client.admin().indices().prepareDelete(indexName);
                 delIdx.execute().actionGet();
             }            
             
+            
+ 
+
+
             final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(indexName);
 
+           createIndexRequestBuilder.setSettings(ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder()
+                .startObject()
+                   .startObject("analysis")
+                        .startObject("analyzer")
+                            .startObject("html")
+                                .field("type", "custom")
+                                .field("tokenizer", "standard")
+                                .field("char_filter", new String[] { "html_strip"} )
+                                .field("max_token_length", 48)
+                                .field("filter", new String[]{"snowball", "standard", "lowercase"})
+                            .endObject()
+                        .endObject()
+                    .endObject()                   
+                .endObject().string()));
+            
             // MAPPING GOES HERE
             String featureType = "feature";
             final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(featureType)
                     //.startObject("_ttl").field("enabled", "true").field("default", "1s").endObject().
+
+                    //TODO no analyzer for path and other meta fields
+
                     .startObject("properties")
                     
                         .startObject("description")

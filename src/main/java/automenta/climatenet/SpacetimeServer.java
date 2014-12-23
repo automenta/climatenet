@@ -74,7 +74,6 @@ public class SpacetimeServer extends PathHandler {
                 //Deque<String> dequeVal = reqParams.get("value");
                 Deque<String> idArray = reqParams.get("id");
                 
-                System.out.println(idArray);
                 
                 ArrayNode a = Core.json.readValue(idArray.getFirst(), ArrayNode.class);
                 
@@ -85,12 +84,8 @@ public class SpacetimeServer extends PathHandler {
                     ids[j++] = x.textValue();
                 }
                 QueryBuilder qb = QueryBuilders.termsQuery("_id", ids);
-                SearchResponse response = spacetime.client.prepareSearch(spacetime.index)
-                //.setTypes("type1", "type2")
-                    .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                    .setQuery(qb).setFrom(0).setSize(60).setExplain(true)
-                    .execute()
-                    .actionGet();
+                
+                SearchResponse response = spacetime.search(qb, 0, 60);
                 
                 SearchHits result = response.getHits();
                 
