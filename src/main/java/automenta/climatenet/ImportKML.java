@@ -6,14 +6,18 @@
 package automenta.climatenet;
 
 import automenta.climatenet.proxy.ProxyServer;
-import automenta.knowtention.Core;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Proxy;
 import java.net.URI;
@@ -36,6 +40,7 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.opensextant.geodesy.Geodetic2DPoint;
@@ -458,6 +463,22 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
         
     }
     
+     final public static ObjectMapper json = new ObjectMapper()
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)            
+            .configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true)
+            .configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
+            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+    
+    public static ObjectNode fromJSON(String x) {
+        try {
+            
+            return json.readValue(x, ObjectNode.class);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
     
     
     public void loadLayers(boolean initialize, boolean shuffle, int threads, final long postDelay) throws Exception {
@@ -482,7 +503,8 @@ Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setL
 
         String layers = new String(encoded, "UTF8");
 
-        ObjectNode j = Core.fromJSON(layers);
+        
+        ObjectNode j = fromJSON(layers);
         ArrayNode n = (ArrayNode) j.get("cv");
         String currentSection = "Unknown";
         

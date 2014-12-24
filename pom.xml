@@ -71,19 +71,32 @@
           <version>${geotools.version}</version>
         </dependency>
         -->
+              
+        <dependency>
+            <groupId>com.github.fge</groupId>
+            <artifactId>json-patch</artifactId>
+            <version>1.9</version>
+        </dependency>
+        
+                <dependency>
+            <groupId>io.undertow</groupId>        
+            <artifactId>undertow-core</artifactId>
+            <version>1.2.0.Beta6</version>
+        </dependency>   
+        
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
         </dependency>
 
-
+<!--
         <dependency>
             <groupId>automenta</groupId>
             <artifactId>knowtention</artifactId>
             <version>1.0</version>            
         </dependency>
-
+-->
 
  <!--
         <dependency>

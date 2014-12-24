@@ -9,13 +9,18 @@ and open the template in the editor.
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="jquery-2.1.1.min.js"></script>
-        <script src="lodash.min.js"></script>
+        <script src="lib/jquery-2.1.1.min.js"></script>
+        <script src="lib/lodash.min.js"></script>
 
         <!-- http://leafletjs.com/examples/quick-start.html -->
-        <script src="leaflet/leaflet.js"></script>        
-        <link rel="stylesheet" href="leaflet/leaflet.css">
+        <script src="lib/leaflet/leaflet.js"></script>        
+        <link rel="stylesheet" href="lib/leaflet/leaflet.css">
 
+        <script src="lib/d3/d3.min.js"></script>    
+        
+        <script src="lib/zoomtree.js"></script>        
+        <link rel="stylesheet" href="lib/zoomtree.css">
+        
     </head>
     <body>
         <style>
@@ -27,7 +32,7 @@ and open the template in the editor.
             }
             
             #layermenu { 
-                position: fixed; left: 1em; bottom: 1em; width: 25%; height: 25%; 
+                position: fixed; right: 1em; bottom: 1em; width: 25%; height: 25%; 
                 overflow-y: scroll; 
                 opacity: 0.85;
             }
@@ -35,23 +40,25 @@ and open the template in the editor.
                 font-family: arial;
                 
             }
+            #layertree {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+            }
         </style>
         <div id="map"></div>
+        <div id="layertree"></div>
         <div id="layermenu" class="panel"></div>
         
         <script>
 
             var updatePeriodMS = 500;
-
-            var map = L.map('map').setView([51.505, -0.09], 13);
-
-            L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                attribution: 'attribute this :P mothrefuckers',
-                maxZoom: 18
-            }).addTo(map);
-
             var features = { };
             var layer = { };
+            var visibleLayers = { };
             
             var geojsonMarkerOptions = {
                 radius: 8,
@@ -62,8 +69,44 @@ and open the template in the editor.
                 fillOpacity: 0.8
             };
 
-            var gj = L.geoJson().addTo(map);
 
+            var map = L.map('map').setView([51.505, -0.09], 13);
+            var ltree;
+            function init() {
+                L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                    attribution: 'attribute this :P mothrefuckers',
+                    maxZoom: 18
+                }).addTo(map);
+
+
+                ltree = zoomtree('layertree', {
+                    "name": "animate",
+                    "children": [{
+                        "name": "Easing",
+                        "size": 17010
+                    }, {
+                        "name": "FunctionSequence",
+                        "size": 5842
+                    }, {
+                        "name": "interpolate",
+                        "children": [{
+                            "name": "ArrayInterpolator",
+                            "size": 1983
+                        }]
+                    }
+                ]});
+        
+                map.on('viewreset', updateBounds);
+                map.on('move', updateBounds);
+                map.on('resize', updateBounds);
+
+                updateBounds();
+                
+            }
+
+
+
+            /*
             //not used yet:
             var geojsonoption = {
                 onEachFeature: function onEachFeature(feature, layer) {
@@ -76,6 +119,7 @@ and open the template in the editor.
                     return L.circleMarker(latlng, geojsonMarkerOptions);
                 }
             };
+            */
             
             function addFeature(id, f) {
                 if (!f.geom)  return;
@@ -159,7 +203,6 @@ and open the template in the editor.
             }
             
             function renderLayerSelect() {
-                console.log(JSON.stringify(visibleLayers, null, 4));
                 
                 var nh = $('<div/>');
                 var nu = $('<ul/>').appendTo(nh);
@@ -179,7 +222,6 @@ and open the template in the editor.
                     var l = r[i];
                     layer[i] = l;
                 }
-                console.log(layer);
             }
             
             function updateLayers(layerIDs, callback) {
@@ -219,12 +261,9 @@ and open the template in the editor.
                             console.log('err', v, m);
                         });
             }, updatePeriodMS);
+            
+            $(document).ready(init);
 
-            map.on('viewreset', updateBounds);
-            map.on('move', updateBounds);
-            map.on('resize', updateBounds);
-
-            updateBounds();
         </script>
 
     </body>

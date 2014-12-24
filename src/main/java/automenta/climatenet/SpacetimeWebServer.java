@@ -5,8 +5,8 @@
  */
 package automenta.climatenet;
 
+import static automenta.climatenet.ImportKML.json;
 import automenta.climatenet.p2p.TomPeer;
-import automenta.knowtention.Core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import static io.undertow.Handlers.resource;
@@ -24,16 +24,10 @@ import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.common.geo.builders.CircleBuilder;
-import org.elasticsearch.common.geo.builders.EnvelopeBuilder;
-import org.elasticsearch.common.geo.builders.ShapeBuilder;
-import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
@@ -76,7 +70,7 @@ public class SpacetimeWebServer extends PathHandler {
                 //Deque<String> dequeVal = reqParams.get("value");
                 Deque<String> idArray = reqParams.get("id");
 
-                ArrayNode a = Core.json.readValue(idArray.getFirst(), ArrayNode.class);
+                ArrayNode a = json.readValue(idArray.getFirst(), ArrayNode.class);
 
                 String[] ids = new String[a.size()];
                 int j = 0;

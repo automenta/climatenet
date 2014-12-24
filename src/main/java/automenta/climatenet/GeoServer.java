@@ -31,6 +31,8 @@ public class GeoServer {
     //http://wiki.openstreetmap.org/wiki/Geojson_CSS
     //https://github.com/mapbox/simplestyle-spec
     
+    //https://github.com/caesar0301/awesome-public-datasets
+    
     /*
     embedded postgis setup:
         1. install postgres, postgis
