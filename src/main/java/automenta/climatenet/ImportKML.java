@@ -5,6 +5,8 @@
  */
 package automenta.climatenet;
 
+import automenta.climatenet.kml.KmlReader;
+import automenta.climatenet.kml.UrlRef;
 import automenta.climatenet.proxy.ProxyServer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -38,9 +40,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.opensextant.geodesy.Geodetic2DPoint;
@@ -58,11 +57,11 @@ import org.opensextant.giscore.events.SimpleField;
 import org.opensextant.giscore.events.SimpleField.Type;
 import org.opensextant.giscore.geometry.Geometry;
 import org.opensextant.giscore.geometry.Point;
-import org.opensextant.giscore.input.kml.KmlReader;
-import org.opensextant.giscore.input.kml.UrlRef;
 import org.opensextant.giscore.output.IGISOutputStream;
 import org.opensextant.giscore.output.kml.KmlOutputStream;
 import org.opensextant.giscore.output.shapefile.ShapefileOutputStream;
+
+
 
 /**
  * 
@@ -104,8 +103,8 @@ public class ImportKML {
         URL url = new URL(urlString);
         Deque<String> path = new ArrayDeque();
         
-        Logger.getLogger(org.opensextant.giscore.input.kml.KmlInputStream.class).setLevel(Level.OFF);
-Logger.getLogger(org.opensextant.giscore.events.AltitudeModeEnumType.class).setLevel(Level.OFF);
+        /*Logger.getLogger(KmlInputStream.class).setLevel(Level.OFF);
+Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         
         
         KmlReader reader = new KmlReader(url, proxy);
