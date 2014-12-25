@@ -6,31 +6,36 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>ClimateNet</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="lib/jquery-2.1.1.min.js"></script>
         <script src="lib/lodash.min.js"></script>
+        <script src="lib/graphlib.min.js"></script>
+
+        <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="lib/bootswatch/bootstrap.cyborg.min.css">
+
+        <link rel="stylesheet" href="lib/fontawesome/css/font-awesome.min.css">
 
         <!-- http://leafletjs.com/examples/quick-start.html -->
         <script src="lib/leaflet/leaflet.js"></script>        
         <link rel="stylesheet" href="lib/leaflet/leaflet.css">
 
         <script src="lib/d3/d3.min.js"></script>    
-        
+
+        <!--
         <script src="lib/zoomtree.js"></script>        
         <link rel="stylesheet" href="lib/zoomtree.css">
-        
+        -->
+
     </head>
     <body>
         <style>
             #map { position: fixed; left: 0; top: 0; height: 100%; width: 100% }
-            
-            .panel {
-                background-color: black;
-                color: white;
-            }
-            
+            .leaflet-control-attribution { display: none; }
+
             #layermenu { 
                 position: fixed; right: 1em; bottom: 1em; width: 25%; height: 25%; 
                 overflow-y: scroll; 
@@ -38,7 +43,8 @@ and open the template in the editor.
             }
             body {
                 font-family: arial;
-                
+                margin: 0;
+                padding: 0;
             }
             #layertree {
                 position: fixed;
@@ -48,18 +54,251 @@ and open the template in the editor.
                 height: 100%;
                 pointer-events: none;
             }
+            
+            
+            
+            //sidebar:
+            .row{
+    margin-left:0px;
+    margin-right:0px;
+}
+
+#wrapper {
+    padding-left: 70px;
+    transition: all .4s ease 0s;
+    height: 100%
+}
+
+#sidebar-wrapper {
+    margin-left: -180px;
+    left: 70px;
+    width: 180px;
+    background: #222;
+    position: fixed;
+    height: 100%;
+    z-index: 10000;
+    transition: all .4s ease 0s;
+    opacity: 0.9;
+}
+
+.sidebar-nav {
+    display: block;
+    float: left;
+    width: 180px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+#page-content-wrapper {
+    padding-left: 0;
+    margin-left: 0;
+    width: 100%;
+    height: auto;
+}
+#wrapper.active {
+    padding-left: 180px;
+}
+#wrapper.active #sidebar-wrapper {
+    left: 180px;
+}
+
+#page-content-wrapper {
+  width: 100%;
+}
+
+#sidebar_menu li a, .sidebar-nav li a {
+    color: #999;
+    display: block;
+    float: left;
+    text-decoration: none;
+    width: 100%;
+    background: #252525;
+    border-top: 1px solid #373737;
+    border-bottom: 1px solid #1A1A1A;
+    -webkit-transition: background .5s;
+    -moz-transition: background .5s;
+    -o-transition: background .5s;
+    -ms-transition: background .5s;
+    transition: background .5s;
+}
+.sidebar_name {
+    padding-top: 25px;
+    color: #fff;
+    opacity: .7;
+}
+
+.sidebar-nav li {
+}
+
+.sidebar-nav li a {
+  color: #999999;
+  display: block;
+  text-decoration: none;
+}
+
+.sidebar-nav li a:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.2);
+  text-decoration: none;
+}
+
+.sidebar-nav li a:active,
+.sidebar-nav li a:focus {
+  text-decoration: none;
+}
+
+
+
+.sidebar-nav > .sidebar-brand {
+  height: 65px;
+  line-height: 60px;
+  font-size: 18px;
+}
+
+.sidebar-nav > .sidebar-brand a {
+  color: #999999;
+}
+
+.sidebar-nav > .sidebar-brand a:hover {
+  color: #fff;
+  background: none;
+}
+
+.main_icon, .sub_icon {
+    float:right;
+    padding-right: 5px;
+    padding-top: 5px;
+}
+
+.content-header {
+  height: 65px;
+  line-height: 65px;
+}
+
+.content-header h1 {
+  margin: 0;
+  margin-left: 20px;
+  line-height: 65px;
+  display: inline-block;
+}
+
+@media (max-width:767px) {
+    #wrapper {
+    padding-left: 70px;
+    transition: all .4s ease 0s;
+}
+#sidebar-wrapper {
+    left: 70px;
+}
+#wrapper.active {
+    padding-left: 150px;
+}
+#wrapper.active #sidebar-wrapper {
+    left: 150px;
+    width: 150px;
+    transition: all .4s ease 0s;
+}
+}
+
+.sidebar-nav li.enabled a {
+    color: black;
+    background-color: #857909 !important;
+}
+.sidebar_search {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    line-height: 1;
+    width: 75%;
+}
+
         </style>
+
         <div id="map"></div>
-        <div id="layertree"></div>
-        <div id="layermenu" class="panel"></div>
-        
+
+
+        <div id="wrapper" class="active">
+
+            <!-- Sidebar -->
+            <div id="sidebar-wrapper">
+                <ul id="sidebar_menu" class="sidebar-nav">
+                    <li class="sidebar-brand">
+                        <div style="float: left">
+                            <input placeholder="Find.." class="sidebar_search" type="text"></input>
+                        </div>
+                        <div style="right:0; position:absolute"><a id="menu-toggle" href="#"><i class="main_icon fa fa-bomb fa-2x"></i></a></div>
+                    </li>
+                </ul>
+                <ul class="sidebar-nav" id="visibleLayers">     
+                    <!--<li><a>Link1<i class="sub_icon fa fa-bolt fa-2x"></i></a></li>
+                    <li><a>link2<i class="sub_icon fa fa-cloud fa-2x"></i></a></li>-->
+                </ul>
+
+            </div>
+
+            <!-- Page content -->
+            <div id="page-content-wrapper">
+            </div>
+
+        </div>
+
+
+        <!--
+
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">             
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
+                        <li><a href="#">Link</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dropdown <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="#">Action</a></li>
+                                <li><a href="#">Another action</a></li>
+                                <li><a href="#">Something else here</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">Separated link</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">One more separated link</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <form class="navbar-form navbar-left" role="search">
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Search">
+                        </div>
+                    </form>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#">Link</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dropdown <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="#">Action</a></li>
+                                <li><a href="#">Another action</a></li>
+                                <li><a href="#">Something else here</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">Separated link</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        -->
+
+
+        <!--<div id="layermenu" class="panel panel-default"></div>-->
+
         <script>
+            
 
             var updatePeriodMS = 500;
-            var features = { };
-            var layer = { };
-            var visibleLayers = { };
+            var features = {};
+            var layer = new graphlib.Graph({multigraph: true}); //https://github.com/cpettitt/graphlib/wiki
             
+
             var geojsonMarkerOptions = {
                 radius: 8,
                 fillColor: "#ff7800",
@@ -73,68 +312,81 @@ and open the template in the editor.
             var map = L.map('map').setView([51.505, -0.09], 13);
             var ltree;
             function init() {
+                
+                $("#menu-toggle").click(function(e) {
+                        e.preventDefault();
+                        $("#wrapper").toggleClass("active");
+                });
+                
                 L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                    attribution: 'attribute this :P mothrefuckers',
+                    attribution: '',
                     maxZoom: 18
                 }).addTo(map);
 
 
-                ltree = zoomtree('layertree', {
-                    "name": "animate",
-                    "children": [{
-                        "name": "Easing",
-                        "size": 17010
-                    }, {
-                        "name": "FunctionSequence",
-                        "size": 5842
-                    }, {
-                        "name": "interpolate",
-                        "children": [{
-                            "name": "ArrayInterpolator",
-                            "size": 1983
-                        }]
-                    }
-                ]});
-        
+                /*
+                 ltree = zoomtree('layertree', {
+                 "name": "animate",
+                 "children": [{
+                 "name": "Easing",
+                 "size": 17010
+                 }, {
+                 "name": "FunctionSequence",
+                 "size": 5842
+                 }, {
+                 "name": "interpolate",
+                 "children": [{
+                 "name": "ArrayInterpolator",
+                 "size": 1983
+                 }]
+                 }
+                 ]});
+                 */
+
+
                 map.on('viewreset', updateBounds);
                 map.on('move', updateBounds);
                 map.on('resize', updateBounds);
 
                 updateBounds();
+
+                updateRootLayers(renderLayerView);
                 
             }
 
 
 
             /*
-            //not used yet:
-            var geojsonoption = {
-                onEachFeature: function onEachFeature(feature, layer) {
-                    // does this feature have a property named popupContent?
-                    if (feature.properties && feature.properties.popupContent) {
-                        layer.bindPopup(feature.properties.popupContent);
-                    }
-                },
-                pointToLayer: function (feature, latlng) {
-                    return L.circleMarker(latlng, geojsonMarkerOptions);
-                }
-            };
-            */
-            
+             //not used yet:
+             var geojsonoption = {
+             onEachFeature: function onEachFeature(feature, layer) {
+             // does this feature have a property named popupContent?
+             if (feature.properties && feature.properties.popupContent) {
+             layer.bindPopup(feature.properties.popupContent);
+             }
+             },
+             pointToLayer: function (feature, latlng) {
+             return L.circleMarker(latlng, geojsonMarkerOptions);
+             }
+             };
+             */
+
             function addFeature(id, f) {
-                if (!f.geom)  return;
-                if (features[id]) return;
-                
+                if (!f.geom)
+                    return;
+                if (features[id])
+                    return;
+
                 f.type = "Feature";
                 f.geometry = f.geom;
-                
-                
+
+
                 if (f.geom.type === "point")
                     f.geometry.type = "Point";
                 var layer = L.geoJson(f, {
                     /*style: function (feature) {
-                        return {color: feature.properties.color};
-                    },*/
+                     return {color: feature.properties.color};
+                     },*/
                     onEachFeature: function (feature, layer) {
                         layer.bindPopup(feature.description);
                     }
@@ -143,103 +395,155 @@ and open the template in the editor.
                 features[id] = layer;
                 layer.addTo(map);
             }
-            
+
             function removeFeature(i) {
                 features[i].removeFrom(map);
                 delete features[i];
             }
             
+            function newLayerEntry(layerID) {
+                return {
+                    id: layerID, 
+                    name: undefined, featuresVisible: 1,
+                    features: new WeakSet()                                
+                };
+            }
+
             function updateGeoJSONFeatures(r) {
-                
+
+                _.each(layer.nodes(), function(l) {
+                    layer.node(l).featuresVisible = 0;
+                });                
                 for (var i in features) {
                     if (!r[i]) {
                         removeFeature(i);
                     }
                 }
-                
+
                 for (var i in r) {
                     var f = r[i];
                     addFeature(i, f);
                 }
-                
-                var unknownLayers = { };
-                
-                visibleLayers = { };
+
+                var unknownLayers = {};
+
                 for (var i in features) {
                     var f = features[i].data;
                     var p = f.path;
+
+                    if (!p)
+                        continue;
+
+                    //TODO cache known paths
                     
-                    if (!p) continue;                 
+                    var parent = null;
+                    var layerNode = null;
                     
-                    var l = visibleLayers;
                     for (var i = 0; i < p.length; i++) {
-                        var e = p[i];
-                        if (l[e]) {                            
-                            l = l[e];
-                            l.count = l.count + 1;
+                        var layerID = p[i];
+                        layerNode = layer.node(layerID);
+                        
+                        if (layerNode) {
+                            layerNode.featuresVisible = layerNode.featuresVisible + 1;
                         }
                         else {
-                            l = l[e] = { count: 1 };    
-                            if (!layer[e]) {
-                                unknownLayers[e] = true;
-                                layer[e] = {name: '?' };
+                            var layerNode = newLayerEntry(layerID);
+                            layer.setNode(layerID, layerNode);
+                            
+                            if (parent) {
+                                layer.setEdge(parent, layerID, 'parent');
                             }
-                            
-                        }
                         
-                            
+                            layerNode = layer.node(layerID);
+                            unknownLayers[layerID] = true;
+                        }
+                                                                        
+                        parent = layerID;
+                        
+                        layerNode.features.add(f);
                     }
                     
                     
+
                 }
-                
-                unknownLayers = _.map(_.keys(unknownLayers), 
-                    function(l) { return encodeURIComponent(l); });
-                    
+
+                unknownLayers = _.map(_.keys(unknownLayers),
+                        function (l) {
+                            return encodeURIComponent(l);
+                        });
+
                 if (unknownLayers.length > 0)
-                    updateLayers(unknownLayers, renderLayerSelect);
+                    updateLayers(unknownLayers, renderLayerView);
                 else
-                    renderLayerSelect();
+                    renderLayerView();
             }
-            
-            function renderLayerSelect() {
+
+            function renderLayerView() {
+
                 
-                var nh = $('<div/>');
-                var nu = $('<ul/>').appendTo(nh);
+                var vl = $('#visibleLayers');
+                vl.html('');
                 
-                _.each(visibleLayers, function(v, k) {
-                    var layerdata = layer[k];
-                    var name = layerdata.name;
-                    var count = visibleLayers[k].count;
-                    nu.append('<li>' + name + ' ' + count + '</li>');
+                var s = layer.sources();
+                
+                _.each(s, function (n) {
+                    v = layer.node(n);
+                    var name = v.name || v.id;
+                    var count = v.featuresVisible;
+                    //nu.append('<li>' + name + ' ' + count + '</li>');
+                    
+                    var d = $('<li><a>' + name + ' (' + count + ')<i class="sub_icon fa fa-bolt fa-2x"></i></a></li>');
+                    
+                    
+                    if(count) {
+                        d.addClass('enabled');
+                    }
+                    
+                    //d.append(JSON.stringify(layer.successors(n)));
+                    
+                    vl.append(d);
                 });
 
-                $('#layermenu').html(nh);
             }
             
+            var ajaxFail = function (v, m) {  
+                console.error('AJAJ Err:', v, m);  
+                
+            };
+
             function updateLayerMetadata(r) {
                 for (var i in r) {
                     var l = r[i];
-                    layer[i] = l;
+                    
+                    var n = layer.node(i);
+                    if (!n) {
+                        n = newLayerEntry(i);
+                        layer.setNode(i, n);
+                    }
+                    
+                    //TODO copy other metadata, use _.extend
+                    n.name = l.name;                    
                 }
             }
-            
-            function updateLayers(layerIDs, callback) {
-                $.getJSON('/layer/meta', {id: JSON.stringify(layerIDs) })
 
-                        .done(function (r) {
-                            //console.log('received');
-                            //console.log(r);
-                            updateLayerMetadata(r);
-                            
-                            if (callback)
-                                callback();
-                        })
-                        .fail(function (v, m) {
-                            console.log('err', v, m);
-                        });
-                        
+            function updateRootLayers(callback) {
+                $.getJSON('/layer/index')
+                    .done(function (r) {
+                        updateLayerMetadata(r);
+                        if (callback)  callback();
+                    })
+                    .fail(ajaxFail);
             }
+
+            function updateLayers(layerIDs, callback) {
+                $.getJSON('/layer/meta', {id: JSON.stringify(layerIDs)})
+                    .done(function (r) {
+                        updateLayerMetadata(r);
+                        if (callback)  callback();
+                    })
+                    .fail(ajaxFail);
+            }
+            
 
             var updateBounds = _.throttle(function (e) {
                 var b = map.getBounds();
@@ -252,7 +556,6 @@ and open the template in the editor.
                 $.getJSON('/geoCircle', {lat: lat, lon: lon, radiusM: radiusMeters})
 
                         .done(function (r) {
-                            //console.log('received');
                             //console.log(r);
 
                             updateGeoJSONFeatures(r);
@@ -261,7 +564,7 @@ and open the template in the editor.
                             console.log('err', v, m);
                         });
             }, updatePeriodMS);
-            
+
             $(document).ready(init);
 
         </script>

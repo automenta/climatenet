@@ -17,6 +17,7 @@ import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.handlers.resource.FileResourceManager;
 import io.undertow.util.Headers;
 import java.io.File;
+import java.io.IOException;
 import java.util.Deque;
 import java.util.Map;
 import java.util.UUID;
@@ -55,11 +56,19 @@ public class SpacetimeWebServer extends PathHandler {
         server.start();
 
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
-                //addPrefixPath("/ws", websocket(new WebSocketConnector(core)).addExtension(new PerMessageDeflateHandshake()))
+        //addPrefixPath("/ws", websocket(new WebSocketConnector(core)).addExtension(new PerMessageDeflateHandshake()))
         addPrefixPath("/", resource(
                 new FileResourceManager(new File(clientPath), 100)).
                 setDirectoryListingEnabled(false));
 
+        addPrefixPath("/layer/index", new HttpHandler() {
+
+            @Override
+            public void handleRequest(HttpServerExchange hse) throws Exception {
+                sendLayers(index.rootLayers(), hse);
+            }
+            
+        });
         addPrefixPath("/layer/meta", new HttpHandler() {
 
             @Override
@@ -81,34 +90,7 @@ public class SpacetimeWebServer extends PathHandler {
 
                 SearchResponse response = index.search(qb, 0, 60);
 
-                SearchHits result = response.getHits();
-                
-                if (result.totalHits() == 0) {
-                    ex.getResponseSender().send("");
-                    return;
-                }
-
-
-                XContentBuilder d = jsonBuilder().startObject();
-
-                for (SearchHit h : result) {
-
-                    Map<String, Object> s = h.getSource();
-
-
-                    d.startObject(h.getId())
-                            .field("name", s.get("name"));
-                    Object desc = s.get("description");
-                    if (desc != null) {
-                        d.field("description", s.get("description"));
-                    }
-                    d.endObject();
-
-                }
-
-                d.endObject();
-
-                send(ex, d);
+                sendLayers(response, ex);
 
             }
 
@@ -140,7 +122,6 @@ public class SpacetimeWebServer extends PathHandler {
 
                         Map<String, Object> s = h.getSource();
 
-
                         //System.out.println(h.getId() + " " + s);
                         d.startObject(h.getId())
                                 .field("path", s.get("path"))
@@ -162,7 +143,6 @@ public class SpacetimeWebServer extends PathHandler {
         });
     }
 
-
     public static void main(String[] args) throws Exception {
         int webPort = 9090;
         int p2pPort = 9091;
@@ -182,6 +162,31 @@ public class SpacetimeWebServer extends PathHandler {
 
         ex.getResponseSender().send(d.bytes().toChannelBuffer().toByteBuffer());
         ex.getResponseSender().close();
+    }
+
+    public static boolean sendLayers(SearchResponse response, HttpServerExchange ex) throws IOException {
+        SearchHits result = response.getHits();
+        if (result.totalHits() == 0) {
+            ex.getResponseSender().send("");
+            return true;
+        }
+        XContentBuilder d = jsonBuilder().startObject();
+        for (SearchHit h : result) {
+
+            Map<String, Object> s = h.getSource();
+
+            d.startObject(h.getId())
+                    .field("name", s.get("name"));
+            Object desc = s.get("description");
+            if (desc != null) {
+                d.field("description", s.get("description"));
+            }
+            d.endObject();
+
+        }
+        d.endObject();
+        send(ex, d);
+        return false;
     }
 
 }

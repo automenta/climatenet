@@ -16,7 +16,9 @@ import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
 
 /**
@@ -37,6 +39,22 @@ public class ElasticSpacetimeRO implements Spacetime {
         client = new TransportClient()                
                 .addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
         
+    }
+    
+    /** returns a list of the root layers (having no parents) in the index */
+    public SearchResponse rootLayers() {
+        
+        QueryStringQueryBuilder q = QueryBuilders.queryString("+_type:layer -path:*");        
+                
+        int max = 100;
+        
+        SearchResponse response = client.prepareSearch(index)
+            .setSearchType(SearchType.DEFAULT)                
+            .setQuery(q).setExplain(false)
+                .setFrom(0).setSize(max)
+            .execute()
+            .actionGet();
+        return response;
     }
 
     public SearchResponse search(QueryBuilder qb, int i, int i0) {
