@@ -10,5 +10,7 @@ package automenta.climatenet;
  * @author me
  */
 public interface Spacetime {
+
+    public void close();
     
 }

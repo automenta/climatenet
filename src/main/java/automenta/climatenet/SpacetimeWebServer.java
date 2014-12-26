@@ -5,6 +5,7 @@
  */
 package automenta.climatenet;
 
+import automenta.climatenet.elastic.ElasticSpacetime;
 import static automenta.climatenet.ImportKML.json;
 import automenta.climatenet.p2p.TomPeer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,7 +39,7 @@ import org.elasticsearch.search.SearchHits;
  */
 public class SpacetimeWebServer extends PathHandler {
 
-    final ElasticSpacetimeRO index;
+    final ElasticSpacetime db;
     final String clientPath = "./src/web";
 
     public SpacetimeWebServer(int port, String indexName) throws Exception {
@@ -46,17 +47,17 @@ public class SpacetimeWebServer extends PathHandler {
     }
 
     public SpacetimeWebServer(String host, int port, String indexName) throws Exception {
-        index = new ElasticSpacetime(indexName);
+        db = ElasticSpacetime.server(indexName, false);
 
         Undertow server = Undertow.builder()
                 .addHttpListener(port, host)
                 .setIoThreads(8)
                 .setHandler(this)
                 .build();
-        server.start();
 
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
         //addPrefixPath("/ws", websocket(new WebSocketConnector(core)).addExtension(new PerMessageDeflateHandshake()))
+        
         addPrefixPath("/", resource(
                 new FileResourceManager(new File(clientPath), 100)).
                 setDirectoryListingEnabled(false));
@@ -65,7 +66,7 @@ public class SpacetimeWebServer extends PathHandler {
 
             @Override
             public void handleRequest(HttpServerExchange hse) throws Exception {
-                sendLayers(index.rootLayers(), hse);
+                sendLayers(db.rootLayers(), hse);
             }
             
         });
@@ -75,7 +76,7 @@ public class SpacetimeWebServer extends PathHandler {
             public void handleRequest(HttpServerExchange ex) throws Exception {
                 Map<String, Deque<String>> reqParams = ex.getQueryParameters();
 
-                //   Deque<String> deque = reqParams.get("attrName");
+                //Deque<String> deque = reqParams.get("attrName");
                 //Deque<String> dequeVal = reqParams.get("value");
                 Deque<String> idArray = reqParams.get("id");
 
@@ -88,7 +89,7 @@ public class SpacetimeWebServer extends PathHandler {
                 }
                 QueryBuilder qb = QueryBuilders.termsQuery("_id", ids);
 
-                SearchResponse response = index.search(qb, 0, 60);
+                SearchResponse response = db.search(qb, 0, 60);
 
                 sendLayers(response, ex);
 
@@ -114,7 +115,7 @@ public class SpacetimeWebServer extends PathHandler {
                     double lon = Double.parseDouble(lons.getFirst());
                     double rad = Double.parseDouble(rads.getFirst());
 
-                    SearchHits result = index.search(lat, lon, rad, 60);
+                    SearchHits result = db.search(lat, lon, rad, 60);
 
                     XContentBuilder d = jsonBuilder().startObject();
 
@@ -141,6 +142,9 @@ public class SpacetimeWebServer extends PathHandler {
             }
 
         });
+        
+        server.start();
+
     }
 
     public static void main(String[] args) throws Exception {
@@ -151,7 +155,7 @@ public class SpacetimeWebServer extends PathHandler {
 
         TomPeer peer = new TomPeer(
                 new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
-        peer.add(s.index);
+        peer.add(s.db);
 
     }
 

@@ -5,14 +5,14 @@
  */
 package automenta.climatenet.p2p;
 
-import automenta.climatenet.ElasticSpacetimeRO;
 import automenta.climatenet.Spacetime;
-import static automenta.climatenet.p2p.TestP2PDHT.RND;
+import automenta.climatenet.elastic.ElasticSpacetime;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,11 +33,13 @@ import org.elasticsearch.search.SearchHit;
  * @author me
  */
 public class TomPeer {
+    public static final Random RND = new Random();
+    
     public final PeerDHT peer;
     
     final int defaultSearchResults = 64;
     
-    public List<Spacetime> indices = new CopyOnWriteArrayList<>();
+    public List<Spacetime> db = new CopyOnWriteArrayList<>();
 
     
     public TomPeer(final PeerDHT peer) {
@@ -72,21 +74,21 @@ public class TomPeer {
     }
     
     public void add(Spacetime e) {
-        indices.add(e);
+        db.add(e);
     }
             
     public Object handleMessage(PeerAddress sender, Object request) {
         if (request instanceof String) {
             //ASK
             
-            if (indices.isEmpty()) return null;
+            if (db.isEmpty()) return null;
             
             QueryBuilder qb = QueryBuilders.queryString((String)request);
                         
             Map<String, Object> results = new HashMap();
-            for (Spacetime i : indices) {
-                if (i instanceof ElasticSpacetimeRO) {
-                    ElasticSpacetimeRO e = (ElasticSpacetimeRO) i;
+            for (Spacetime i : db) {
+                if (i instanceof ElasticSpacetime) {
+                    ElasticSpacetime e = (ElasticSpacetime) i;
                     
                     SearchResponse r = e.search(qb, 0, defaultSearchResults);
                     for (SearchHit s : r.getHits()) {
@@ -119,6 +121,13 @@ public class TomPeer {
         FutureSend futureSend = send(key, value);
         futureSend.awaitUninterruptibly();
         return futureSend.rawDirectData2();        
+    }
+
+    /** shutdown method */
+    public void close() {
+        for (Spacetime d : db) {
+            d.close();
+        }
     }
     
     public interface Answering {

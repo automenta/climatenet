@@ -5,8 +5,9 @@
  */
 package automenta.climatenet;
 
-import automenta.climatenet.kml.KmlReader;
-import automenta.climatenet.kml.UrlRef;
+import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.kml.giscore.KmlReader;
+import automenta.climatenet.kml.giscore.UrlRef;
 import automenta.climatenet.proxy.ProxyServer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -87,7 +88,8 @@ public class ImportKML {
         ProxyServer cache = new ProxyServer(16000);
         
         
-        new ImportKML(cache.proxy).loadLayers(false, true, 1, 3);
+        ElasticSpacetime es = ElasticSpacetime.server("cv", false);
+        new ImportKML(cache.proxy).loadLayers(es, true, 1, 3);
     }
         
     
@@ -480,7 +482,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
     }
     
     
-    public void loadLayers(boolean initialize, boolean shuffle, int threads, final long postDelay) throws Exception {
+    public void loadLayers(final ElasticSpacetime st, boolean shuffle, int threads, final long postDelay) throws Exception {
         
         ExecutorService executor = 
                 
@@ -488,10 +490,6 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                 Executors.newSingleThreadExecutor() :
                 Executors.newFixedThreadPool(threads);
         
-        ElasticSpacetime stInit = new ElasticSpacetime("cv", initialize);
-        stInit.close();
-            
-          
         
         if (!Files.exists(Paths.get(basePath)))
             Files.createDirectory(Paths.get(basePath));
@@ -534,11 +532,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                     public void run() {
                         try {
                             System.out.println("START: " + layer);
-                            final ElasticSpacetime st = new ElasticSpacetime("cv");
-                            int features = transformKML(layer, name, url, st, false, false);
-                            
-                            st.close();
-                            
+                            int features = transformKML(layer, name, url, st, false, false);                            
                         
                             if (postDelay > 0) {
                                 try {

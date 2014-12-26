@@ -11,11 +11,19 @@
         <maven.compiler.target>1.7</maven.compiler.target>
         <geotools.version>12.1</geotools.version>
         <geotk.version>4.x-SNAPSHOT</geotk.version>
-        
+                <junit.version>4.10</junit.version>
+
     </properties>
     
 
     <dependencies>
+        
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
         
         
         <dependency>

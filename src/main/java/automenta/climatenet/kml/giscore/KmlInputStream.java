@@ -16,7 +16,7 @@
  *
  **************************************************************************************
  */
-package automenta.climatenet.kml;
+package automenta.climatenet.kml.giscore;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -348,42 +348,47 @@ public class KmlInputStream extends XmlInputStream implements IKml {
 			// The first start element may be a KML element, which isn't
             // handled by the rest of the code. We'll handle it here to obtain the
             // namespaces
-            StartElement first = ev.asStartElement();
-            QName qname = first.getName();
-            String nstr = qname.getNamespaceURI();
-            final String localPart = qname.getLocalPart();
-            if ("kml".equals(localPart)) {
-                if (StringUtils.isNotBlank(nstr) && !ms_kml_ns.contains(nstr)) {
-                    // KML namespace not registered
+            
+            if (ev.isStartElement()) {
+                StartElement first = ev.asStartElement();
+                QName qname = first.getName();
+                String nstr = qname.getNamespaceURI();
+                final String localPart = qname.getLocalPart();
+                if ("kml".equals(localPart)) {
+                    if (StringUtils.isNotBlank(nstr) && !ms_kml_ns.contains(nstr)) {
+                        // KML namespace not registered
+                        log.info("Registering unrecognized KML namespace: {}", nstr);
+                        ms_kml_ns.add(nstr);
+                    }
+                    stream.nextEvent(); // Consume event
+                } else if (StringUtils.isNotBlank(nstr) && !ms_kml_ns.contains(nstr)
+                        && (ms_features.contains(localPart) || ms_containers.contains(localPart))) {
+                                    // root element non-kml (e.g. GroundOverlay) and namespace is not registered.
+                    // Add it otherwise will be parsed as foreign elements
                     log.info("Registering unrecognized KML namespace: {}", nstr);
                     ms_kml_ns.add(nstr);
                 }
-                stream.nextEvent(); // Consume event
-            } else if (StringUtils.isNotBlank(nstr) && !ms_kml_ns.contains(nstr)
-                    && (ms_features.contains(localPart) || ms_containers.contains(localPart))) {
-				// root element non-kml (e.g. GroundOverlay) and namespace is not registered.
-                // Add it otherwise will be parsed as foreign elements
-                log.info("Registering unrecognized KML namespace: {}", nstr);
-                ms_kml_ns.add(nstr);
-            }
-            @SuppressWarnings("unchecked")
-            Iterator<Namespace> niter = first.getNamespaces();
-            while (niter.hasNext()) {
-                Namespace ns = niter.next();
-                String prefix = ns.getPrefix();
-                if (StringUtils.isBlank(prefix)) {
-                    continue;
+
+                @SuppressWarnings("unchecked")
+                Iterator<Namespace> niter = first.getNamespaces();
+                while (niter.hasNext()) {
+                    Namespace ns = niter.next();
+                    String prefix = ns.getPrefix();
+                    if (StringUtils.isBlank(prefix)) {
+                        continue;
+                    }
+                                    // assuming that namespace prefixes are unique in the source KML document since it would violate
+                    // the XML unique attribute constraint and not even load in Google Earth.
+                    try {
+                        org.opensextant.giscore.Namespace gnamespace
+                                = org.opensextant.giscore.Namespace.getNamespace(prefix, ns.getNamespaceURI());
+                        ds.getNamespaces().add(gnamespace);
+                    } catch (IllegalArgumentException e) {
+                        // ignore invalid namespaces since often namespaces may not even be used in the document itself
+                        log.warn("ignore invalid namespace " + prefix + "=" + ns.getNamespaceURI());
+                    }
                 }
-				// assuming that namespace prefixes are unique in the source KML document since it would violate
-                // the XML unique attribute constraint and not even load in Google Earth.
-                try {
-                    org.opensextant.giscore.Namespace gnamespace
-                            = org.opensextant.giscore.Namespace.getNamespace(prefix, ns.getNamespaceURI());
-                    ds.getNamespaces().add(gnamespace);
-                } catch (IllegalArgumentException e) {
-                    // ignore invalid namespaces since often namespaces may not even be used in the document itself
-                    log.warn("ignore invalid namespace " + prefix + "=" + ns.getNamespaceURI());
-                }
+                
             }
         } catch (XMLStreamException e) {
             e.printStackTrace();

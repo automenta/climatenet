@@ -73,7 +73,7 @@ Copyright (C) 2000-2007 Jason Hunter & Brett McLaughlin.
  on the JDOM Project, please see <http://www.jdom.org/>.
 
  */
-package automenta.climatenet.kml;
+package automenta.climatenet.kml.giscore;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;

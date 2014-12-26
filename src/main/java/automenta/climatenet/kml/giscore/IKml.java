@@ -16,7 +16,7 @@
  *  their occurrence.
  *
  ***************************************************************************************/
-package automenta.climatenet.kml;
+package automenta.climatenet.kml.giscore;
 
 /**
  * Container for element and attribute names used in KML

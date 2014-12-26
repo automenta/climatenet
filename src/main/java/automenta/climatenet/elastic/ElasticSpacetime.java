@@ -3,24 +3,44 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet;
+package automenta.climatenet.elastic;
 
+import automenta.climatenet.Spacetime;
+import com.google.common.io.Files;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.geo.builders.CircleBuilder;
+import org.elasticsearch.common.geo.builders.EnvelopeBuilder;
+import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.search.SearchHits;
 
 /**
  *
  * @author me
  */
-public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
+public class ElasticSpacetime  implements Spacetime {
+
+    
+    
     //private final Node node;
     /*
      me:  http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-geo-shape-type.html elastic search and solr are competitors
@@ -37,14 +57,49 @@ public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
         ./bin/plugin -i elasticsearch/marvel/latest
     
      */
+    
+    protected final Client client;
+    protected final String index;
+    protected BulkRequestBuilder bulkRequest;
+    protected boolean debug = false;
 
+    
+    public static ElasticSpacetime temporary(String index) throws Exception {
+        String dbPath = Files.createTempDir().getAbsolutePath();
+        final EmbeddedES e = new EmbeddedES(dbPath);
+        return new ElasticSpacetime(index, e.getClient(), true) {
 
-    public ElasticSpacetime(String indexName) throws Exception {
-        this(indexName, false);
+            @Override public void close() {
+                super.close();
+                e.close(true);
+            }
+            
+        };
+    }
+    
+    /** creates an embedded instance */
+    public static ElasticSpacetime local(String index, String dbPath, boolean initIndex) throws Exception {
+        EmbeddedES e = new EmbeddedES(dbPath);
+        return new ElasticSpacetime(index, e.getClient(), initIndex);
+    }
+    
+    
+    /** connects to ES defaults: localhost:9300 */
+    public static ElasticSpacetime server(String index, boolean initIndex) throws Exception {
+        return remote(index, "localhost", 9300, initIndex);
+    }
+    
+    public static ElasticSpacetime remote(String index, String host, int port, boolean initIndex) throws Exception {
+        Client c = new TransportClient()                
+                .addTransportAddress(new InetSocketTransportAddress(host, port));
+        return new ElasticSpacetime(index, c, initIndex);
     }
 
-    public ElasticSpacetime(String indexName, boolean initIndex) throws Exception {
-        super(indexName);
+    protected ElasticSpacetime(String indexName, Client client, boolean initIndex) throws Exception {
+        
+        this.index = indexName;
+        
+        this.client = client;
 
         boolean existsIndex = true;
          final IndicesExistsResponse res = client.admin().indices().prepareExists(indexName).execute().actionGet();
@@ -119,6 +174,70 @@ public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
 
     }
 
+    /** returns a list of the root layers (having no parents) in the index */
+    public SearchResponse rootLayers() {
+        
+        QueryStringQueryBuilder q = QueryBuilders.queryString("+_type:layer -path:*");        
+                
+        int max = 100;
+        
+        SearchResponse response = client.prepareSearch(index)
+            .setSearchType(SearchType.DEFAULT)                
+            .setQuery(q).setExplain(false)
+                .setFrom(0).setSize(max)
+            .execute()
+            .actionGet();
+        return response;
+    }
+
+    public SearchResponse search(QueryBuilder qb, int i, int i0) {
+        SearchResponse response = client.prepareSearch(index)
+        //.setTypes("type1", "type2")
+            .setSearchType(SearchType.DEFAULT)
+            .setQuery(qb).setFrom(0).setSize(60).setExplain(false)
+            .execute()
+            .actionGet();
+        return response;
+    }
+    
+    public SearchHits search(double minLat, double minLon, double maxLat, double maxLon) {
+
+        //NOT WORKING YET
+        EnvelopeBuilder envelope = ShapeBuilder.newEnvelope().topLeft(
+                Math.max(minLon, maxLon), Math.max(minLat, maxLat))
+                .bottomRight(Math.min(minLon, maxLon), Math.min(minLat, maxLat));
+
+        QueryBuilder qb = geoShapeQuery("geom", envelope);
+
+        //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
+        SearchResponse response = client.prepareSearch(index)
+                //.setTypes("type1", "type2")
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(qb).setFrom(0).setSize(60).setExplain(true)
+                .execute()
+                .actionGet();
+        return response.getHits();
+    }
+
+    public SearchHits search(double lat, double lon, double radiusMeters, int max) {
+
+        CircleBuilder shape = ShapeBuilder.newCircleBuilder().center(lon, lat).radius(radiusMeters, DistanceUnit.METERS);
+
+        QueryBuilder qb = geoShapeQuery("geom", shape);
+
+        //http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/search.html
+        SearchResponse response = client.prepareSearch(index)
+                .setTypes("feature")
+                .setSearchType(SearchType.DEFAULT)
+                .setExplain(false)
+                .setQuery(qb).setFrom(0).setSize(max)
+                .execute()
+                .actionGet();
+        return response.getHits();
+    }
+    
+
+    
     public void bulkStart() {
         bulkRequest = client.prepareBulk();
     }
@@ -150,7 +269,8 @@ public class ElasticSpacetime extends ElasticSpacetimeRO implements Spacetime {
 
     }
 
+    @Override
     public void close() {
-        client.close();
+        client.close();        
     }
 }

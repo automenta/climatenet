@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet.p2p;
+package automenta.climatenet;
 
+import automenta.climatenet.p2p.TomPeer;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Random;
@@ -63,7 +64,7 @@ public class TestP2PDHT {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void _main(String[] args) throws Exception {
         try {
             PeerDHT[] peers = createMasters(2, 4001);
 
