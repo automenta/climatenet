@@ -26,7 +26,7 @@ public class Main {
         //parser.addMutuallyExclusiveGroup("")
         
         
-        ArgumentGroup peerGroup = parser.addArgumentGroup("peer");
+        ArgumentGroup peerGroup = parser.addArgumentGroup("P2P");
         
         
         peerGroup.addArgument("-p2pport").type(Integer.class).required(false).
@@ -34,8 +34,11 @@ public class Main {
         peerGroup.addArgument("-p2pseeds").type(String.class).setDefault("").required(false).
                 help("Comma-separated (no spaces) list of host:port pairs");
         
-        ArgumentGroup webGroup = parser.addArgumentGroup("web");
+        ArgumentGroup webGroup = parser.addArgumentGroup("Web server");
         webGroup.addArgument("-webport").type(Integer.class).required(false).setDefault(8080).help("Port to connect Web Server");
+        
+        ArgumentGroup netGroup = parser.addArgumentGroup("Network");
+        netGroup.addArgument("-localhost").type(String.class).required(false).setDefault("localhost").help("Host to bind servers, if different from localhost");
 
         MutuallyExclusiveGroup dbGroup = parser.addMutuallyExclusiveGroup("Database");
         dbGroup.addArgument("-esserver").type(String.class).help("ElasticSearch server host:port");
@@ -55,7 +58,9 @@ public class Main {
             String esServer = res.getString("esserver");
             String esIndex = res.getString("esindex");
             Integer webPort = res.getInt("webport");
+            String webHost = res.getString("webhost");
             Integer p2pPort = res.getInt("p2pport");
+            String localhost = res.getString("localhost");
             
             //System.out.println(esPath + " " + esServer + " " + esIndex);
             
@@ -72,11 +77,11 @@ public class Main {
             
             
             if (e !=null && webPort!=null) {
-                w = new SpacetimeWebServer(e, webPort);
+                w = new SpacetimeWebServer(e, localhost, webPort);
             }
             
             if (e!=null && p2pPort!=null) {
-                p = new SpacetimePeer(p2pPort);
+                p = new SpacetimePeer(localhost, p2pPort);
                 p.peer.add(e);
                 
                 //TODO add seeds

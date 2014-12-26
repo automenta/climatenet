@@ -8,10 +8,12 @@ package automenta.climatenet;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.p2p.TomPeer.Answering;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.tomp2p.connection.Bindings;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.p2p.PeerBuilder;
@@ -28,19 +30,23 @@ public class SpacetimePeer {
     public final TomPeer peer;
     
     public SpacetimePeer(Number160 peerID, int port) throws IOException {
+        this(peerID, "localhost", port);
+    }
+    
+    public SpacetimePeer(Number160 peerID, String host, int port) throws IOException {
 
         peer = new TomPeer(
-                new PeerBuilderDHT(new PeerBuilder(peerID).ports(port).start()).start());
+                new PeerBuilderDHT(new PeerBuilder(peerID).bindings(new Bindings().addAddress(InetAddress.getByName(host))).ports(port).start()).start());
         
         //peer.add(index);        
         
     }
     
-    public SpacetimePeer(int port) throws IOException {
-        this((String)null, port);        
+    public SpacetimePeer(String host, int port) throws IOException {
+        this((String)null, host, port);        
     }
     
-    public SpacetimePeer(String peerID, int port) throws IOException {
+    public SpacetimePeer(String peerID, String host, int port) throws IOException {
         this(peerID != null ? Number160.createHash(peerID) : new Number160(new Random()), port);        
     }
 
