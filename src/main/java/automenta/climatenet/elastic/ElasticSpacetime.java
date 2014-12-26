@@ -8,8 +8,6 @@ package automenta.climatenet.elastic;
 import automenta.climatenet.Spacetime;
 import com.google.common.io.Files;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
@@ -32,6 +30,8 @@ import org.elasticsearch.index.query.QueryBuilders;
 import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -39,6 +39,7 @@ import org.elasticsearch.search.SearchHits;
  */
 public class ElasticSpacetime  implements Spacetime {
 
+    public final static Logger logger = LoggerFactory.getLogger(ElasticSpacetime.class);
     
     
     //private final Node node;
@@ -78,21 +79,28 @@ public class ElasticSpacetime  implements Spacetime {
     }
     
     /** creates an embedded instance */
-    public static ElasticSpacetime local(String index, String dbPath, boolean initIndex) throws Exception {
+    public static ElasticSpacetime local(String index, String dbPath, boolean forceInit) throws Exception {
         EmbeddedES e = new EmbeddedES(dbPath);
-        return new ElasticSpacetime(index, e.getClient(), initIndex);
+        return new ElasticSpacetime(index, e.getClient(), forceInit);
     }
     
     
     /** connects to ES defaults: localhost:9300 */
-    public static ElasticSpacetime server(String index, boolean initIndex) throws Exception {
-        return remote(index, "localhost", 9300, initIndex);
+    public static ElasticSpacetime server(String index, boolean forceInit) throws Exception {
+        return server(index, "localhost", 9300, forceInit);
     }
     
-    public static ElasticSpacetime remote(String index, String host, int port, boolean initIndex) throws Exception {
+    public static ElasticSpacetime server(String index, String hostport, boolean forceInit) throws Exception {    
+        String[] hp = hostport.split(":");
+        String host = hp[0];
+        int port = Integer.parseInt(hp[1]);
+        return server(index, host, port, forceInit);
+    }
+    
+    public static ElasticSpacetime server(String index, String host, int port, boolean forceInit) throws Exception {
         Client c = new TransportClient()                
                 .addTransportAddress(new InetSocketTransportAddress(host, port));
-        return new ElasticSpacetime(index, c, initIndex);
+        return new ElasticSpacetime(index, c, forceInit);
     }
 
     protected ElasticSpacetime(String indexName, Client client, boolean initIndex) throws Exception {
@@ -109,6 +117,7 @@ public class ElasticSpacetime  implements Spacetime {
             }
     
         if (initIndex) {
+            logger.info("Initializing index '" + indexName + "' (exists=" + existsIndex +")");
 
             if (existsIndex) {
                 //delete existing
@@ -259,7 +268,7 @@ public class ElasticSpacetime  implements Spacetime {
             try {
                 System.out.println(index + " " + type + " " + n.string());
             } catch (IOException ex) {
-                Logger.getLogger(ElasticSpacetime.class.getName()).log(Level.SEVERE, null, ex);
+                logger.warn(ex.toString());
             }
         }
 

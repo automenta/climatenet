@@ -8,8 +8,8 @@ package automenta.climatenet;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.p2p.TomPeer.Answering;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.tomp2p.dht.PeerBuilderDHT;
@@ -27,13 +27,21 @@ public class SpacetimePeer {
     //public final Spacetime index;
     public final TomPeer peer;
     
-    public SpacetimePeer(String peerID, int port) throws IOException {
-        
+    public SpacetimePeer(Number160 peerID, int port) throws IOException {
+
         peer = new TomPeer(
-                new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(port).start()).start());
+                new PeerBuilderDHT(new PeerBuilder(peerID).ports(port).start()).start());
         
         //peer.add(index);        
         
+    }
+    
+    public SpacetimePeer(int port) throws IOException {
+        this((String)null, port);        
+    }
+    
+    public SpacetimePeer(String peerID, int port) throws IOException {
+        this(peerID != null ? Number160.createHash(peerID) : new Number160(new Random()), port);        
     }
 
     public void addPeer(String hostPort) {

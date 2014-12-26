@@ -30,6 +30,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import static org.elasticsearch.river.RiverIndexName.Conf.indexName;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 
@@ -42,12 +43,12 @@ public class SpacetimeWebServer extends PathHandler {
     final ElasticSpacetime db;
     final String clientPath = "./src/web";
 
-    public SpacetimeWebServer(int port, String indexName) throws Exception {
-        this("localhost", port, indexName);
+    public SpacetimeWebServer(ElasticSpacetime db, int port) throws Exception {
+        this(db, "localhost", port);
     }
 
-    public SpacetimeWebServer(String host, int port, String indexName) throws Exception {
-        db = ElasticSpacetime.server(indexName, false);
+    public SpacetimeWebServer(final ElasticSpacetime db, String host, int port) throws Exception {
+        this.db = db;
 
         Undertow server = Undertow.builder()
                 .addHttpListener(port, host)
@@ -151,7 +152,10 @@ public class SpacetimeWebServer extends PathHandler {
         int webPort = 9090;
         int p2pPort = 9091;
         String peerID = UUID.randomUUID().toString();
-        SpacetimeWebServer s = new SpacetimeWebServer(webPort, "cv");
+        
+        SpacetimeWebServer s = new SpacetimeWebServer(
+                ElasticSpacetime.server("cv", false),
+                webPort);
 
         TomPeer peer = new TomPeer(
                 new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());

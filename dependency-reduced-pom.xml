@@ -18,7 +18,33 @@
           </execution>
         </executions>
         <configuration>
+          <transformers>
+            <transformer>
+              <mainClass>automenta.climatenet.Main</mainClass>
+            </transformer>
+            <transformer />
+          </transformers>
           <minimizeJar>true</minimizeJar>
+          <filters>
+            <filter>
+              <artifact>org.jboss.xnio:*</artifact>
+              <includes>
+                <include>**</include>
+              </includes>
+            </filter>
+            <filter>
+              <artifact>org.jboss.logging:*</artifact>
+              <includes>
+                <include>**</include>
+              </includes>
+            </filter>
+            <filter>
+              <artifact>io.undertow:*</artifact>
+              <includes>
+                <include>**</include>
+              </includes>
+            </filter>
+          </filters>
         </configuration>
       </plugin>
     </plugins>
