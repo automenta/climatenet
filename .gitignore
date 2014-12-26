@@ -2,3 +2,4 @@ target/
 data/
 cache/
 
+dependency-reduced-pom.xml

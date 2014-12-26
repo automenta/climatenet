@@ -137,6 +137,15 @@
             <version>${geotk.version}</version>    
         </dependency>
         -->
+        <!--
+        <dependency>
+          <groupId>fr.pilato.elasticsearch.river</groupId>
+	<artifactId>rssriver</artifactId>
+	
+	<version>1.4.0-SNAPSHOT</version>
+        </dependency>
+        -->
+        
         <dependency>
             <groupId>org.jvnet.ogc</groupId>
             <artifactId>sensorml-common</artifactId>
