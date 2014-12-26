@@ -19,7 +19,9 @@ import io.undertow.server.handlers.resource.FileResourceManager;
 import io.undertow.util.Headers;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.tomp2p.dht.PeerBuilderDHT;
@@ -30,18 +32,21 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import static org.elasticsearch.river.RiverIndexName.Conf.indexName;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author me
  */
 public class SpacetimeWebServer extends PathHandler {
-
+    public static final Logger logger = LoggerFactory.getLogger(SpacetimeWebServer.class);
+    
     final ElasticSpacetime db;
     final String clientPath = "./src/web";
+    private List<String> paths = new ArrayList();
 
     public SpacetimeWebServer(ElasticSpacetime db, int port) throws Exception {
         this(db, "localhost", port);
@@ -144,9 +149,18 @@ public class SpacetimeWebServer extends PathHandler {
 
         });
         
+        
         server.start();
-
+        logger.info("Started web server @ " + host + ":" + port + "\n  " + paths);
+        
     }
+
+    @Override
+    public synchronized PathHandler addPrefixPath(String path, HttpHandler handler) {
+        paths.add(path);
+        return super.addPrefixPath(path, handler);
+    }
+    
 
     public static void main(String[] args) throws Exception {
         int webPort = 9090;

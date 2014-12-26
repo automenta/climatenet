@@ -48,16 +48,16 @@ public class Main {
 
         try {
             Namespace res = parser.parseArgs(args);
-            System.out.println(res);            
+            //System.out.println(res);            
             
-            //1. configure DB
+            
             String esPath = res.getString("espath");
             String esServer = res.getString("esserver");
             String esIndex = res.getString("esindex");
             Integer webPort = res.getInt("webport");
             Integer p2pPort = res.getInt("p2pport");
             
-            System.out.println(esPath + " " + esServer + " " + esIndex);
+            //System.out.println(esPath + " " + esServer + " " + esIndex);
             
             ElasticSpacetime e = null;            
             SpacetimeWebServer w = null;
