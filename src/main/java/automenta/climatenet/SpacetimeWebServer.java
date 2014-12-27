@@ -28,6 +28,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.tomp2p.connection.PeerBean;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
@@ -51,25 +52,34 @@ public class SpacetimeWebServer extends PathHandler {
     final ElasticSpacetime db;
     final String clientPath = "./src/web";
     private List<String> paths = new ArrayList();
+    private final Undertow server;
+    private final String host;
+    private final int port;
 
-    public class SourceIndex extends Channel {
+    abstract public static class ReadOnlyChannel<O> extends Channel {
 
-        public SourceIndex() {
-            super("source/index");
+        public ReadOnlyChannel(String id) {
+            super(id);
         }
+        
+        abstract public O nextValue();
 
         @Override
-        public synchronized ObjectNode commit() {
-            
-            return super.commit( json(db.rootLayers()) );
+        public ObjectNode commit() {
+            O o = nextValue();
+            if (o instanceof ObjectNode)
+                return super.commit((ObjectNode)o);
+            else
+                return super.commit(json(o));
         }
-
+        
         
     }
+
     
     /** wraps a channel as an HTTP handler which returns a snapshot (text) JSON representation */
     public static class ChannelSnapshot implements HttpHandler {
-        private final Channel channel;
+        public final Channel channel;
     
         public ChannelSnapshot(Channel c) {
             super();
@@ -90,8 +100,10 @@ public class SpacetimeWebServer extends PathHandler {
 
     public SpacetimeWebServer(final ElasticSpacetime db, String host, int port) throws Exception {
         this.db = db;
-
-        Undertow server = Undertow.builder()                
+        this.host = host;
+        this.port = port;
+        
+        server = Undertow.builder()                
                 .addHttpListener(port, host)
                 .setIoThreads(8)
                 .setHandler(this)
@@ -104,10 +116,15 @@ public class SpacetimeWebServer extends PathHandler {
                 new FileResourceManager(new File(clientPath), 100)).
                 setDirectoryListingEnabled(false));
 
-        SourceIndex sourceIndex = new SourceIndex();
+        Channel sourceIndex = new ReadOnlyChannel<SearchResponse>("/source/index") {
+            @Override public SearchResponse nextValue() {
+                return db.rootLayers();
+            }          
+        };
+
         
         addPrefixPath("/socket", new WebSocketCore(
-                new SourceIndex()
+                sourceIndex
         ).handler());
         
         addPrefixPath("/layer/index", new ChannelSnapshot(sourceIndex));
@@ -186,8 +203,13 @@ public class SpacetimeWebServer extends PathHandler {
         });
         
         
+
+        
+    }
+    
+    public void start() {
         server.start();
-        logger.info("Started web server @ " + host + ":" + port + "\n  " + paths);
+        logger.info("Started web server @ " + host + ":" + port + "\n  " +    paths);
         
     }
 
@@ -207,10 +229,31 @@ public class SpacetimeWebServer extends PathHandler {
                 ElasticSpacetime.server("cv", false),
                 webPort);
 
-        TomPeer peer = new TomPeer(
+        final TomPeer peer = new TomPeer(
                 new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
         peer.add(s.db);
 
+        
+                
+        
+        
+        s.addPrefixPath("/peer/index", new ChannelSnapshot( new ReadOnlyChannel<PeerBean>("/peer/index") {
+            @Override public PeerBean nextValue() {
+                return peer.peer.peerBean();
+            }          
+        }));
+        s.addPrefixPath("/peer/connection", new ChannelSnapshot( new ReadOnlyChannel("/peer/connection") {
+            @Override public Object nextValue() {
+                return peer.peer.peer().connectionBean();
+            }          
+        }));
+        s.addPrefixPath("/peer/route", new ChannelSnapshot( new ReadOnlyChannel("/peer/route") {
+            @Override public Object nextValue() {
+                return peer.peer.peer().distributedRouting().peerMap();
+            }          
+        }));
+
+        s.start();
     }
 
     
@@ -260,6 +303,10 @@ public class SpacetimeWebServer extends PathHandler {
         d.endObject();
         send(ex, d);
         return false;
+    }
+    
+    public static ObjectNode json(Object o) {
+        return json.convertValue(o, ObjectNode.class);
     }
 
     public static ObjectNode json(SearchResponse response) {

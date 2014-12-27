@@ -5,12 +5,12 @@ var Websocket = Connection.extend({
 */
 
 /** creates a websocket connection object */
-function Websocket(conn) {
+function Websocket(path, conn) {
 
     if (!conn) conn = { };
     
     if (!conn.url)
-        conn.url = 'ws://' + window.location.hostname + ':' + window.location.port + '/ws';    
+        conn.url = 'ws://' + window.location.hostname + ':' + window.location.port + '/' + path;    
     
     //subscriptions: channel id -> channel
     conn.subs = { };

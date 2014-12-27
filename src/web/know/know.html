@@ -99,7 +99,7 @@
 
             var ui = UI($('body'));
         
-            var server = Websocket({
+            var server = Websocket('socket', {
                 onOpen: function() {
                     
                     var s = window.s = spacegraph(ui, $('#graph'), {
@@ -107,6 +107,7 @@
 
                             server.on('index', this.addChannel);
                             server.on('chat', this.addChannel);
+                            server.on('source/index', this.addChannel);
 
                             newPopupMenu(this);
                         }            

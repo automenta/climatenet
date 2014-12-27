@@ -87,6 +87,9 @@ public class Main {
                 //TODO add seeds
             }
             
+            if (w!=null)
+                w.start();
+            
             /*System.out.println(((Accumulate) res.get("accumulate"))
                     .accumulate((List<Integer>) res.get("integers")));*/
         } catch (ArgumentParserException e) {
