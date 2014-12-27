@@ -164,7 +164,8 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
         if (inTransaction)
             return prev;
 
-        root = next;
+        if (next!=null)
+            root = next;
         
         JsonNode patch = null;
                 

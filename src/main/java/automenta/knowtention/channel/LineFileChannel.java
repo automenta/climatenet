@@ -6,6 +6,7 @@
 package automenta.knowtention.channel;
 
 import automenta.knowtention.Channel;
+import automenta.knowtention.Channel.JTransaction;
 import automenta.knowtention.Core;
 import automenta.knowtention.Runner;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -170,8 +171,8 @@ public class LineFileChannel extends Runner {
     private synchronized void update(final List<String> lines) {
         
         
-        channel.tx(new Runnable() {
-            @Override public void run() {                
+        channel.tx(new JTransaction() {
+            @Override public ObjectNode run() {                
                 
                 ArrayNode l = Core.newJson.arrayNode();
                 
@@ -182,7 +183,9 @@ public class LineFileChannel extends Runner {
                 o.put("id", id );
                 //o.put("content", (file.getAbsolutePath() + ":" + getClass().getSimpleName()) );
                 o.put("list", l);        
-                channel.addVertex(o);        
+                channel.addVertex(o);       
+                
+                return null;
 
             }            
         });

@@ -8,7 +8,6 @@ package automenta.knowtention.example;
 import automenta.knowtention.Channel;
 import automenta.knowtention.Channel.ChannelChange;
 import automenta.knowtention.Core;
-import automenta.knowtention.WebServer;
 import automenta.knowtention.WebSocketCore;
 import automenta.knowtention.model.JSONObjectMetrics;
 import com.github.fge.jsonpatch.JsonPatch;
@@ -29,7 +28,7 @@ public class ReportJSONComplexity {
                 
             }
         });
-        new WebServer(c, 8080);
+       // new WebServer(c, 8080);
     }
     
 }
