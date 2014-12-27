@@ -8,8 +8,12 @@ package automenta.climatenet;
 import automenta.climatenet.elastic.ElasticSpacetime;
 import static automenta.climatenet.ImportKML.json;
 import automenta.climatenet.p2p.TomPeer;
+import automenta.knowtention.Channel;
+import static automenta.knowtention.Core.newJson;
+import automenta.knowtention.WebSocketCore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import static io.undertow.Handlers.resource;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
@@ -48,6 +52,38 @@ public class SpacetimeWebServer extends PathHandler {
     final String clientPath = "./src/web";
     private List<String> paths = new ArrayList();
 
+    public class SourceIndex extends Channel {
+
+        public SourceIndex() {
+            super("source/index");
+        }
+
+        @Override
+        public synchronized ObjectNode commit() {
+            
+            return super.commit( json(db.rootLayers()) );
+        }
+
+        
+    }
+    
+    /** wraps a channel as an HTTP handler which returns a snapshot (text) JSON representation */
+    public static class ChannelSnapshot implements HttpHandler {
+        private final Channel channel;
+    
+        public ChannelSnapshot(Channel c) {
+            super();
+            this.channel = c;
+        }
+
+        @Override
+        public void handleRequest(HttpServerExchange hse) throws Exception { 
+            send(hse, channel.commit());                
+        }
+                
+    }
+    
+    
     public SpacetimeWebServer(ElasticSpacetime db, int port) throws Exception {
         this(db, "localhost", port);
     }
@@ -55,7 +91,7 @@ public class SpacetimeWebServer extends PathHandler {
     public SpacetimeWebServer(final ElasticSpacetime db, String host, int port) throws Exception {
         this.db = db;
 
-        Undertow server = Undertow.builder()
+        Undertow server = Undertow.builder()                
                 .addHttpListener(port, host)
                 .setIoThreads(8)
                 .setHandler(this)
@@ -68,14 +104,14 @@ public class SpacetimeWebServer extends PathHandler {
                 new FileResourceManager(new File(clientPath), 100)).
                 setDirectoryListingEnabled(false));
 
-        addPrefixPath("/layer/index", new HttpHandler() {
-
-            @Override
-            public void handleRequest(HttpServerExchange hse) throws Exception {
-                sendLayers(db.rootLayers(), hse);
-            }
-            
-        });
+        SourceIndex sourceIndex = new SourceIndex();
+        
+        addPrefixPath("/socket", new WebSocketCore(
+                new SourceIndex()
+        ).handler());
+        
+        addPrefixPath("/layer/index", new ChannelSnapshot(sourceIndex));
+        
         addPrefixPath("/layer/meta", new HttpHandler() {
 
             @Override
@@ -177,6 +213,21 @@ public class SpacetimeWebServer extends PathHandler {
 
     }
 
+    
+    public static void send(HttpServerExchange ex, JsonNode d) {
+        ex.startBlocking();
+
+        ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+
+        try {
+            json.writeValue(ex.getOutputStream(), d);
+        } catch (IOException ex1) {
+            logger.warn(ex1.toString());
+        }
+        
+        ex.getResponseSender().close();
+    }
+    
     public static void send(HttpServerExchange ex, XContentBuilder d) {
         ex.startBlocking();
 
@@ -211,4 +262,29 @@ public class SpacetimeWebServer extends PathHandler {
         return false;
     }
 
+    public static ObjectNode json(SearchResponse response) {
+        SearchHits result = response.getHits();
+        ObjectNode o = newJson.objectNode();
+        if (result.totalHits() == 0) {            
+            return o;
+        }        
+        for (SearchHit h : result) {
+
+            Map<String, Object> s = h.getSource();
+
+            ObjectNode p = newJson.objectNode();
+            o.put(h.getId(), p);
+            
+            p.put("name", s.get("name").toString());
+            
+            Object desc = s.get("description");
+            if (desc != null)
+                p.put("description", s.get("description").toString());
+            
+        }        
+        
+        return o;
+        
+    }
+    
 }

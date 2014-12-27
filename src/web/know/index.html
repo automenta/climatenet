@@ -1,0 +1,128 @@
+<html>
+    <head>
+        <title>?</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <script src="lib/jquery-2.1.1.min.js"></script>
+        <script src="lib/jquery-ui.min.js"></script>
+        
+        <script src="lib/lodash.min.js"></script>
+        <script src="lib/cytoscape.js"></script>
+        <script src="lib/cytoscape-edgehandles.js"></script>
+        
+        
+        <script src="lib/json-patch-duplex.min.js"></script>
+        <!--<script src="lib/jiff.js"></script>
+        <script src="lib/jsonsynch.min.js"></script>-->
+        
+        <script src="lib/web_socket.js"></script>
+
+        <script src="lib/html2json/html2json.js"></script>
+        <script src="lib/html2json/htmlparser.js"></script>
+        <!--<script src="lib/jquery.pep.js"></script>-->
+
+        <link type="text/css" rel="stylesheet" href="lib/foundation/foundation.min.css"  media="screen,projection"/>
+        <script type="text/javascript" src="lib/foundation/foundation.min.js"></script>
+
+
+        <script src="lib/pnotify/pnotify.custom.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="lib/pnotify/pnotify.custom.min.css"/>
+
+        <script src="lib/metawidgets/metawidget-core.min.js"></script>
+        
+        <script src="lib/modernizr.js"></script>
+        <!-- <script src="lib/fastclick.js"></script> -->
+
+        <script src="core.js"></script>
+        <script src="channel.js"></script>
+        <script src="ui.js"></script>
+        <script src="spacegraph.js"></script>
+        <script src="frame.js"></script>
+        <script src="node.js"></script>
+        
+        <script src="example_channels.js"></script>
+
+        <link type="text/css" rel="stylesheet" href="spacegraph.css"/>
+        <link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
+
+    </head>
+    <body>
+        <nav class="top-bar" data-topbar role="navigation">
+
+
+            <section class="top-bar-section">
+            
+                <ul id="ChannelMenu" class="left">
+                    
+                </ul>
+                
+                <ul class="right">
+                    <li><a href="#what">What</a></li>
+                    <li><a href="#who">Who</a></li>
+                    <li><a href="#where">Where</a></li>
+                    <li><a href="#when">When</a></li>
+                    <li><a href="#why">Why</a></li>
+
+                    <li class="has-dropdown">
+                        <a href="#">Now</a>        
+                        <ul class="dropdown">
+                            <li><a href="#">Be</a></li>
+                            <li><a href="#">Do</a></li>                            
+                            <li><a href="#">Know</a></li>
+                            <!--<li class="active"><a href="#">Active link in dropdown</a></li>-->
+                        </ul>
+                    </li>
+                </ul>
+
+
+            </section>
+        </nav>
+
+        <div id="overlay"></div>
+
+        <div id="graph">
+            <!-- cytoscape render here -->
+        </div>
+        
+        <div id="widgets"></div>
+
+
+        
+        
+        <script>$(document).foundation();</script>
+    </body>
+
+    <script>
+
+        $(document).ready(function() {
+
+            var ui = UI($('body'));
+        
+            var server = Websocket({
+                onOpen: function() {
+                    
+                    var s = window.s = spacegraph(ui, $('#graph'), {
+                        start: function() { 
+
+                            server.on('index', this.addChannel);
+                            server.on('chat', this.addChannel);
+
+                            newPopupMenu(this);
+                        }            
+                    });
+                    
+                    s.nodeProcessor.push(new ListToText());
+                    s.nodeProcessor.push(new UrlToIFrame());
+
+                    s.addChannel(new Channel( newExampleChannel1(), server));
+
+                }
+            });
+        
+        });
+
+        
+        
+    </script>
+</html>
