@@ -152,7 +152,7 @@ public class SpacetimeWebServer extends PathHandler {
 
                 SearchResponse response = db.search(qb, 0, 60);
 
-                sendLayers(response, ex);
+                sendTags(response, ex);
 
             }
 
@@ -283,7 +283,7 @@ public class SpacetimeWebServer extends PathHandler {
         ex.getResponseSender().close();
     }
 
-    public static boolean sendLayers(SearchResponse response, HttpServerExchange ex) throws IOException {
+    public static boolean sendTags(SearchResponse response, HttpServerExchange ex) throws IOException {
         SearchHits result = response.getHits();
         if (result.totalHits() == 0) {
             ex.getResponseSender().send("");
@@ -299,6 +299,10 @@ public class SpacetimeWebServer extends PathHandler {
             Object desc = s.get("description");
             if (desc != null) {
                 d.field("description", s.get("description"));
+            }
+            Object inh = s.get("inh");
+            if (inh!=null) {
+                d.field("inh", inh);
             }
             d.endObject();
 
@@ -331,7 +335,12 @@ public class SpacetimeWebServer extends PathHandler {
             
             Object desc = s.get("description");
             if (desc != null)
-                p.put("description", s.get("description").toString());
+                p.put("description", desc.toString());
+            
+            Object inh = s.get("inh");
+            if (inh!=null) {
+               p.put("inh", json.convertValue(inh, ObjectNode.class));
+            }
             
         }        
         

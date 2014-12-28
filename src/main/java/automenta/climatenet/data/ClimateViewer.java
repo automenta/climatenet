@@ -83,10 +83,11 @@ public class ClimateViewer {
                         Tag t = new Tag(id, name);
                         t.url(url);
 
-                        st.addTag(t);
                         if (currentSection != null) {
                             t.inh.put(currentSection, 1.0);
                         }
+
+                        st.addTag(t);
 
                         //System.out.println(currentSection + " " + name + " " + x);
                         //executor.submit(new ImportKML(st, proxy, id, name, url));

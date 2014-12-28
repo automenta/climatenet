@@ -71,14 +71,17 @@ and open the template in the editor.
 
 #sidebar-wrapper {
     margin-left: -180px;
-    left: 70px;
-    width: 180px;
+    left: 50px; /* how much to leave unfolded */
+    width: 180px;    
     background: #222;
     position: fixed;
     height: 100%;
+    max-height: 100%;
     z-index: 10000;
     transition: all .4s ease 0s;
     opacity: 0.9;
+    overflow-y: scroll;  
+    overflow-x: hidden;
 }
 
 .sidebar-nav {
@@ -165,9 +168,9 @@ and open the template in the editor.
 }
 
 .main_icon, .sub_icon {
-    float:right;
-    padding-right: 5px;
-    padding-top: 5px;
+    float:left;
+    /*padding-right: 5px;
+    padding-top: 5px;*/
 }
 
 .content-header {
@@ -488,6 +491,11 @@ and open the template in the editor.
                 
                 _.each(s, function (n) {
                     v = tag.node(n);
+                    if (!v) {
+                        console.error('missing tag: ' + n);
+                        return;
+                    }
+                    
                     var name = v.name || v.id;
                     var count = v.featuresVisible;
                     //nu.append('<li>' + name + ' ' + count + '</li>');
@@ -521,8 +529,16 @@ and open the template in the editor.
                         tag.setNode(i, n);
                     }
                     
+                    
                     //TODO copy other metadata, use _.extend
-                    n.name = l.name;                    
+                    n.name = l.name || i;                    
+                    if (l.inh) {
+                        n.inh = l.inh;
+                        _.each(n.inh, function(strength, superTag) {
+                            tag.setEdge(superTag, i);
+                        });
+                    }
+                    
                 }
             }
 

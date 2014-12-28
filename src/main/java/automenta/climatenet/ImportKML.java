@@ -208,6 +208,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                         DocumentStart ds = (DocumentStart)go;
                         XContentBuilder d;
 
+                        /*
                         //System.out.println("Document " + ds.getType().name());
                         d = jsonBuilder().startObject()
                                 .field("url", urlString)
@@ -215,6 +216,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                         d.endObject();
 
                         st.add("tag", layer, d);
+                        */
                         
                         path.add(layer);
 
@@ -244,7 +246,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
 
                         path.add(i);
 
-
+                        
                         st.add("tag", i, d);
 
                     }
