@@ -6,6 +6,7 @@
 package automenta.climatenet.elastic;
 
 import automenta.climatenet.Spacetime;
+import automenta.climatenet.Tag;
 import com.google.common.io.Files;
 import java.io.IOException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
@@ -148,7 +149,16 @@ public class ElasticSpacetime implements Spacetime {
 
                 // MAPPING GOES HERE
                 String featureType = "feature";
-                final XContentBuilder mappingBuilder = jsonBuilder().startObject().startObject(featureType)
+                String tagType = "tag";
+                
+                final XContentBuilder mappingBuilder = jsonBuilder().startObject()
+                    //TODO mappings for 'tag'
+                        /*
+                    .startObject(tagType)
+                    .endObject()
+                        */
+                        
+                    .startObject(featureType)
                         //.startObject("_ttl").field("enabled", "true").field("default", "1s").endObject().
 
                         //TODO no analyzer for path and other meta fields
@@ -194,13 +204,13 @@ public class ElasticSpacetime implements Spacetime {
     }
 
     /**
-     * returns a list of the root layers (having no parents) in the index
+     * returns a list of the root tags (having no parents) in the index
      */
-    public SearchResponse rootLayers() {
+    public SearchResponse tagRoots() {
 
-        QueryStringQueryBuilder q = QueryBuilders.queryString("+_type:layer -path:*");
+        QueryStringQueryBuilder q = QueryBuilders.queryString("+_type:tag -path:*");
 
-        int max = 100;
+        int max = 2048;
 
         SearchResponse response = client.prepareSearch(index)
                 .setSearchType(SearchType.DEFAULT)
@@ -290,5 +300,15 @@ public class ElasticSpacetime implements Spacetime {
     @Override
     public void close() {
         client.close();
+    }
+
+    public synchronized void bulk(Runnable transaction) {
+        bulkStart();
+        transaction.run();
+        bulkEnd();
+    }
+
+    public void addTag(Tag t) {
+        add("tag", t.id, t.toJSON(false));
     }
 }

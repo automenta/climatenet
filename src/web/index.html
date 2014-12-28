@@ -296,7 +296,7 @@ and open the template in the editor.
 
             var updatePeriodMS = 500;
             var features = {};
-            var layer = new graphlib.Graph({multigraph: true}); //https://github.com/cpettitt/graphlib/wiki
+            var tag = new graphlib.Graph({multigraph: true}); //https://github.com/cpettitt/graphlib/wiki
             
 
             var geojsonMarkerOptions = {
@@ -401,7 +401,7 @@ and open the template in the editor.
                 delete features[i];
             }
             
-            function newLayerEntry(layerID) {
+            function newTagEntry(layerID) {
                 return {
                     id: layerID, 
                     name: undefined, featuresVisible: 1,
@@ -411,8 +411,8 @@ and open the template in the editor.
 
             function updateGeoJSONFeatures(r) {
 
-                _.each(layer.nodes(), function(l) {
-                    layer.node(l).featuresVisible = 0;
+                _.each(tag.nodes(), function(l) {
+                    tag.node(l).featuresVisible = 0;
                 });                
                 for (var i in features) {
                     if (!r[i]) {
@@ -441,20 +441,20 @@ and open the template in the editor.
                     
                     for (var i = 0; i < p.length; i++) {
                         var layerID = p[i];
-                        layerNode = layer.node(layerID);
+                        layerNode = tag.node(layerID);
                         
                         if (layerNode) {
                             layerNode.featuresVisible = layerNode.featuresVisible + 1;
                         }
                         else {
-                            var layerNode = newLayerEntry(layerID);
-                            layer.setNode(layerID, layerNode);
+                            var layerNode = newTagEntry(layerID);
+                            tag.setNode(layerID, layerNode);
                             
                             if (parent) {
-                                layer.setEdge(parent, layerID, 'parent');
+                                tag.setEdge(parent, layerID, 'parent');
                             }
                         
-                            layerNode = layer.node(layerID);
+                            layerNode = tag.node(layerID);
                             unknownLayers[layerID] = true;
                         }
                                                                         
@@ -484,10 +484,10 @@ and open the template in the editor.
                 var vl = $('#visibleLayers');
                 vl.html('');
                 
-                var s = layer.sources();
+                var s = tag.sources();
                 
                 _.each(s, function (n) {
-                    v = layer.node(n);
+                    v = tag.node(n);
                     var name = v.name || v.id;
                     var count = v.featuresVisible;
                     //nu.append('<li>' + name + ' ' + count + '</li>');
@@ -515,10 +515,10 @@ and open the template in the editor.
                 for (var i in r) {
                     var l = r[i];
                     
-                    var n = layer.node(i);
+                    var n = tag.node(i);
                     if (!n) {
-                        n = newLayerEntry(i);
-                        layer.setNode(i, n);
+                        n = newTagEntry(i);
+                        tag.setNode(i, n);
                     }
                     
                     //TODO copy other metadata, use _.extend
@@ -527,7 +527,7 @@ and open the template in the editor.
             }
 
             function updateRootLayers(callback) {
-                $.getJSON('/layer/index')
+                $.getJSON('/tag/index')
                     .done(function (r) {
                         updateLayerMetadata(r);
                         if (callback)  callback();
@@ -536,7 +536,7 @@ and open the template in the editor.
             }
 
             function updateLayers(layerIDs, callback) {
-                $.getJSON('/layer/meta', {id: JSON.stringify(layerIDs)})
+                $.getJSON('/tag/meta', {id: JSON.stringify(layerIDs)})
                     .done(function (r) {
                         updateLayerMetadata(r);
                         if (callback)  callback();

@@ -214,7 +214,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                                 .field("name", name);
                         d.endObject();
 
-                        st.add("layer", layer, d);
+                        st.add("tag", layer, d);
                         
                         path.add(layer);
 
@@ -245,7 +245,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                         path.add(i);
 
 
-                        st.add("layer", i, d);
+                        st.add("tag", i, d);
 
                     }
                     else if (go instanceof Feature) {

@@ -7,6 +7,8 @@ package automenta.climatenet;
 
 import automenta.climatenet.elastic.ElasticSpacetime;
 import static automenta.climatenet.ImportKML.json;
+import automenta.climatenet.data.ClimateViewer;
+import automenta.climatenet.data.SchemaOrg;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.knowtention.Channel;
 import static automenta.knowtention.Core.newJson;
@@ -118,7 +120,7 @@ public class SpacetimeWebServer extends PathHandler {
 
         Channel sourceIndex = new ReadOnlyChannel<SearchResponse>("/source/index") {
             @Override public SearchResponse nextValue() {
-                return db.rootLayers();
+                return db.tagRoots();
             }          
         };
 
@@ -127,9 +129,9 @@ public class SpacetimeWebServer extends PathHandler {
                 sourceIndex
         ).handler());
         
-        addPrefixPath("/layer/index", new ChannelSnapshot(sourceIndex));
+        addPrefixPath("/tag/index", new ChannelSnapshot(sourceIndex));
         
-        addPrefixPath("/layer/meta", new HttpHandler() {
+        addPrefixPath("/tag/meta", new HttpHandler() {
 
             @Override
             public void handleRequest(HttpServerExchange ex) throws Exception {
@@ -233,7 +235,8 @@ public class SpacetimeWebServer extends PathHandler {
                 new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
         peer.add(s.db);
 
-        
+        SchemaOrg.load(s.db);
+        new ClimateViewer(s.db);
                 
         
         
@@ -306,6 +309,8 @@ public class SpacetimeWebServer extends PathHandler {
     }
     
     public static ObjectNode json(Object o) {
+        if (o instanceof SearchResponse)
+            return json((SearchResponse)o);
         return json.convertValue(o, ObjectNode.class);
     }
 
