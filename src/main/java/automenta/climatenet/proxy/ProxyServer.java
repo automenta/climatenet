@@ -43,10 +43,11 @@ public class ProxyServer implements HttpHandler {
 
     private AsyncHttpClient client = new AsyncHttpClient();
     public final Proxy proxy;
-    final String cachePath = "cache/";
+    final String cachePath;
 
-    public ProxyServer(int port) {
+    public ProxyServer(int port, String cachePath) {
 
+        this.cachePath = cachePath + "/";
         Undertow server = Undertow.builder()
                 .addHttpListener(port, "localhost")
                 .setIoThreads(4)

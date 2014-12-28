@@ -11,12 +11,9 @@ import automenta.climatenet.kml.giscore.UrlRef;
 import automenta.climatenet.proxy.ProxyServer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Lists;
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,21 +25,17 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.index.mapper.MapperBuilders.id;
 import org.opensextant.geodesy.Geodetic2DPoint;
 import org.opensextant.giscore.DocumentType;
 import org.opensextant.giscore.data.DocumentTypeRegistration;
@@ -74,28 +67,22 @@ import org.opensextant.giscore.output.shapefile.ShapefileOutputStream;
  * @see https://github.com/OpenSextant/giscore/wiki
  * @author me
  */
-public class ImportKML {
+public class ImportKML implements Runnable {
 
-    String basePath = "data";
-    String layersFile = "src/main/java/automenta/climatenet/cvlayers.json";
-    
+        
     static final HtmlCompressor compressor = new HtmlCompressor();
     
     private final Proxy proxy;
     
-    public static void main(String[] args) throws Exception {
-        
-        ProxyServer cache = new ProxyServer(16000);
-        
-        
-        ElasticSpacetime es = ElasticSpacetime.server("cv", false);
-        new ImportKML(cache.proxy).loadLayers(es, true, 1, 3);
-    }
-        
-    
+
     public static String getSerial(String layer, int serial ) {
         return (Base64.getEncoder().encodeToString(BigInteger.valueOf( serial ).add( BigInteger.valueOf(layer.hashCode()).shiftRight(32) ).toByteArray()));        
     }
+    private final ElasticSpacetime st;
+    private final String id;
+    private final String name;
+    private final String url;
+
     
     public String[] getPath(Deque<String> p) {
         return p.toArray(new String[p.size()]);
@@ -117,11 +104,12 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         
         File temp = Files.createTempDirectory("kml" + layer).toFile();
         
-        String p = basePath + "/" + layer;
+        String p = null;
+        //String p = basePath + "/" + layer;
         
         //Files.deleteIfExists(Paths.get(p));
-        if (!Files.exists(Paths.get(p)))
-            Files.createDirectory(Paths.get(p));
+        //if (!Files.exists(Paths.get(p)))
+          //  Files.createDirectory(Paths.get(p));
         
         
         IGISOutputStream shpos = null;
@@ -458,11 +446,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
     }
 
-    public ImportKML(Proxy p) throws Exception {
-        this.proxy = p;
-        
-        
-    }
+
     
      final public static ObjectMapper json = new ObjectMapper()
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
@@ -480,92 +464,31 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
             return null;
         }
     }
-    
-    
-    public void loadLayers(final ElasticSpacetime st, boolean shuffle, int threads, final long postDelay) throws Exception {
-        
-        ExecutorService executor = 
-                
-                threads == 1 ?
-                Executors.newSingleThreadExecutor() :
-                Executors.newFixedThreadPool(threads);
-        
-        
-        if (!Files.exists(Paths.get(basePath)))
-            Files.createDirectory(Paths.get(basePath));
-        
-        URI uri = new File(layersFile).toURI();
-
-        byte[] encoded = Files.readAllBytes(Paths.get(uri));
-
-        String layers = new String(encoded, "UTF8");
-
-        
-        ObjectNode j = fromJSON(layers);
-        ArrayNode n = (ArrayNode) j.get("cv");
-        String currentSection = "Unknown";
-        
-        
-        ArrayList<JsonNode> la = Lists.newArrayList(n);
-                
-        if (shuffle) {
-            Collections.shuffle(la, new Random());
-        }
-        
-        for (JsonNode x : la) {
-            if (x.isTextual()) {
-                currentSection = x.textValue();
-            } else if (x.isObject() && x.has("section")) {
-                currentSection = x.get("section").textValue();
-            } else if (!x.isObject() && !x.has("layer")) {
-                System.err.println("Unrecognized item: " + x);
-            } else {
-                final String layer = x.get("layer").textValue();
-                final String url = x.get("kml").textValue();
-                final String name = x.get("name").textValue();
-                
-                System.out.println(currentSection + " " + name + " " + x);
-                                      
-                executor.submit(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            System.out.println("START: " + layer);
-                            int features = transformKML(layer, name, url, st, false, false);                            
-                        
-                            if (postDelay > 0) {
-                                try {
-                                    Thread.sleep(postDelay * features);
-                                } catch (InterruptedException ex) {
-
-                                }                            
-                            }
-                        }
-                        catch (Throwable e) {
-                            //e.printStackTrace();;
-                            System.err.println(e);
-                        }
-
-                        
-                    }
-                    
-                });
-            
-            }
-        }
-        
-        
-        executor.shutdown();
-        while (!executor.isTerminated()) {
-        }        
-
-        
-        
-                
-        
+    public ImportKML(ElasticSpacetime st, Proxy proxy, String id, String name, String url) {
+        this.st = st;
+        this.proxy = proxy;
+        this.id = id;
+        this.name = name;
+        this.url = url;
     }
     
+    
+    
+    
+    @Override
+    public void run() {
+        try {
+            //logger.info(this + " run(): " + id);
+            int features = transformKML(id, name, url, st, false, false);
+
+        } catch (Throwable e) {
+            //e.printStackTrace();;
+            System.err.println(e);
+        }
+
+    }
+
+            
 
     
 
