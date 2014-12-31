@@ -37,8 +37,6 @@ import net.tomp2p.peers.Number160;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
@@ -129,6 +127,39 @@ public class SpacetimeWebServer extends PathHandler {
                 sourceIndex
         ).handler());
         
+        addPrefixPath("/tag", (new WebSocketCore() {
+
+            @Override
+            public synchronized Channel getChannel(WebSocketCore.WebSocketConnection socket, String id) {
+                Channel c = super.getChannel(socket, id);
+                
+                
+                if (c == null) {
+                    //Tag t = new Tag(id, id);
+                    c = new ReadOnlyChannel(id) {
+
+                        @Override
+                        public Object nextValue() {
+                            SearchResponse sr = db.searchID(new String[] { id }, 0, 60, "tag");
+                            SearchHits hits = sr.getHits();
+                            long num = hits.getTotalHits();
+                            if (num==0) return "Missing";
+                            else if (num > 1) return "Ambiguous";
+                                                        
+                            return hits.getAt(0).sourceAsMap();
+                        }
+                        
+                    };
+                    super.addChannel(c);
+                }
+                                                
+                return c;
+            }
+
+            
+            
+        }).handler());
+        
         addPrefixPath("/tag/index", new ChannelSnapshot(sourceIndex));
         
         addPrefixPath("/tag/meta", new HttpHandler() {
@@ -147,10 +178,9 @@ public class SpacetimeWebServer extends PathHandler {
                 int j = 0;
                 for (JsonNode x : a) {
                     ids[j++] = x.textValue();
-                }
-                QueryBuilder qb = QueryBuilders.termsQuery("_id", ids);
+                }                
 
-                SearchResponse response = db.search(qb, 0, 60);
+                SearchResponse response = db.searchID(ids, 0, 60, "tag");
 
                 sendTags(response, ex);
 

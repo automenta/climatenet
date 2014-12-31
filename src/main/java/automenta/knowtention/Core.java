@@ -63,11 +63,15 @@ public class Core extends EventEmitter {
     }
     
     public Channel getChannel(WebSocketCore.WebSocketConnection socket, String id) {
+        return getChannel(socket, id, false);
+    }
+    
+    public Channel getChannel(WebSocketCore.WebSocketConnection socket, String id, boolean createIfNotExists) {
         Channel c = channels.get(id);
         
         //TODO check security permission
         
-        if (c == null) {
+        if ((c == null) && (createIfNotExists)) {
             c = new Channel( id );
             channels.put(id, c);
         }

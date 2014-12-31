@@ -80,7 +80,9 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
                         switch (operation) {
                             case "p":  onPatch(j, socket); break;
                             case "on": onOn(j, socket); break;
+                            case "!": onReload(j, socket); break;                       
                             case "off": onOff(j, socket); break;
+                            default: onOperation(operation, j, socket); break;
                         }
                     }
 
@@ -112,6 +114,13 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
             
         };
 
+        public Channel channel(JsonNode j) {
+            String channel = j.get(1).textValue();
+            
+            Channel c = getChannel(this, channel);
+            return c;            
+        }
+
         protected Channel setChannelSubscription(JsonNode j, WebSocketChannel socket, boolean subscribed) {
             String channel = j.get(1).textValue();
             
@@ -140,10 +149,17 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
             send(socket, a);            
         }
         
+        protected void onReload(JsonNode j, WebSocketChannel socket) {
+            Channel c = channel(j);
+            c.commit();
+        }
+        
         /** 'on', subscribe */
         protected void onOn(JsonNode j, WebSocketChannel socket) {
             Channel c = setChannelSubscription(j, socket, true);
             if (c==null) return;
+            
+            c.commit();
             
             sendChannel(c);
         }
@@ -215,12 +231,18 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
             //System.out.println("Error: " + thrwbl);
         }
 
+ 
+
     }
 
     @Override
     public void onConnect(WebSocketHttpExchange exchange, WebSocketChannel socket) {
         socket.getReceiveSetter().set(new WebSocketConnection(socket));
         socket.resumeReceives();
+
+    }
+    
+    protected void onOperation(String operation, JsonNode param, WebSocketChannel socket) {
 
     }
 

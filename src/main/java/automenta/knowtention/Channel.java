@@ -128,7 +128,6 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
     
     /* patch may be null */
     protected void emitChange(JsonNode patch) {
-        root.put("id",id);
         
         //core.emit(ChannelChange.class, this, patch);
         emit(ChannelChange.class, this, patch);
@@ -164,8 +163,12 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
         if (inTransaction)
             return prev;
 
-        if (next!=null)
+        if (next!=null) {
+            prev = root;
             root = next;
+        }
+        
+        root.put("id",id);
         
         JsonNode patch = null;
                 

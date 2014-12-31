@@ -1,8 +1,97 @@
-/*
-var Websocket = Connection.extend({
+var Channel = function (initialData, connection) {
+
+    var synchPeriodMS = 1500;
+
+    //set channel name
+    if (typeof(initialData)==="string")
+        initialData = { id: initialData };
     
-});
-*/
+    var c = {
+        ui: null,
+        data: initialData,
+        socket: connection,
+        prev: {},
+        id: function () {
+            return this.data.id;
+        }
+    };
+
+    c.init = function (ui) {
+        this.ui = ui;
+
+        //this.commit();
+    };
+    
+    c.destroy = function() {
+        
+    };
+
+
+    c.removeNode = function(n) {
+        n.data().removed = true;
+
+        var removedAny = false;
+        var id = n.data().id;
+        this.data.nodes = _.filter(this.data.nodes, function(e) {
+            if (e.id === id) {
+                removedAny = true;
+                return false;
+            }
+        });
+                        
+        return removedAny;
+    };
+    
+    c.addNode = function(n) {
+        
+        if (!this.data)
+            this.data = { };
+        
+        if (!this.data.nodes)
+            this.data.nodes = [];
+        
+        c.data.nodes.push(n);
+    
+    };
+    
+    c.commit = _.throttle(function () {
+
+        if (!this.socket || !this.socket.opened) {
+            return;
+        }
+
+        /** include positions in update only if p is defined and is object */
+        if (this.data.p && typeof(this.data.p)==="object") {
+            //get positions
+            var eles = this.ui.elements();
+            var P = {};
+            for (var i = 0; i < eles.length; i++) {
+                var ele = eles[i];
+                //console.log( ele.id() + ' is ' + ( ele.selected() ? 'selected' : 'not selected' ) );
+                var p = ele.position();
+                var x = p.x;
+                if (!isFinite(x))
+                    continue;
+                var y = p.y;
+                P[ele.id()] = [parseInt(x), parseInt(y)];
+            }
+            this.data.p = P; //positions; using 1 character because this is updated frequently
+        }
+
+        //https://github.com/Starcounter-Jack/Fast-JSON-Patch
+        var diff = jsonpatch.compare(this.prev, this.data);
+
+        this.prev = _.clone(this.data, true);
+
+        if (diff.length > 0) {
+            this.socket.send(['p' /*patch*/, this.data.id, diff]);
+        }
+
+    }, synchPeriodMS);
+
+    return c;
+};
+
 
 /** creates a websocket connection object */
 function Websocket(path, conn) {
@@ -43,6 +132,8 @@ function Websocket(path, conn) {
     };
     ws.onerror = function (e) {
         console.log("Websocket error", e);
+        if (conn.onError)
+            conn.onError(e);
     };
 
     conn.send = function(data) {
@@ -63,11 +154,19 @@ function Websocket(path, conn) {
             var chan = conn.subs[chanID];
             if (!chan) {
                 chan = new Channel( channelData, conn );
-                s.addChannel(chan);
+                if (window.s)
+                    window.s.addChannel(chan);
+                                
+                if (conn.onChange)
+                    conn.onChange(chan);
             }
             else {
                 chan.data = channelData;
-                s.updateChannel(chan);
+                if (window.s)
+                    window.s.updateChannel(chan);
+                
+                if (conn.onChange)
+                    conn.onChange(chan);                
             }
         },
         'channel.patch': function(d) {
@@ -81,7 +180,12 @@ function Websocket(path, conn) {
                 console.log('patch', patch, c, c.data);
 
                 jsonpatch.apply(c.data, patch);
-                s.addChannel(c);                
+                
+                if (window.s)
+                    window.s.addChannel(c);                
+                
+                if (conn.onChange)
+                    conn.onChange(c);
             }
             else {
                 console.log('error patching', patch);
@@ -118,18 +222,26 @@ function Websocket(path, conn) {
     };
     
     conn.on = function(channelID, callback) {
-        if (conn.subs[channelID])
-            return; //already subbed
         
-        conn.subs[channelID] = new Channel(channelID);
+        if (conn.subs[channelID]) {
+            //already subbed            
+        }
+        else {
+            conn.subs[channelID] = new Channel(channelID);
+            if (callback)
+                callback.off = function() { conn.off(channelID); };            
+        }
         
         conn.send(['on', channelID]);
         
         //TODO save callback in map so when updates arrive it can be called
         
-        callback.off = function() { conn.off(channelID); };
-        
         return callback;
+    };
+    
+    //reload is just sending an 'on' event again
+    conn.reload = function(channelID) {
+        conn.send(['!', channelID]);
     };
     
     conn.off = function(channelID) {
@@ -183,4 +295,17 @@ function newEle(e, dom) {
     if (dom)
         return d;
     return $(d);
+}
+
+
+function urlQuery(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] === variable) {
+            return pair[1];
+        }
+    }
+    return(false);
 }

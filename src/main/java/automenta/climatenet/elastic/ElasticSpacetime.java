@@ -12,6 +12,7 @@ import java.io.IOException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -221,13 +222,21 @@ public class ElasticSpacetime implements Spacetime {
         return response;
     }
 
-    public SearchResponse search(QueryBuilder qb, int i, int i0) {
-        SearchResponse response = client.prepareSearch(index)
+    public SearchResponse searchID(String[] ids, int from, int size, String... types) {
+        return search(QueryBuilders.termsQuery("_id", ids), from, size, types);
+    }
+    
+    public SearchResponse search(QueryBuilder qb, int from, int size, String... types) {
+        SearchRequestBuilder q = client.prepareSearch(index)
                 //.setTypes("type1", "type2")
-                .setSearchType(SearchType.DEFAULT)
-                .setQuery(qb).setFrom(0).setSize(60).setExplain(false)
-                .execute()
-                .actionGet();
+                .setSearchType(SearchType.DEFAULT)                
+                .setQuery(qb).setFrom(from).setSize(size).setExplain(false);
+        
+        if (types.length > 0)
+            q.setTypes(types);
+        
+        SearchResponse response = q.execute().actionGet();
+        
         return response;
     }
 

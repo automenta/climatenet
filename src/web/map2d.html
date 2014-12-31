@@ -30,15 +30,20 @@ and open the template in the editor.
         <link rel="stylesheet" href="lib/leaflet/leaflet.osmgeocoder.css">
         <link rel="stylesheet" href="lib/leaflet/MarkerCluster.css">
         
+        <script src="lib/pnotify/pnotify.custom.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="lib/pnotify/pnotify.custom.min.css"/>
 
-        <script src="lib/d3/d3.min.js"></script>    
+        
 
         <!--
+        <script src="lib/d3/d3.min.js"></script>    
         <script src="lib/zoomtree.js"></script>        
         <link rel="stylesheet" href="lib/zoomtree.css">
         -->
+        
         <link rel="stylesheet" href="map2d.css">
         
+        <script src="util.js"></script>
 
     </head>
     <body>
@@ -212,6 +217,9 @@ and open the template in the editor.
                         l.setOpacity(opacity);
                         l.addTo(map);
                     }
+                   
+                   //var markers = new L.MarkerClusterGroup();
+                   //markers.addLayer(new L.Marker(getRandomLatLng(map)));
                 });
             }, renderPeriodMS);
 
@@ -242,6 +250,9 @@ and open the template in the editor.
 
                 if (f.geom.type === "point")
                     f.geometry.type = "Point";
+                
+                //https://github.com/albburtsev/Leaflet.geojsonCSS
+                //L.geoJson.css(json).addTo(map);
                 var layer = L.geoJson(f, {
                     /*style: function (feature) {
                      return {color: feature.properties.color};
@@ -333,8 +344,6 @@ and open the template in the editor.
                             layerNode.inh[parent] = 1.0;
                             layerNode.update();
                             
-                        
-                            //layerNode = tag.node(layerID);
                             unknownLayers[layerID] = true;
                         }
                                                                         
@@ -366,8 +375,20 @@ and open the template in the editor.
             function opacityChange(x) {                
                 var d = $(this).data('tag');
                 var opacity = $(this).val();
-                tagOpacity[d] = opacity;
+                
+                if (opacity < 0.01) {
+                    delete tagOpacity[d];
+                }
+                else {
+                    tagOpacity[d] = opacity;
+                }
+                
                 setTimeout(renderTags, 0);
+            }
+            
+            function updateTagButton(x) {                
+                var d = $(this).data('tag');
+                window.open("watch.html?url=tag&channels=" + d, "_blank", "toolbar=yes, scrollbars=yes, resizable=yes, top=500, left=500, width=400, height=400");
             }
 
             function renderLayerView(vl, s) {
@@ -392,12 +413,17 @@ and open the template in the editor.
                         var d = $('<li></li>');
                         
                         var a = $('<a>' + name + ' (' + count + ')</a>').appendTo(d);                        
+                        
+                        
                         var opacity = $('<input class="opacitySlider" type="range" min="0" step="0.01" max="1.0"/>').appendTo(a);
                         opacity.val(tagOpacity[n] || 0);
                         opacity.data('tag', n);
                         
                         opacity.change(opacityChange);
                         
+                        var updateButton = $('<button>U</button>').appendTo(a);
+                        updateButton.data('tag', n);
+                        updateButton.click(updateTagButton);
                         
                         
                         var u  = $('<ul>').appendTo(d);
