@@ -7,6 +7,7 @@ package automenta.climatenet;
 
 import static automenta.climatenet.SpacetimeWebServer.json;
 import automenta.climatenet.data.ClimateViewer;
+import automenta.climatenet.data.NOntology;
 import automenta.climatenet.data.SchemaOrg;
 import automenta.climatenet.elastic.ElasticSpacetime;
 import automenta.climatenet.p2p.TomPeer;
@@ -337,8 +338,12 @@ public class SpacetimeWebServer extends PathHandler {
                 new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
         peer.add(s.db);
 
+        logger.info("Loading Schema.org (ontology)");
         SchemaOrg.load(s.db);
+        logger.info("Loading ClimateViewer (ontology)");
         new ClimateViewer(s.db);
+        logger.info("Loading Netention (ontology)");
+        NOntology.load(s.db);
 
         s.addPrefixPath("/peer/index", new ChannelSnapshot(new ReadOnlyChannel<PeerBean>("/peer/index") {
             @Override

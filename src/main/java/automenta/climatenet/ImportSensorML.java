@@ -7,7 +7,7 @@ package automenta.climatenet;
 
 /**
  *
- * @author me
+ * @see https://github.com/Geomatys/geotoolkit/blob/master/modules/storage/geotk-feature-sensorml/src/test/java/org/geotoolkit/data/sml/SMLDataStoreTest.java
  */
 public class ImportSensorML {
     

@@ -33,8 +33,8 @@ public class Tag {
         this.inh = new HashMap();
     }
     
-    public Tag url(String u) {
-        meta.put("url", u);
+    public Tag meta(String key, Object value) {
+        meta.put(key, value);
         return this;
     }
 

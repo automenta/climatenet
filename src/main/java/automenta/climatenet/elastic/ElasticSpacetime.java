@@ -293,8 +293,8 @@ public class ElasticSpacetime implements Spacetime {
 
             @Override
             public void run() {
-                if (debug)
-                    System.out.println(this + " commiting " + bulkRequest.numberOfActions() + " actions");
+                /*if (debug)
+                    System.out.println(this + " commiting " + bulkRequest.numberOfActions() + " actions");*/
                 
                 BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 
@@ -302,7 +302,7 @@ public class ElasticSpacetime implements Spacetime {
                     System.err.println(bulkResponse.buildFailureMessage());
                 }
                 else if (debug)
-                    System.out.println(this + " committed");
+                    System.out.println(this + " committed " + bulkRequest.numberOfActions() + " actions");
             }
             
         });

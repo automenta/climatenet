@@ -4,14 +4,14 @@
       "id": "Thing",
       "name": "Thing",
       "description": "Something that may be used or applied",
-      "extend": null,
+      "extend": null
       
     },
     {
       "id": "Concept",
       "name": "Concept",
       "description": "An abstract concept",
-      "extend": null,
+      "extend": null
       
     },
     {
@@ -24,7 +24,7 @@
         "startsAt",
         "stopsAt",
         "maxAttendance"
-      ],
+      ]
       
     },
     {
@@ -36,7 +36,7 @@
       ],
       "value": [
         "involvesUser"
-      ],
+      ]
       
     },
     {
@@ -52,7 +52,7 @@
         "male",
         "female",
         "email"
-      ],
+      ]
       
     },
     {
@@ -63,7 +63,7 @@
       ],
       "value": [
         "similarTo"
-      ],
+      ]
       
     },
     {
@@ -88,7 +88,7 @@
       ],
       "extend": [
         "Thing"
-      ],
+      ]
       
     },
     {
@@ -100,7 +100,7 @@
       ],
       "extend": [
         "Concept"
-      ],
+      ]
       
     },
     {
@@ -114,7 +114,7 @@
       ],
       "extend": [
         "Concept"
-      ],
+      ]
       
     },
     {
@@ -131,7 +131,7 @@
       ],
       "extend": [
         "Concept"
-      ],
+      ]
       
     },
     {
@@ -144,7 +144,7 @@
       ],
       "extend": [
         "Concept"
-      ],
+      ]
       
     },
     {
@@ -153,17 +153,13 @@
       "description": "A multimedia object",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Report",
       "name": "Report",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "_Arrive",
       "name": "Arrive",
@@ -172,9 +168,7 @@
       ],
       "value": [
         "arriveLocation"
-      ],
-      
-    },
+      ]    },
     {
       "id": "_Depart",
       "name": "Depart",
@@ -183,9 +177,7 @@
       ],
       "value": [
         "departLocation"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Problem",
       "name": "Problem",
@@ -194,41 +186,31 @@
       ],
       "value": [
         "problemBlame"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Solution",
       "name": "Solution",
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Cause",
       "name": "Cause",
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Effect",
       "name": "Effect",
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Internet",
       "name": "Internet",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Goal",
       "name": "Goal",
@@ -248,33 +230,27 @@
       ],
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "GoalCentroid",
       "name": "Possible Goal",
       "extend": [
         "Goal",
         "Imaginary"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Favorite",
       "name": "Favorite",
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "User",
       "name": "User",
       "extend": [
         "Thing"
       ],
-      "reserved": true,
+      "reserved": true
       
     },
     {
@@ -282,24 +258,20 @@
       "name": "Message",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Decision",
       "name": "Decision",
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Decision.Agree",
       "name": "Agree",
       "extend": [
         "Decision"
       ],
-      "description": "You are happy with the proposal.",
+      "description": "You are happy with the proposal."
       
     },
     {
@@ -308,7 +280,7 @@
       "extend": [
         "Decision"
       ],
-      "description": "You are unsure, or you\u2019re happy for the group to decide without you.",
+      "description": "You are unsure, or you\u2019re happy for the group to decide without you."
       
     },
     {
@@ -317,7 +289,7 @@
       "extend": [
         "Decision"
       ],
-      "description": "You think there might be a better alternative, but you\u2019re willing to go with the group.",
+      "description": "You think there might be a better alternative, but you\u2019re willing to go with the group."
       
     },
     {
@@ -326,7 +298,7 @@
       "extend": [
         "Decision"
       ],
-      "description": "You have serious objections and you\u2019ll be extremely unhappy if this proposal goes ahead.",
+      "description": "You have serious objections and you\u2019ll be extremely unhappy if this proposal goes ahead."
       
     },
     {
@@ -337,9 +309,7 @@
       ],
       "value": [
         "know"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Trust",
       "name": "Trust",
@@ -349,9 +319,7 @@
       "icon": "\/icon\/trade.png",
       "value": [
         "trust"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Distrust",
       "name": "Distrust",
@@ -360,9 +328,7 @@
       ],
       "value": [
         "distrust"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Value",
       "name": "Like",
@@ -372,9 +338,7 @@
       ],
       "value": [
         "value"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Not",
       "name": "Not",
@@ -384,17 +348,13 @@
       "icon": "\/icon\/not.png",
       "value": [
         "not"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Access",
       "name": "Access",
       "extend": [
         "Action"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Can",
       "name": "Can",
@@ -405,9 +365,7 @@
       "description": "Something offer, offered, offering, share, shared, sharing, provide, providing, able",
       "value": [
         "can"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Need",
       "name": "Need",
@@ -418,16 +376,14 @@
       "description": "Something want, wanted, wanting, need, needed, needing, seek, seeking, request, requested, requesting",
       "value": [
         "need"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Offer",
       "name": "Offer",
       "extend": [
         "Can"
       ],
-      "icon": "\/icon\/can.png",
+      "icon": "\/icon\/can.png"
       
     },
     {
@@ -436,7 +392,7 @@
       "extend": [
         "Can"
       ],
-      "icon": "\/icon\/can.png",
+      "icon": "\/icon\/can.png"
       
     },
     {
@@ -445,7 +401,7 @@
       "extend": [
         "Can"
       ],
-      "icon": "\/icon\/can.png",
+      "icon": "\/icon\/can.png"
       
     },
     {
@@ -454,7 +410,7 @@
       "extend": [
         "Can"
       ],
-      "icon": "\/icon\/can.png",
+      "icon": "\/icon\/can.png"
       
     },
     {
@@ -463,7 +419,7 @@
       "extend": [
         "Can"
       ],
-      "icon": "\/icon\/can.png",
+      "icon": "\/icon\/can.png"
       
     },
     {
@@ -472,7 +428,7 @@
       "extend": [
         "Can"
       ],
-      "icon": "\/icon\/can.png",
+      "icon": "\/icon\/can.png"
       
     },
     {
@@ -480,90 +436,68 @@
       "name": "Volunteer",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Shelter",
       "name": "Shelter",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Food",
       "name": "Food",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Tools",
       "name": "Tools",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Health",
       "name": "Health",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Transport",
       "name": "Transport",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Service",
       "name": "Service",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Animal",
       "name": "Animal",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Infrastructure",
       "name": "Infrastructure",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Nature",
       "name": "Nature",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Danger",
       "name": "Danger",
       "description": "Danger, emergency, or disaster situation \/ event",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Plugin",
       "name": "Plugin",
@@ -573,9 +507,7 @@
       "value": [
         "Plugin.enable",
         "Plugin.updateEvery"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Medical_emergency",
       "name": "Medical Emergency",
@@ -585,44 +517,34 @@
       ],
       "value": [
         "medicalEmergencyBodyPart"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Fire",
       "name": "Fire",
       "extend": [
         "Danger"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Theft",
       "name": "Theft",
       "description": "Theft or abduction",
       "extend": [
         "Danger"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Physical_security",
       "name": "Invasion",
       "description": "Security intrusion",
       "extend": [
         "Danger"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Promise",
       "name": "Promise",
       "description": "Promise or an Offer. 'I will do it, but only if you will help.'",
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Tag",
       "name": "Tag",
@@ -632,9 +554,7 @@
       ],
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Template",
       "name": "Template",
@@ -644,9 +564,7 @@
       ],
       "extend": [
         "Concept"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Earth",
       "name": "Earth",
@@ -654,9 +572,7 @@
       "icon": "icon\/earth.png",
       "extend": [
         "Thing"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Points of Interest",
       "name": "Points of Interest",
@@ -664,9 +580,7 @@
       "dbpediaLayer": true,
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "United_States",
       "name": "United States",
@@ -674,9 +588,7 @@
       "icon": "icon\/earth.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "iem-us-nexrad",
       "name": "United States NEXRAD Weather",
@@ -688,9 +600,7 @@
       },
       "extend": [
         "United_States"
-      ],
-      
-    },
+      ]    },
     {
       "id": "conus_ir",
       "name": "CONUS Infrared",
@@ -702,9 +612,7 @@
       },
       "extend": [
         "United_States"
-      ],
-      
-    },
+      ]    },
     {
       "id": "conus_vis",
       "name": "CONUS VIS",
@@ -716,9 +624,7 @@
       },
       "extend": [
         "United_States"
-      ],
-      
-    },
+      ]    },
     {
       "id": "mrms_q3_24h_precipitation",
       "name": "24h Precipitation",
@@ -730,9 +636,7 @@
       },
       "extend": [
         "United_States"
-      ],
-      
-    },
+      ]    },
     {
       "id": "terrain-satellite",
       "name": "Satellite",
@@ -741,9 +645,7 @@
       "tileLayer": "http:\/\/server.arcgisonline.com\/ArcGIS\/rest\/services\/World_Imagery\/MapServer\/tile\/{z}\/{y}\/{x}",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "terrain-contour",
       "name": "Contour",
@@ -752,9 +654,7 @@
       "tileLayer": "http:\/\/services.arcgisonline.com\/ArcGIS\/rest\/services\/World_Topo_Map\/MapServer\/tile\/{z}\/{y}\/{x}?blankTile=false",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "cycle-map",
       "name": "Cycle Map",
@@ -763,9 +663,7 @@
       "tileLayer": "http:\/\/{s}.tile.opencyclemap.org\/cycle\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "terrain-ocean",
       "name": "Ocean Floor",
@@ -774,9 +672,7 @@
       "tileLayer": "http:\/\/services.arcgisonline.com\/ArcGIS\/rest\/services\/Ocean_Basemap\/MapServer\/tile\/{z}\/{y}\/{x}",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-clouds",
       "name": "Clouds",
@@ -785,9 +681,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/clouds\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-precipitation",
       "name": "Precipitation",
@@ -796,9 +690,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/precipitation\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-rain",
       "name": "Rain",
@@ -807,9 +699,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/rain\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-pressure",
       "name": "Pressure",
@@ -818,9 +708,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/pressure\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-pressure_cntr",
       "name": "Pressure Contour",
@@ -829,9 +717,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/pressure_cntr\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-wind",
       "name": "Wind",
@@ -840,9 +726,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/wind\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "owm-temp",
       "name": "Temperature",
@@ -851,7 +735,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/temp\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
+      ]
 
     },
     {
@@ -862,9 +746,7 @@
       "tileLayer": "http:\/\/{s}.tile.openweathermap.org\/map\/snow\/{z}\/{x}\/{y}.png",
       "extend": [
         "Earth"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion",
       "name": "Emotion",
@@ -882,49 +764,37 @@
         "decidingAffectedFuture",
         "feelBetterOrWorse",
         "furtherGoalAction"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.calm",
       "name": "Calm",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.happy",
       "name": "Happy",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.trusting",
       "name": "Trusting",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.anticipating",
       "name": "Anticipating",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.surprised",
       "name": "Surprised",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.sad",
       "name": "Sad",
@@ -933,56 +803,44 @@
       ],
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.afraid",
       "name": "Afraid",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.angry",
       "name": "Angry",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.disgusted",
       "name": "Disgusted",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.tired",
       "name": "Tired",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Emotion.energized",
       "name": "Energized",
       "extend": [
         "Emotion"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Learn",
       "name": "Learn",
       "extend": [
         "Know"
       ],
-      "icon": "icon\/know\/k1.png",
+      "icon": "icon\/know\/k1.png"
       
     },
     {
@@ -991,7 +849,7 @@
       "extend": [
         "Know"
       ],
-      "icon": "icon\/know\/k4.png",
+      "icon": "icon\/know\/k4.png"
       
     },
     {
@@ -1000,7 +858,7 @@
       "extend": [
         "Know"
       ],
-      "icon": "icon\/know\/k5.png",
+      "icon": "icon\/know\/k5.png"
       
     },
     {
@@ -1014,9 +872,7 @@
         "urlFetchPeriod",
         "addArticleTag",
         "lastURLFetch"
-      ],
-      
-    },
+      ]    },
     {
       "id": "RSSItem",
       "name": "RSS Item",
@@ -1025,9 +881,7 @@
       ],
       "value": [
         "rssItemURL"
-      ],
-      
-    },
+      ]    },
     {
       "id": "WebURL",
       "name": "Web URL",
@@ -1038,9 +892,7 @@
         "urlAddress",
         "urlFetchPeriod",
         "lastURLFetch"
-      ],
-      
-    },
+      ]    },
     {
       "id": "ICalURL",
       "name": "Calendar (iCal)",
@@ -1051,9 +903,7 @@
         "urlAddress",
         "urlFetchPeriod",
         "lastURLFetch"
-      ],
-      
-    },
+      ]    },
     {
       "id": "GPlusObject",
       "name": "Google+ Object",
@@ -1064,9 +914,7 @@
         "gplusID",
         "urlFetchPeriod",
         "addArticleTag"
-      ],
-      
-    },
+      ]    },
     {
       "id": "Earthquake",
       "name": "Earthquake",
@@ -1077,105 +925,103 @@
       "value": [
         "eqMagnitude",
         "eqDepth"
-      ],
-      
-    }
+      ]    }
   ],
   "property": [
     {
       "name": "Active",
       "extend": "boolean",
-      "id": "active",
+      "id": "active"
       
     },
     {
       "name": "Starts At",
       "extend": "text",
-      "id": "startsAt",
+      "id": "startsAt"
       
     },
     {
       "name": "Stops At",
       "extend": "text",
-      "id": "stopsAt",
+      "id": "stopsAt"
       
     },
     {
       "name": "Maximum Attendance",
       "extend": "integer",
-      "id": "maxAttendance",
+      "id": "maxAttendance"
       
     },
     {
       "name": "Involves",
       "extend": "object",
-      "id": "involvesUser",
+      "id": "involvesUser"
       
     },
     {
       "name": "Current Role",
       "extend": "text",
-      "id": "currentRole",
+      "id": "currentRole"
       
     },
     {
       "name": "Biography",
       "extend": "html",
-      "id": "biography",
+      "id": "biography"
       
     },
     {
       "name": "Birthdate",
       "extend": "timepoint",
-      "id": "birthdate",
+      "id": "birthdate"
       
     },
     {
       "name": "Male",
       "extend": "boolean",
-      "id": "male",
+      "id": "male"
       
     },
     {
       "name": "Female",
       "extend": "boolean",
-      "id": "female",
+      "id": "female"
       
     },
     {
       "name": "E-Mail",
       "extend": "text",
-      "id": "email",
+      "id": "email"
       
     },
     {
       "name": "to",
       "extend": "object",
-      "id": "similarTo",
+      "id": "similarTo"
       
     },
     {
       "name": "Purpose",
       "extend": "html",
-      "id": "purpose",
+      "id": "purpose"
       
     },
     {
       "name": "Quantity",
       "extend": "integer",
-      "id": "quantity",
+      "id": "quantity"
       
     },
     {
       "name": "Weight (individual)",
       "extend": "real",
-      "id": "individualWeight",
+      "id": "individualWeight"
       
     },
     {
       "name": "Color",
       "extend": "text",
-      "id": "color",
+      "id": "color"
       
     },
     {
@@ -1189,73 +1035,73 @@
         "Gold(g)",
         "Silver(g)"
       ],
-      "id": "itemCost",
+      "id": "itemCost"
       
     },
     {
       "name": "Quantity Unit",
       "extend": "text",
-      "id": "quantityUnit",
+      "id": "quantityUnit"
       
     },
     {
       "name": "Quantity per Day",
       "extend": "real",
-      "id": "quantityPerTime",
+      "id": "quantityPerTime"
       
     },
     {
       "name": "Quality",
       "extend": "text",
-      "id": "quality",
+      "id": "quality"
       
     },
     {
       "name": "Offer Expires",
       "extend": "timepoint",
-      "id": "offerExpires",
+      "id": "offerExpires"
       
     },
     {
       "name": "Expires",
       "extend": "timepoint",
-      "id": "itemExpires",
+      "id": "itemExpires"
       
     },
     {
       "name": "Paid",
       "extend": "boolean",
-      "id": "itemPaid",
+      "id": "itemPaid"
       
     },
     {
       "name": "Pay Bitcoin Wallet",
       "extend": "text",
-      "id": "payWalletBTC",
+      "id": "payWalletBTC"
       
     },
     {
       "name": "Pay Ripple Wallet",
       "extend": "text",
-      "id": "payWalletRipple",
+      "id": "payWalletRipple"
       
     },
     {
       "name": "Pay PayPal Address",
       "extend": "text",
-      "id": "payWalletPayPal",
+      "id": "payWalletPayPal"
       
     },
     {
       "name": "Pay Bank Account (RTN)",
       "extend": "text",
-      "id": "payWalletRTN",
+      "id": "payWalletRTN"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "next",
+      "id": "next"
       
     },
     {
@@ -1267,7 +1113,7 @@
         "inch",
         "mile"
       ],
-      "id": "gLength",
+      "id": "gLength"
       
     },
     {
@@ -1279,7 +1125,7 @@
         "inch",
         "mile"
       ],
-      "id": "gWidth",
+      "id": "gWidth"
       
     },
     {
@@ -1291,7 +1137,7 @@
         "inch",
         "mile"
       ],
-      "id": "gHeight",
+      "id": "gHeight"
       
     },
     {
@@ -1302,7 +1148,7 @@
         "pound",
         "ounce"
       ],
-      "id": "mass",
+      "id": "mass"
       
     },
     {
@@ -1316,7 +1162,7 @@
         "roentgen",
         "curie"
       ],
-      "id": "physicalIonizingRadiation",
+      "id": "physicalIonizingRadiation"
       
     },
     {
@@ -1327,7 +1173,7 @@
         "celsius",
         "kelvin"
       ],
-      "id": "physicalTemperature",
+      "id": "physicalTemperature"
       
     },
     {
@@ -1336,7 +1182,7 @@
       "units": [
         "candela "
       ],
-      "id": "physicalLightLevel",
+      "id": "physicalLightLevel"
       
     },
     {
@@ -1345,7 +1191,7 @@
       "units": [
         "decibel "
       ],
-      "id": "physicalSoundLevel",
+      "id": "physicalSoundLevel"
       
     },
     {
@@ -1356,7 +1202,7 @@
         "atmosphere",
         "inches of Hg"
       ],
-      "id": "physicalAtmosphericPressure",
+      "id": "physicalAtmosphericPressure"
       
     },
     {
@@ -1365,7 +1211,7 @@
       "units": [
         "O2 to N2 Ratio"
       ],
-      "id": "physicalOxygenConcentration",
+      "id": "physicalOxygenConcentration"
       
     },
     {
@@ -1374,84 +1220,84 @@
       "units": [
         "ppm"
       ],
-      "id": "physicalCO2Concentration",
+      "id": "physicalCO2Concentration"
       
     },
     {
       "name": "Paid",
       "extend": "boolean",
-      "id": "transactionPaid",
+      "id": "transactionPaid"
       
     },
     {
       "name": "Due",
       "extend": "boolean",
-      "id": "transactionDue",
+      "id": "transactionDue"
       
     },
     {
       "name": "Gratis",
       "extend": "boolean",
-      "id": "transactionGratis",
+      "id": "transactionGratis"
       
     },
     {
       "name": "Arrive location",
       "extend": "spacepoint",
-      "id": "arriveLocation",
+      "id": "arriveLocation"
       
     },
     {
       "name": "Depart location",
       "extend": "spacepoint",
-      "id": "departLocation",
+      "id": "departLocation"
       
     },
     {
       "name": "Blame",
       "description": "Who or what is blamed",
       "extend": "object",
-      "id": "problemBlame",
+      "id": "problemBlame"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "goal",
+      "id": "goal"
       
     },
     {
       "name": "Require Acknowledgement",
       "extend": "boolean",
-      "id": "requiresAcknowledgement",
+      "id": "requiresAcknowledgement"
       
     },
     {
       "name": "Repeat started",
       "extend": "timepoint",
       "readonly": true,
-      "id": "lastAcknowledgement",
+      "id": "lastAcknowledgement"
       
     },
     {
       "name": "Enabled",
       "extend": "boolean",
       "default": true,
-      "id": "goalEnabled",
+      "id": "goalEnabled"
       
     },
     {
       "name": "Depends On",
       "extend": "object",
       "tag": "Goal",
-      "id": "goalDependency",
+      "id": "goalDependency"
       
     },
     {
       "name": "Worker",
       "extend": "object",
       "tag": "Human",
-      "id": "goalWorker",
+      "id": "goalWorker"
       
     },
     {
@@ -1460,14 +1306,14 @@
       "min": 0,
       "max": 1,
       "mode": "slider",
-      "id": "goalProgress",
+      "id": "goalProgress"
       
     },
     {
       "name": "Deadline",
       "extend": "timepoint",
       "max": 1,
-      "id": "goalDeadline",
+      "id": "goalDeadline"
       
     },
     {
@@ -1481,7 +1327,7 @@
         "Gold(g)",
         "Silver(g)"
       ],
-      "id": "goalCost",
+      "id": "goalCost"
       
     },
     {
@@ -1496,137 +1342,137 @@
         "Gold(g)",
         "Silver(g)"
       ],
-      "id": "goalBudgeted",
+      "id": "goalBudgeted"
       
     },
     {
       "name": "Objective",
       "extend": "html",
       "description": "What to accomplish and how to measure progress",
-      "id": "goalObjective",
+      "id": "goalObjective"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "know",
+      "id": "know"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "trust",
+      "id": "trust"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "distrust",
+      "id": "distrust"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "value",
+      "id": "value"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "not",
+      "id": "not"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "can",
+      "id": "can"
       
     },
     {
       "name": "",
       "extend": "object",
-      "id": "need",
+      "id": "need"
       
     },
     {
       "name": "Enable",
       "extend": "boolean",
       "max": 1,
-      "id": "Plugin.enable",
+      "id": "Plugin.enable"
       
     },
     {
       "name": "Update Every (sec)",
       "extend": "real",
       "max": 1,
-      "id": "Plugin.updateEvery",
+      "id": "Plugin.updateEvery"
       
     },
     {
       "name": "Body Part",
       "extend": "object",
-      "id": "medicalEmergencyBodyPart",
+      "id": "medicalEmergencyBodyPart"
       
     },
     {
       "name": "Value Type",
       "extend": "text",
-      "id": "tagValueType",
+      "id": "tagValueType"
       
     },
     {
       "name": "What I am Doing",
       "extend": "html",
-      "id": "emotionWhatDoing",
+      "id": "emotionWhatDoing"
       
     },
     {
       "name": "Who I am With",
       "extend": "object",
       "tag": "Human",
-      "id": "emotionWhoWith",
+      "id": "emotionWhoWith"
       
     },
     {
       "name": "Is the meaning I\u2019m assigning to this event unduly extreme?",
       "extend": "html",
-      "id": "undulyExtremeMeaning",
+      "id": "undulyExtremeMeaning"
       
     },
     {
       "name": "Am I exaggerating a simple event to derive harsh conclusions from it?",
       "extend": "html",
-      "id": "harshConclusions",
+      "id": "harshConclusions"
       
     },
     {
       "name": "Am I drawing global conclusions from this isolated event?",
       "extend": "html",
-      "id": "drawingGlobalConclusions",
+      "id": "drawingGlobalConclusions"
       
     },
     {
       "name": "Am I deciding that this specific event totally defines who it affects?",
       "extend": "html",
-      "id": "decidingTotalDefinition",
+      "id": "decidingTotalDefinition"
       
     },
     {
       "name": "Am I deciding that this specific event affects the future of who it affects?",
       "extend": "html",
-      "id": "decidingAffectedFuture",
+      "id": "decidingAffectedFuture"
       
     },
     {
       "name": "Does this meaning lead me to feel better or worse about myself?",
       "extend": "html",
-      "id": "feelBetterOrWorse",
+      "id": "feelBetterOrWorse"
       
     },
     {
       "name": "Is it encouraging further goal-directed action or discouraging me to give up?",
       "extend": "html",
-      "id": "furtherGoalAction",
+      "id": "furtherGoalAction"
       
     },
     {
@@ -1634,7 +1480,7 @@
       "extend": "url",
       "min": 1,
       "default": "http:\/\/",
-      "id": "urlAddress",
+      "id": "urlAddress"
       
     },
     {
@@ -1642,44 +1488,44 @@
       "extend": "real",
       "default": "10",
       "max": 1,
-      "id": "urlFetchPeriod",
+      "id": "urlFetchPeriod"
       
     },
     {
       "name": "Add Tag to Articles",
       "extend": "text",
-      "id": "addArticleTag",
+      "id": "addArticleTag"
       
     },
     {
       "name": "Last Update",
       "extend": "timepoint",
       "readonly": true,
-      "id": "lastURLFetch",
+      "id": "lastURLFetch"
       
     },
     {
       "name": "RSS Item URL",
       "extend": "url",
-      "id": "rssItemURL",
+      "id": "rssItemURL"
       
     },
     {
       "name": "Google+ ID",
       "extend": "text",
-      "id": "gplusID",
+      "id": "gplusID"
       
     },
     {
       "name": "Magnitude",
       "extend": "real",
-      "id": "eqMagnitude",
+      "id": "eqMagnitude"
       
     },
     {
       "name": "Depth (m)",
       "extend": "real",
-      "id": "eqDepth",
+      "id": "eqDepth"
       
     }
   ]

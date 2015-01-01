@@ -148,6 +148,73 @@ and open the template in the editor.
                 tag.setNode(id, t);
             }
             
+            function newTileLayer(template) {
+                //var template = T.tileLayer;
+                var options = {
+                    attribution: ''
+                };
+                if (typeof template !== 'string') {
+                    options = template;
+                    template = options.template;
+
+                    var d = new Date(Date.now() - 24 * 60 * 60 * 1000  /* 24hrs ago */);
+                    var m = d.getMonth() + 1;
+                    var r = d.getDate() + 1;
+                    if (m <= 9)
+                        m = '0' + m;
+                    if (r <= 9)
+                        r = '0' + r;
+                    options.time = d.getFullYear() + '-' + m + '-' + r;
+                }
+                if (options.reprojected) {
+                    if (options.format.indexOf('png') != -1) {
+                        //put PNG layers above, since they usually contain transparent image that could see through to a solid JPG layer beneath
+                        options.zIndex = 101;
+                    }
+                    else
+                        options.zIndex = 100;
+                }
+
+
+                var tl = L.tileLayer(template, options);
+
+                if (options.reprojected) {
+                    notify({title: 'Map Re-projected', text: "The '" + T.name + "' layer uses an alternate map projection.  It may not appear aligned with other layers."});
+                    tl.reprojects = true;
+                }
+
+                //tl.setOpacity(strength);
+
+                /*tl.addTo(map);
+                onAdded(tl);*/
+        
+                features[template] = tl;
+                return tl;
+
+            }
+            
+            function newWMSLayer(url) {
+                //var l = T.wmsLayer;
+
+                var o = {
+                    //layers: l.layer,
+                    format: 'image/png',
+                    transparent: true,
+                    attribution: ''
+                };
+                /*if (l.crs) {
+                 if (l.crs == 'EPSG4326')
+                 o.crs = L.CRS.EPSG4326;
+                 }*/
+                var w = L.tileLayer.wms(url, o);
+                /*w.setOpacity(strength);
+                w.addTo(map);*/
+        
+                features[url] = w;
+                
+                return w;
+            }
+            
             function addTileLayers() {
                 var w = newTag('Weather');
                 w.name = 'Weather';
@@ -244,15 +311,16 @@ and open the template in the editor.
                 f.type = "Feature";
                 f.geometry = f.geom;
                 
-                
+                /*
                 if (f.styleUrl) {
                     if (!styles[f.styleUrl]) {
                         console.log(f.id + ' missing style: ' + f.styleUrl);
                         
                         //TODO batch these
-                        loadStyles([f.styleUrl]);
+                        //loadStyles([f.styleUrl]);
                     }
                 }
+                */
 
 
                 if (f.geom.type === "point")
@@ -489,8 +557,11 @@ and open the template in the editor.
                         var d = newEle('li');
                         
                         var a = $('<a>' + name + ' (' + count + ')</a>').appendTo(d);                        
+                                                
+                        if (v.meta)
+                            a.append(JSON.stringify(v.meta));
                         
-                        if (count > 0) {
+                        /*if (count > 0)*/ {
 
                             var opacity = $('<input class="opacitySlider" type="range" min="0" step="0.01" max="1.0"/>').appendTo(a);
                             opacity.val(v.opacity || 0);
@@ -548,6 +619,16 @@ and open the template in the editor.
                     if (l.styleUrl) {
                         n.styleUrl = l.styleUrl;
                     }
+                    
+                    n.meta = l.meta || { };
+                    
+                    if (n.meta.wmsLayer) {                        
+                        n.features[n.meta.wmsLayer] = newWMSLayer(n.meta.wmsLayer);
+                    }
+                    if (n.meta.tileLayer) {
+                        n.features[n.meta.tileLayer] = newTileLayer(n.meta.tileLayer);
+                    }
+                    
                         
                     if (l.inh) {
                         n.inh = l.inh;
@@ -577,6 +658,7 @@ and open the template in the editor.
                     })
                     .fail(ajaxFail);
             }
+            /*
             function loadStyles(styleIDs, callback) {
                 //layerIDs = _.map(styleIDs, encodeURIComponent);
                 
@@ -586,7 +668,7 @@ and open the template in the editor.
                         if (callback)  callback();
                     })
                     .fail(ajaxFail);
-            }            
+            } */           
 
             var updateBounds = _.throttle(function (e) {
                 var b = map.getBounds();

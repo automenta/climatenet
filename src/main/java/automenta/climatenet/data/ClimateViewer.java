@@ -81,18 +81,19 @@ public class ClimateViewer {
                 System.err.println("Unrecognized item: " + x);
             } else {
                 final String id = x.get("layer").textValue();
-                final String url = x.get("kml").textValue();
+                final String kml = x.get("kml").textValue();
                 final String name = x.get("name").textValue();
                 
 
                 Tag t = new Tag(id, name);
-                t.url(url);
+                t.meta("kmlLayer", kml);
                 if (icon!=null)
                     t.icon(icon);
 
                 if (currentSection != null) {
                     t.inh.put(currentSection, 1.0);
                 }
+                
 
                 st.addTag(bulk, t);
 
