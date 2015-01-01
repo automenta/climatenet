@@ -58,7 +58,7 @@
         
         var socket = new Websocket(socketURL, {
             onChange: function(c) {
-                $('#json').html( JSON.stringify(c.data) );
+                $('#json').html( JSON.stringify(c.data,null,4) );
             },
             onError: function(e) {
                 wlog('ERROR: ' + JSON.stringify(e) );

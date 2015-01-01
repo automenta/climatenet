@@ -396,6 +396,7 @@ and open the template in the editor.
                         var layerID = p[i];
                         layerNode = tag.node(layerID);
                         
+                        
                         if (layerNode) {
                         }
                         else {
@@ -468,23 +469,25 @@ and open the template in the editor.
                         var count = _.size(v.features);
                         //nu.append('<li>' + name + ' ' + count + '</li>');
 
-                        var d = $('<li></li>');
+                        var d = newEle('li');
                         
                         var a = $('<a>' + name + ' (' + count + ')</a>').appendTo(d);                        
                         
+                        if (count > 0) {
+
+                            var opacity = $('<input class="opacitySlider" type="range" min="0" step="0.01" max="1.0"/>').appendTo(a);
+                            opacity.val(v.opacity || 0);
+                            opacity.data('tag', n);
+
+                            opacity.change(opacityChange);
+                        }
                         
-                        var opacity = $('<input class="opacitySlider" type="range" min="0" step="0.01" max="1.0"/>').appendTo(a);
-                        opacity.val(v.opacity || 0);
-                        opacity.data('tag', n);
-                        
-                        opacity.change(opacityChange);
-                        
-                        var updateButton = $('<button>U</button>').appendTo(a);
+                        var updateButton = $('<button>*</button>').appendTo(a);
                         updateButton.data('tag', n);
                         updateButton.click(updateTagButton);
                         
                         
-                        var u  = $('<ul>').appendTo(d);
+                        var u  = newEle('ul').appendTo(d);
 
                         renderLayerView(u, tag.successors( v.id ));
 

@@ -337,7 +337,8 @@ public class ElasticSpacetime implements Spacetime {
         UpdateResponse r = u.execute().actionGet();
                 
         if (debug) {
-            System.out.println(r.getHeaders());
+            if (!r.getHeaders().isEmpty())
+                System.out.println(r.getHeaders());
         }
     }
     
