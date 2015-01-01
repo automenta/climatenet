@@ -55,11 +55,11 @@ public class SpacetimeWebServer extends PathHandler {
     public static final Logger logger = LoggerFactory.getLogger(SpacetimeWebServer.class);
 
     final ElasticSpacetime db;
-    
+
     final String clientPath = "./src/web";
-    
+
     final String cachePath = "cache";
-    
+
     private List<String> paths = new ArrayList();
     private final Undertow server;
     private final String host;
@@ -91,6 +91,7 @@ public class SpacetimeWebServer extends PathHandler {
      * synchronizes a document with elastic db
      */
     public class ElasticChannel extends ReadOnlyChannel {
+
         private final String eType;
         private final String eID;
         boolean readOnly = false;
@@ -117,12 +118,13 @@ public class SpacetimeWebServer extends PathHandler {
 
         @Override
         public synchronized ObjectNode commit(ObjectNode next) {
-                        
-            if (readOnly)
+
+            if (readOnly) {
                 throw new RuntimeException(this + " is set read-only; unable to commit change to database");
-            
+            }
+
             db.update(eType, eID, next.toString());
-            
+
             return super.commit(next);
         }
 
@@ -143,7 +145,7 @@ public class SpacetimeWebServer extends PathHandler {
 
         @Override
         public void handleRequest(HttpServerExchange hse) throws Exception {
-            send(hse, channel.commit());
+            send(channel.commit(), hse);
         }
 
     }
@@ -158,7 +160,7 @@ public class SpacetimeWebServer extends PathHandler {
         this.port = port;
 
         cache = new CachingProxyServer(cacheProxyPort, cachePath);
-        
+
         server = Undertow.builder()
                 .addHttpListener(port, host)
                 .setIoThreads(8)
@@ -166,7 +168,6 @@ public class SpacetimeWebServer extends PathHandler {
                 .build();
 
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
-        
         addPrefixPath("/", resource(
                 new FileResourceManager(new File(clientPath), 100)).
                 setDirectoryListingEnabled(false));
@@ -199,9 +200,8 @@ public class SpacetimeWebServer extends PathHandler {
 
             @Override
             protected void onOperation(String operation, Channel c, JsonNode param, WebSocketChannel socket) {
-                
+
                 //TODO prevent interrupting update operation if already in-progress
-                
                 switch (operation) {
                     case "update":
                         try {
@@ -216,11 +216,10 @@ public class SpacetimeWebServer extends PathHandler {
                             }
 
                             System.out.println("Updating " + c);
-                            
+
                             try {
                                 new ImportKML(db, cache.proxy, c.id, kml).run();
-                            }
-                            catch (Exception e) {
+                            } catch (Exception e) {
                                 ObjectNode nc = c.getSnapshot();
                                 ObjectNode meta = (ObjectNode) nc.get("meta");
                                 meta.put("status", e.toString());
@@ -255,27 +254,30 @@ public class SpacetimeWebServer extends PathHandler {
 
             @Override
             public void handleRequest(HttpServerExchange ex) throws Exception {
-                Map<String, Deque<String>> reqParams = ex.getQueryParameters();
 
-                //Deque<String> deque = reqParams.get("attrName");
-                //Deque<String> dequeVal = reqParams.get("value");
-                Deque<String> idArray = reqParams.get("id");
-
-                ArrayNode a = Core.json.readValue(idArray.getFirst(), ArrayNode.class);
-
-                String[] ids = new String[a.size()];
-                int j = 0;
-                for (JsonNode x : a) {
-                    ids[j++] = x.textValue();
-                }
-
-                SearchResponse response = db.searchID(ids, 0, 60, "tag");
-
-                sendTags(response, ex);
+                sendTags(
+                        db.searchID(
+                                getStringArrayParameter(ex, "id"), 0, 60, "tag"
+                        ), 
+                        ex);
 
             }
 
         });
+        addPrefixPath("/style/meta", new HttpHandler() {
+
+            @Override
+            public void handleRequest(HttpServerExchange ex) throws Exception {
+
+                send( json(
+                        db.searchID(
+                                getStringArrayParameter(ex, "id"), 0, 60, "style"
+                        )) , 
+                        ex);
+
+            }
+
+        });        
 
         addPrefixPath("/geoCircle", new HttpHandler() {
 
@@ -297,24 +299,9 @@ public class SpacetimeWebServer extends PathHandler {
 
                     SearchHits result = db.search(lat, lon, rad, 60);
 
-                    XContentBuilder d = jsonBuilder().startObject();
+                    XContentBuilder d = responseTagOrFeature(result);
 
-                    for (SearchHit h : result) {
-
-                        Map<String, Object> s = h.getSource();
-
-                        //System.out.println(h.getId() + " " + s);
-                        d.startObject(h.getId())
-                                .field("path", s.get("path"))
-                                .field("name", s.get("name"))
-                                .field("description", s.get("description"))
-                                .field("geom", s.get("geom"));
-                        d.endObject();
-
-                    }
-                    d.endObject();
-
-                    send(ex, d);
+                    send(d, ex);
 
                 }
                 ex.getResponseSender().send("");
@@ -375,7 +362,7 @@ public class SpacetimeWebServer extends PathHandler {
         s.start();
     }
 
-    public static void send(HttpServerExchange ex, JsonNode d) {
+    public static void send(JsonNode d, HttpServerExchange ex) {
         ex.startBlocking();
 
         ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
@@ -389,7 +376,7 @@ public class SpacetimeWebServer extends PathHandler {
         ex.getResponseSender().close();
     }
 
-    public static void send(HttpServerExchange ex, XContentBuilder d) {
+    public static void send(XContentBuilder d, HttpServerExchange ex) {
         ex.startBlocking();
 
         ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
@@ -398,23 +385,44 @@ public class SpacetimeWebServer extends PathHandler {
         ex.getResponseSender().close();
     }
 
-    public static boolean sendTags(SearchResponse response, HttpServerExchange ex) throws IOException {
-        SearchHits result = response.getHits();
-        if (result.totalHits() == 0) {
-            ex.getResponseSender().send("");
-            return true;
-        }
+    public static XContentBuilder responseTagOrFeature(Iterable<SearchHit> result) throws IOException {
         XContentBuilder d = jsonBuilder().startObject();
         for (SearchHit h : result) {
 
             Map<String, Object> s = h.getSource();
 
-            d.startObject(h.getId())
-                    .field("name", s.get("name"));
+            d.startObject(h.getId());
+
+            Object name = s.get("name");
+            if (name != null) {
+                d.field("name", name);
+            }
+
             Object desc = s.get("description");
             if (desc != null) {
-                d.field("description", s.get("description"));
+                d.field("description", desc);
             }
+
+            Object path = s.get("path");
+            if (path != null) {
+                d.field("path", path);
+            }
+
+            Object geom = s.get("geom");
+            if (geom != null) {
+                d.field("geom", geom);
+            }
+
+            Object style = s.get("style");
+            if (style != null) {
+                d.field("style", style);
+            }
+
+            Object styleUrl = s.get("styleUrl");
+            if (styleUrl != null) {
+                d.field("styleUrl", styleUrl);
+            }
+
             Object inh = s.get("inh");
             if (inh != null) {
                 d.field("inh", inh);
@@ -422,8 +430,20 @@ public class SpacetimeWebServer extends PathHandler {
             d.endObject();
 
         }
+
         d.endObject();
-        send(ex, d);
+        return d;
+    }
+
+    public static boolean sendTags(SearchResponse response, HttpServerExchange ex) throws IOException {
+        SearchHits result = response.getHits();
+        if (result.totalHits() == 0) {
+            ex.getResponseSender().send("");
+            return true;
+        }
+        XContentBuilder d = responseTagOrFeature(result);
+
+        send(d, ex);
         return false;
     }
 
@@ -436,33 +456,48 @@ public class SpacetimeWebServer extends PathHandler {
 
     public static ObjectNode json(SearchResponse response) {
         SearchHits result = response.getHits();
+                
         ObjectNode o = newJson.objectNode();
         if (result.totalHits() == 0) {
             return o;
         }
         for (SearchHit h : result) {
 
-            Map<String, Object> s = h.getSource();
-
             ObjectNode p = newJson.objectNode();
             o.put(h.getId(), p);
 
-            p.put("name", s.get("name").toString());
-
-            Object desc = s.get("description");
-            if (desc != null) {
-                p.put("description", desc.toString());
+            Map<String, Object> s = h.getSource();
+            
+            for (Map.Entry<String, Object> e : s.entrySet()) {
+                try {
+                    p.put(e.getKey(), Core.json.convertValue( e.getValue(), JsonNode.class ) );
+                }
+                catch (Exception ee) {
+                    System.err.println(ee);
+                }
             }
 
-            Object inh = s.get("inh");
-            if (inh != null) {
-                p.put("inh", Core.json.convertValue(inh, ObjectNode.class));
-            }
 
         }
 
         return o;
 
+    }
+
+    public static String[] getStringArrayParameter(HttpServerExchange ex, String param) throws IOException {
+        Map<String, Deque<String>> reqParams = ex.getQueryParameters();
+
+        Deque<String> idArray = reqParams.get(param);
+
+        ArrayNode a = Core.json.readValue(idArray.getFirst(), ArrayNode.class);
+
+        String[] ids = new String[a.size()];
+        int j = 0;
+        for (JsonNode x : a) {
+            ids[j++] = x.textValue();
+        }
+
+        return ids;
     }
 
 }

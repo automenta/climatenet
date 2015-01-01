@@ -212,11 +212,17 @@ public class ImportKML implements Runnable {
                             //System.out.println("Loading NetworkLink: " + ref + " " + gisObj);
                             try {
 
-                                path.add(ref.toString());
+                                String r = ref.toString();
+                                boolean pathChanged = false;
+                                if (!(!path.isEmpty()) && (path.getLast().equals(r))) {
+                                    path.add(ref.toString());
+                                    pathChanged = true;
+                                }
 
                                 process(gisObj);
 
-                                path.removeLast();
+                                if (pathChanged)
+                                    path.removeLast();
 
                             } catch (IOException ex) {
                                 System.err.println(ex);
@@ -360,9 +366,9 @@ public class ImportKML implements Runnable {
 
     }
     
-    XContentBuilder styleJson(Style s) throws IOException {
+    XContentBuilder styleJson(XContentBuilder fb, Style s) throws IOException {
         
-        XContentBuilder fb = jsonBuilder().startObject();
+        
 
         String iconURL = s.getIconUrl();
         if (iconURL!=null)
@@ -372,23 +378,29 @@ public class ImportKML implements Runnable {
         if (baloonText!=null)
             fb.field("baloonText", baloonText);
         
-        Color iconColor = s.getIconColor();
+        /*Color iconColor = s.getIconColor();
         if (iconColor!=null)
-            fb.field("iconColor", new int[] { iconColor.getRed(), iconColor.getGreen(), iconColor.getBlue(), iconColor.getAlpha() } );
+            fb.field("iconColor", iconColor.getRed(), iconColor.getGreen(), iconColor.getBlue(), iconColor.getAlpha() );
         
-        Color polyColor = s.getPolyColor();
-        if (polyColor!=null)
-            fb.field("polyColor", new int[] { polyColor.getRed(), polyColor.getGreen(), polyColor.getBlue(), polyColor.getAlpha() } );
-       
-        Double lineWidth = s.getLineWidth();
-        if (lineWidth!=null)
-            fb.field("lineWidth", lineWidth);
         
         Color lineColor = s.getLineColor();
         if (lineColor!=null)
-            fb.field("lineColor", new int[] { lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), lineColor.getAlpha() } );
+            fb.field("lineColor", new Integer[] { lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), lineColor.getAlpha() } );
         
-        fb.endObject();
+        Color polyColor = s.getPolyColor();
+        if (polyColor!=null)
+            fb.field("polyColor", "rgba(" + polyColor.getRed() + "," + polyColor.getGreen()+ "," + polyColor.getBlue()+ "," + polyColor.getAlpha() + ")"  );
+       */
+        Color polyColor = s.getPolyColor();
+        if (polyColor!=null)
+            fb.field("polyColor", polyColor.toString().substring("org.opensextant.giscore.utils.".length()) );
+        
+        Double lineWidth = s.getLineWidth();
+        if (lineWidth!=null)
+            fb.field("lineWidth", lineWidth);
+
+        
+        
         
         return fb;
         
@@ -399,7 +411,9 @@ public class ImportKML implements Runnable {
         
 
 
-        XContentBuilder fb = styleJson(s);
+        XContentBuilder fb = jsonBuilder().startObject();
+        styleJson(fb, s);
+        fb.endObject();
 
         bulk = st.add(bulk, "style", id, fb);
         updateBulk();
@@ -453,6 +467,8 @@ public class ImportKML implements Runnable {
 
             String styleURL = cs.getStyleUrl();
             if (styleURL != null) {
+                if (styleURL.startsWith("#"))
+                    styleURL = styleURL.substring(1);
                 d.field("styleURL", styleURL);
             }
 
@@ -525,12 +541,23 @@ public class ImportKML implements Runnable {
             }
 
             if (f.getStyleUrl() != null) {
-                if (f.getStyleUrl().length() > 0)
-                    fb.field("styleUrl", f.getStyleUrl());
+                if (f.getStyleUrl().length() > 0) {
+                    String styleURL = f.getStyleUrl();
+                    if (styleURL.startsWith("#"))
+                        styleURL = styleURL.substring(1);
+                    fb.field("styleUrl",styleURL);
+                }
             }
             if (f.getStyle()!=null) {           
-                if (f.getStyle() instanceof Style)
-                    fb.field("style", styleJson((Style)f.getStyle()));
+                
+                if (f.getStyle() instanceof Style) {
+                    fb.startObject("style");
+                
+                    styleJson(fb, (Style)f.getStyle());
+                    
+                    fb.endObject();
+                }
+                
             }
 
             fb.field("path", getPath(path));

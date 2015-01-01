@@ -132,6 +132,7 @@ and open the template in the editor.
             var updatePeriodMS = 500;
             var renderPeriodMS = 150;
 
+            var styles = { };
             var features = {};
             var tag = new graphlib.Graph({multigraph: true}); //https://github.com/cpettitt/graphlib/wiki
 
@@ -208,10 +209,10 @@ and open the template in the editor.
 
                 updateBounds();                
                 
-                setTimeout(getTagMetadata, 0);
+                setTimeout(loadTags, 0);
             }
 
-            var getTagMetadata = _.throttle(function() {
+            var loadTags = _.throttle(function() {
                 
                 /*map.eachLayer(function (layer) {
                    layer.remove(); 
@@ -242,21 +243,33 @@ and open the template in the editor.
 
                 f.type = "Feature";
                 f.geometry = f.geom;
+                
+                
+                if (f.styleUrl) {
+                    if (!styles[f.styleUrl]) {
+                        console.log(f.id + ' missing style: ' + f.styleUrl);
+                        
+                        //TODO batch these
+                        loadStyles([f.styleUrl]);
+                    }
+                }
 
 
                 if (f.geom.type === "point")
                     f.geometry.type = "Point";
                 
-                f.style = { };
-                f.style.opacity = 1.0;
+                if (!f.style)
+                    f.style = { };
                 
-                f.properties = { };
-                
-                if (f.name) {
-                    f.properties.name = f.name;
-                }
-                if (f.description) {
-                    f.properties.description = f.description;
+                if (!f.properties) {
+                    f.properties = { };
+
+                    if (f.name) {
+                        f.properties.name = f.name;
+                    }
+                    if (f.description) {
+                        f.properties.description = f.description;
+                    }
                 }
                 
                 if (f.name && f.description)
@@ -405,10 +418,12 @@ and open the template in the editor.
                             layerNode.update();
                             
                             unknownLayers[layerID] = true;
+                            
                         }
                               
                         if (layerNode.opacity > maxOpacity)
                             maxOpacity = layerNode.opacity;
+                        
                         
                         parent = layerID;
                                                 
@@ -426,7 +441,7 @@ and open the template in the editor.
 
                 
                 if (unknownLayers.length > 0)
-                    getTagMetadata(unknownLayers, renderLayerViews);
+                    loadTags(unknownLayers, renderLayerViews);
                 else
                     renderLayerViews();
             }
@@ -442,7 +457,7 @@ and open the template in the editor.
                 var t = tag.node(d);
                 t.setOpacity(opacity);
                 
-                setTimeout(getTagMetadata, 0);
+                setTimeout(loadTags, 0);
             }, renderPeriodMS);
             
             function updateTagButton(x) {                
@@ -506,8 +521,14 @@ and open the template in the editor.
                 console.error('AJAJ Err:', v, m);  
                 
             };
+            
+            function updateStyles(r) {
+                for (var i in r) {
+                    styles[i] = r[i];
+                }
+            }
 
-            function updateLayerMetadata(r) {
+            function updateTags(r) {
                 for (var i in r) {
                     var l = r[i];
                     
@@ -516,12 +537,18 @@ and open the template in the editor.
                         n = newTag(i);
                     }
                     
-                    
                     //TODO copy other metadata, use _.extend
-                    n.name = l.name || i;                    
+                    n.name = l.name || i;    
+                    
+                    if (l.style) {
+                        n.style = l.style;
+                    }
+                    if (l.styleUrl) {
+                        n.styleUrl = l.styleUrl;
+                    }
+                        
                     if (l.inh) {
                         n.inh = l.inh;
-
                     }
                     
                     n.update();
@@ -532,21 +559,28 @@ and open the template in the editor.
             function updateTagIndex(callback) {
                 $.getJSON('/tag/index')
                     .done(function (r) {
-                        updateLayerMetadata(r);
+                        updateTags(r);
                         if (callback)  callback();
                     })
                     .fail(ajaxFail);
             }
 
-            function getTagMetadata(layerIDs, callback) {
+            function loadTags(layerIDs, callback) {
                 $.getJSON('/tag/meta', {id: JSON.stringify(layerIDs)})
                     .done(function (r) {
-                        updateLayerMetadata(r);
+                        updateTags(r);
                         if (callback)  callback();
                     })
                     .fail(ajaxFail);
             }
-            
+            function loadStyles(styleIDs, callback) {
+                $.getJSON('/style/meta', {id: JSON.stringify(styleIDs)})
+                    .done(function (r) {
+                        updateStyles(r);
+                        if (callback)  callback();
+                    })
+                    .fail(ajaxFail);
+            }            
 
             var updateBounds = _.throttle(function (e) {
                 var b = map.getBounds();

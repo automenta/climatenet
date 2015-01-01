@@ -244,6 +244,9 @@ public class ElasticSpacetime implements Spacetime {
         
         SearchResponse response = q.execute().actionGet();
         
+                System.out.println(qb +  " "+ types[0] + " " + response.getHits().getTotalHits());
+
+                
         return response;
     }
 
