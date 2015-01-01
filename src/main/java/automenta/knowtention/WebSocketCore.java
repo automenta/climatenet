@@ -82,7 +82,7 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
                             case "on": onOn(j, socket); break;
                             case "!": onReload(j, socket); break;                       
                             case "off": onOff(j, socket); break;
-                            default: onOperation(operation, j, socket); break;
+                            default: onOperation(operation, channel(j), j, socket); break;
                         }
                     }
 
@@ -137,18 +137,19 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
         
         protected void sendChannel(Channel c) {            
             ArrayNode a = Core.newJson.arrayNode();
-            a.add("channel.replace");
+            a.add("=");
             a.add(c.get());
             send(socket, a);            
         }
         protected void sendPatch(String channelID, JsonNode patch) {
             ArrayNode a = Core.newJson.arrayNode();
-            a.add("channel.patch");
+            a.add("+");
             a.add(channelID);
             a.add(patch);
             send(socket, a);            
         }
         
+        /** triggers channel .commit() and this may result in a patch (but not necessarily replace) */
         protected void onReload(JsonNode j, WebSocketChannel socket) {
             Channel c = channel(j);
             c.commit();
@@ -242,7 +243,7 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
 
     }
     
-    protected void onOperation(String operation, JsonNode param, WebSocketChannel socket) {
+    protected void onOperation(String operation, Channel c, JsonNode param, WebSocketChannel socket) {
 
     }
 

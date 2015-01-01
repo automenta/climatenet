@@ -34,18 +34,21 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author me
+ * Proxy server which caches requests and their data to files on disk
  */
-public class ProxyServer implements HttpHandler {
+public class CachingProxyServer implements HttpHandler {
 
+    public static final Logger logger = LoggerFactory.getLogger(CachingProxyServer.class);
+    
     private AsyncHttpClient client = new AsyncHttpClient();
     public final Proxy proxy;
     final String cachePath;
 
-    public ProxyServer(int port, String cachePath) {
+    public CachingProxyServer(int port, String cachePath) {
 
         this.cachePath = cachePath + "/";
         Undertow server = Undertow.builder()
@@ -57,6 +60,7 @@ public class ProxyServer implements HttpHandler {
 
         proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(port));
 
+        logger.info("Cache proxy started: " + proxy + ", saving to: " + cachePath);
     }
 
     public synchronized void caching(String uri, CachedURL c) throws IOException {

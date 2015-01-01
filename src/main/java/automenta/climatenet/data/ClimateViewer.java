@@ -8,7 +8,7 @@ package automenta.climatenet.data;
 import static automenta.climatenet.ImportKML.fromJSON;
 import automenta.climatenet.Tag;
 import automenta.climatenet.elastic.ElasticSpacetime;
-import automenta.climatenet.proxy.ProxyServer;
+import automenta.climatenet.proxy.CachingProxyServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -105,7 +105,7 @@ public class ClimateViewer {
 
     public static void _main(String[] args) throws Exception {
 
-        ProxyServer cache = new ProxyServer(16000, basePath);
+        CachingProxyServer cache = new CachingProxyServer(16000, basePath);
 
         ElasticSpacetime es = ElasticSpacetime.server("cv", false);
         //new ClimateViewer(cache.proxy, layersFile, es, 1, 3);

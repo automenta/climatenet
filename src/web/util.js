@@ -111,7 +111,7 @@ function Websocket(path, conn) {
 
         conn.opened = true;
 
-        console.log('websocket connected');
+        //console.log('websocket connected');
 
         if (conn.onOpen)
             conn.onOpen(this);
@@ -126,8 +126,11 @@ function Websocket(path, conn) {
 
         conn.opened = false;
 
-        console.log("Websocket disconnected");
+        //console.log("Websocket disconnected");
 
+        if (conn.onClose)
+            conn.onClose();
+        
         //attempt reconnect?
     };
     ws.onerror = function (e) {
@@ -145,10 +148,10 @@ function Websocket(path, conn) {
     };
 
     conn.handler = {
-        'channel.replace': function(d) {
+        '=': function(d) {
             var channelData = d[1];
                         
-            console.log('replace', channelData);
+            //console.log('replace', channelData);
             
             var chanID = channelData.id;
             var chan = conn.subs[chanID];
@@ -169,7 +172,7 @@ function Websocket(path, conn) {
                     conn.onChange(chan);                
             }
         },
-        'channel.patch': function(d) {
+        '+': function(d) {
             var channelID = d[1];
             var patch = d[2];
             
@@ -177,7 +180,7 @@ function Websocket(path, conn) {
             //{ id: channelData.id, data:channelData}
             var c = conn.subs[channelID];
             if (c) {
-                console.log('patch', patch, c, c.data);
+                //console.log('patch', patch, c, c.data);
 
                 jsonpatch.apply(c.data, patch);
                 
@@ -188,7 +191,7 @@ function Websocket(path, conn) {
                     conn.onChange(c);
             }
             else {
-                console.log('error patching', patch);
+                console.error('error patching', d);
             }
         }
 
@@ -242,6 +245,10 @@ function Websocket(path, conn) {
     //reload is just sending an 'on' event again
     conn.reload = function(channelID) {
         conn.send(['!', channelID]);
+    };
+    
+    conn.operation = function(op, channelID) {
+        conn.send([op, channelID]);
     };
     
     conn.off = function(channelID) {

@@ -15,6 +15,8 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.geo.builders.CircleBuilder;
@@ -303,9 +305,21 @@ public class ElasticSpacetime implements Spacetime {
         bulkRequest.add(client.prepareIndex(index, type, id)
                 .setSource(n));
         //System.out.println(index + " " + type + " " + n + " " + response.getHeaders());
-
     }
+    public void update(String type, String id, String json) {
+        if (debug) {
+            System.out.println(index + " " + type + " " + json);
+        }
 
+        UpdateRequestBuilder u = client.prepareUpdate(index, type, id).setDoc(json);
+                
+        UpdateResponse r = u.execute().actionGet();
+                
+        if (debug) {
+            System.out.println(r.getHeaders());
+        }
+    }
+    
     @Override
     public void close() {
         client.close();

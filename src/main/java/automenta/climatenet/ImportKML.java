@@ -8,7 +8,6 @@ package automenta.climatenet;
 import automenta.climatenet.elastic.ElasticSpacetime;
 import automenta.climatenet.kml.giscore.KmlReader;
 import automenta.climatenet.kml.giscore.UrlRef;
-import automenta.climatenet.proxy.ProxyServer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,11 +30,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.mapper.MapperBuilders.id;
 import org.opensextant.geodesy.Geodetic2DPoint;
 import org.opensextant.giscore.DocumentType;
 import org.opensextant.giscore.data.DocumentTypeRegistration;
@@ -43,7 +43,6 @@ import org.opensextant.giscore.data.FactoryDocumentTypeRegistry;
 import org.opensextant.giscore.events.ContainerEnd;
 import org.opensextant.giscore.events.ContainerStart;
 import org.opensextant.giscore.events.DocumentStart;
-import org.opensextant.giscore.events.Element;
 import org.opensextant.giscore.events.Feature;
 import org.opensextant.giscore.events.IGISObject;
 import org.opensextant.giscore.events.Schema;
@@ -80,17 +79,20 @@ public class ImportKML implements Runnable {
     }
     private final ElasticSpacetime st;
     private final String id;
-    private final String name;
     private final String url;
+        int serial = 1;
 
-    
+    Deque<String> path = new ArrayDeque();
+    int numFeatures = 0;
+    private String layer;
+
     public String[] getPath(Deque<String> p) {
         return p.toArray(new String[p.size()]);
     }
     
-    public int transformKML(String layer, String name, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
+    public int transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
         URL url = new URL(urlString);
-        Deque<String> path = new ArrayDeque();
+        this.layer = layer;
         
         /*Logger.getLogger(KmlInputStream.class).setLevel(Level.OFF);
 Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
@@ -99,7 +101,6 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
         
-        int numFeatures = 0;
         
         
         File temp = Files.createTempDirectory("kml" + layer).toFile();
@@ -120,7 +121,6 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         SimpleField descriptionField = new SimpleField("description", Type.STRING);
         SimpleField addressField = new SimpleField("address", Type.STRING);
         
-        int serial = 1;
         
         if (esri) {
             String outputFile = p + "/" + layer + ".shape.zip";
@@ -200,8 +200,202 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
   // do something with the gis object; e.g. check for placemark, NetworkLink, etc.
             try {
                 IGISObject go = reader.read();
-                if (go == null)
+                if (!process(go))
                     break;
+            }
+            catch (Throwable t) {
+                exceptions.incrementAndGet();
+                exceptionClass.add(t.getClass());            
+            }
+        } while (true);
+        
+        
+        
+// get list of network links that were retrieved from step above
+        
+        List<URI> networkLinks = reader.getNetworkLinks();
+        
+        reader.close();
+
+        
+        if (!networkLinks.isEmpty()) {
+            
+  // Now import features from all referenced network links.
+            // if Networklinks have nested network links then they will be added to end
+            // of the list and processed one after another. The handleEvent() callback method
+            // below will be called with each feature (i.e. Placemark, GroundOverlay, etc.)
+            // as it is processed in the target KML resources.
+            
+            reader.importFromNetworkLinks(
+                    new KmlReader.ImportEventHandler() {
+                        public boolean handleEvent(UrlRef ref, IGISObject gisObj) {
+                            
+            // if gisObj instanceOf Feature, GroundOverlay, etc.
+                            // do something with the gisObj
+                            // return false to abort the recursive network link parsing
+                            /*if (visited.contains(ref))
+                                return false;*/
+                            
+                            //System.out.println("Loading NetworkLink: " + ref + " " + gisObj);
+                            try {
+                                process(gisObj);
+                            } catch (IOException ex) {
+                                System.err.println(ex);
+                            }
+                            
+                            return true;
+                        }
+                                                
+
+                        @Override
+                        public void handleError(URI uri, Exception excptn) {
+                            exceptions.incrementAndGet();
+                            exceptionClass.add(excptn.getClass());
+                        }
+                        
+                    });
+
+            
+        }
+        
+        if (exceptions.get() > 0) {
+            System.err.println("  Exceptions: " + exceptions + " of " + exceptionClass );
+        }
+
+        if (st!=null) {
+            st.bulkEnd();
+        }
+        
+        if (esri) {
+            ContainerEnd ce = new ContainerEnd();            
+            shpos.write(ce);
+            
+            
+            try {
+                shpos.close();
+            }
+            catch (Exception e) {
+                System.err.println(e);
+            }
+
+            esriOut.flush();
+            esriOut.close();	
+        }
+        if (kml) {            
+            kout.close();
+            toGeoJSON(kmlFile, geojsonFile);
+            toPostgres(layer, geojsonFile, "localhost", "me", "cv");
+        }
+
+        
+        return numFeatures;
+
+        
+    }
+    
+    public static void exec(String cmd) {
+        try {
+            String[] cmdParm = { "/bin/sh", "-c", cmd };
+            
+            Process proc = Runtime.getRuntime().exec(cmdParm);
+            IOUtils.copy(proc.getInputStream(), System.out);
+            IOUtils.copy(proc.getErrorStream(), System.err);        
+            proc.waitFor();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+    public static void toPostgres(String layerName, String inputFile, String host, String user, String db) {
+        exec("ogr2ogr -update -append -skipFailures -f \"PostgreSQL\" PG:\"host=" + host + " user=" + user + " dbname=" + db + "\" " + inputFile + " -nln " + layerName);
+    }
+    
+    public static void toGeoJSON(String inputFile, String outputFile){
+//        ogr2ogr -f "GeoJSON" output.json input.kml
+        exec("rm -f " + outputFile);
+        exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
+    }
+
+
+    
+     final public static ObjectMapper json = new ObjectMapper()
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)            
+            .configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true)
+            .configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
+            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+    
+    public static ObjectNode fromJSON(String x) {
+        try {
+            
+            return json.readValue(x, ObjectNode.class);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+    public ImportKML(ElasticSpacetime st, Proxy proxy, String id, String url) {
+        this.st = st;
+        this.proxy = proxy;
+        this.id = id;
+        this.url = url;
+    }
+    
+    
+    
+    
+    @Override
+    public void run() {
+        try {
+            //logger.info(this + " run(): " + id);
+            int features = transformKML(id, url, st, false, false);
+
+        } catch (Throwable e) {
+            //e.printStackTrace();;
+            System.err.println(e);
+        }
+
+    }
+
+            
+
+    
+
+    static {
+        //https://code.google.com/p/htmlcompressor/wiki/Documentation#Using_HTML_Compressor_from_Java_API
+        
+        compressor.setRemoveComments(true);            //if false keeps HTML comments (default is true)
+compressor.setRemoveMultiSpaces(true);         //if false keeps multiple whitespace characters (default is true)
+compressor.setRemoveIntertagSpaces(true);      //removes iter-tag whitespace characters
+compressor.setRemoveQuotes(true);              //removes unnecessary tag attribute quotes
+compressor.setSimpleDoctype(true);             //simplify existing doctype
+compressor.setRemoveScriptAttributes(true);    //remove optional attributes from script tags
+
+compressor.setRemoveLinkAttributes(true);      //remove optional attributes from link tags
+compressor.setRemoveJavaScriptProtocol(true);      //remove optional attributes from link tags
+compressor.setRemoveHttpProtocol(true);        //replace "http://" with "//" inside tag attributes
+compressor.setRemoveHttpsProtocol(true);       //replace "https://" with "//" inside tag attributes
+compressor.setRemoveSurroundingSpaces("br,p"); //remove spaces around provided tags
+compressor.setCompressCss(true);               //compress inline css 
+
+    }
+
+    private String filterHTML(String html) {
+        
+        
+        try {
+            String compressedHtml = compressor.compress(html);
+
+            return compressedHtml;
+        }
+        catch (Exception e) {
+            return html;
+        }
+        
+    }
+
+    private synchronized boolean process(IGISObject go) throws IOException {
+                if (go == null)
+                    return false;
 
                 if (st!=null) {
                     if (go instanceof DocumentStart) {
@@ -301,229 +495,47 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
                     }
                 }
 
-                if (esri) {
-                    if (go instanceof Feature) {
-                        Feature f = (Feature)go;                
-
-                        if (!f.getFields().isEmpty()) {
-                            System.out.println("Fields: " + f.getFields());
-                        }
-                        if (!f.getExtendedElements().isEmpty()) {
-                            System.out.println("Extended Elements: " + f.getExtendedElements());
-                        }
-                        for (Element e : f.getElements()) {
-                            String n = e.getName();
-                            switch (n) {
-                                case "address":
-                                    f.putData(addressField, e.getText());
-                                    break;
-                                default:
-                                    System.err.println("Unknown element: " + e);
-                                    break;
-                            }
-
-                        }
-                        String x = f.getDescription();
-                        if (x!=null) {
-                            f.putData(descriptionField, x);
-                        }
-
-
-                        //f.putData(null, kout);
-                        //System.out.println(gisObj);
-                    }                
-                    else {
-                        //System.err.println(gisObj.getClass() + " not handled");                     
-                    }
-
-                    shpos.write(go);  
-                }
-                if (kml) {
-                    kout.write(go);
-                }
-            }
-            catch (Throwable t) {
-                exceptions.incrementAndGet();
-                exceptionClass.add(t.getClass());            
-            }
-        } while (true);
-        
-        
-        
-// get list of network links that were retrieved from step above
-        
-        List<URI> networkLinks = reader.getNetworkLinks();
-        
-        reader.close();
-
-        final Set<UrlRef> visited = new HashSet();
-        
-        if (!networkLinks.isEmpty()) {
-            
-  // Now import features from all referenced network links.
-            // if Networklinks have nested network links then they will be added to end
-            // of the list and processed one after another. The handleEvent() callback method
-            // below will be called with each feature (i.e. Placemark, GroundOverlay, etc.)
-            // as it is processed in the target KML resources.
-            
-            reader.importFromNetworkLinks(
-                    new KmlReader.ImportEventHandler() {
-                        public boolean handleEvent(UrlRef ref, IGISObject gisObj) {
-                            
-            // if gisObj instanceOf Feature, GroundOverlay, etc.
-                            // do something with the gisObj
-                            // return false to abort the recursive network link parsing
-                            if (visited.contains(ref))
-                                return false;
-                            
-                            System.out.println("Loading NetworkLink: " + ref);
-                            visited.add(ref);
-                            return true;
-                        }
-
-                        @Override
-                        public void handleError(URI uri, Exception excptn) {
-                            exceptions.incrementAndGet();
-                            exceptionClass.add(excptn.getClass());
-                        }
-                        
-                    });
-
-        }
-        
-        if (exceptions.get() > 0) {
-            System.err.println("  Exceptions: " + exceptions + " of " + exceptionClass );
-        }
-
-        if (st!=null) {
-            st.bulkEnd();
-        }
-        
-        if (esri) {
-            ContainerEnd ce = new ContainerEnd();            
-            shpos.write(ce);
-            
-            
-            try {
-                shpos.close();
-            }
-            catch (Exception e) {
-                System.err.println(e);
-            }
-
-            esriOut.flush();
-            esriOut.close();	
-        }
-        if (kml) {            
-            kout.close();
-            toGeoJSON(kmlFile, geojsonFile);
-            toPostgres(layer, geojsonFile, "localhost", "me", "cv");
-        }
-
-        
-        return numFeatures;
-
-        
-    }
-    
-    public static void exec(String cmd) {
-        try {
-            String[] cmdParm = { "/bin/sh", "-c", cmd };
-            
-            Process proc = Runtime.getRuntime().exec(cmdParm);
-            IOUtils.copy(proc.getInputStream(), System.out);
-            IOUtils.copy(proc.getErrorStream(), System.err);        
-            proc.waitFor();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-    public static void toPostgres(String layerName, String inputFile, String host, String user, String db) {
-        exec("ogr2ogr -update -append -skipFailures -f \"PostgreSQL\" PG:\"host=" + host + " user=" + user + " dbname=" + db + "\" " + inputFile + " -nln " + layerName);
-    }
-    
-    public static void toGeoJSON(String inputFile, String outputFile){
-//        ogr2ogr -f "GeoJSON" output.json input.kml
-        exec("rm -f " + outputFile);
-        exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
-    }
-
-
-    
-     final public static ObjectMapper json = new ObjectMapper()
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-            .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)            
-            .configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true)
-            .configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
-            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-    
-    public static ObjectNode fromJSON(String x) {
-        try {
-            
-            return json.readValue(x, ObjectNode.class);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-    public ImportKML(ElasticSpacetime st, Proxy proxy, String id, String name, String url) {
-        this.st = st;
-        this.proxy = proxy;
-        this.id = id;
-        this.name = name;
-        this.url = url;
-    }
-    
-    
-    
-    
-    @Override
-    public void run() {
-        try {
-            //logger.info(this + " run(): " + id);
-            int features = transformKML(id, name, url, st, false, false);
-
-        } catch (Throwable e) {
-            //e.printStackTrace();;
-            System.err.println(e);
-        }
-
-    }
-
-            
-
-    
-
-    static {
-        //https://code.google.com/p/htmlcompressor/wiki/Documentation#Using_HTML_Compressor_from_Java_API
-        
-        compressor.setRemoveComments(true);            //if false keeps HTML comments (default is true)
-compressor.setRemoveMultiSpaces(true);         //if false keeps multiple whitespace characters (default is true)
-compressor.setRemoveIntertagSpaces(true);      //removes iter-tag whitespace characters
-compressor.setRemoveQuotes(true);              //removes unnecessary tag attribute quotes
-compressor.setSimpleDoctype(true);             //simplify existing doctype
-compressor.setRemoveScriptAttributes(true);    //remove optional attributes from script tags
-
-compressor.setRemoveLinkAttributes(true);      //remove optional attributes from link tags
-compressor.setRemoveJavaScriptProtocol(true);      //remove optional attributes from link tags
-compressor.setRemoveHttpProtocol(true);        //replace "http://" with "//" inside tag attributes
-compressor.setRemoveHttpsProtocol(true);       //replace "https://" with "//" inside tag attributes
-compressor.setRemoveSurroundingSpaces("br,p"); //remove spaces around provided tags
-compressor.setCompressCss(true);               //compress inline css 
-
-    }
-
-    private String filterHTML(String html) {
-        
-        
-        try {
-            String compressedHtml = compressor.compress(html);
-
-            return compressedHtml;
-        }
-        catch (Exception e) {
-            return html;
-        }
-        
+//                if (esri) {
+//                    if (go instanceof Feature) {
+//                        Feature f = (Feature)go;                
+//
+//                        if (!f.getFields().isEmpty()) {
+//                            System.out.println("Fields: " + f.getFields());
+//                        }
+//                        if (!f.getExtendedElements().isEmpty()) {
+//                            System.out.println("Extended Elements: " + f.getExtendedElements());
+//                        }
+//                        for (Element e : f.getElements()) {
+//                            String n = e.getName();
+//                            switch (n) {
+//                                case "address":
+//                                    f.putData(addressField, e.getText());
+//                                    break;
+//                                default:
+//                                    System.err.println("Unknown element: " + e);
+//                                    break;
+//                            }
+//
+//                        }
+//                        String x = f.getDescription();
+//                        if (x!=null) {
+//                            f.putData(descriptionField, x);
+//                        }
+//
+//
+//                        //f.putData(null, kout);
+//                        //System.out.println(gisObj);
+//                    }                
+//                    else {
+//                        //System.err.println(gisObj.getClass() + " not handled");                     
+//                    }
+//
+//                    shpos.write(go);  
+//                }
+//                if (kml) {
+//                    kout.write(go);
+//                }
+                
+                return true;
     }
 }

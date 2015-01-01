@@ -52,6 +52,7 @@
 
         var socketURL = urlQuery('url');
         var channels = urlQuery('channels').split(',');
+        var initOperation = urlQuery('operation');
                 
         wlog('Socket URL: ' + socketURL + ', Channels=' + channels);
         
@@ -70,6 +71,12 @@
                 });
                 
                 wlog('Connected');
+                
+                if (initOperation!==null) {
+                    _.each(channels, function(c) {                        
+                        that.operation(initOperation, c);
+                    });
+                }
                                 
                 this.reloader = setInterval(function() {
                     _.each(channels, function(c) {

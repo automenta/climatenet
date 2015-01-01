@@ -85,7 +85,7 @@ public class KmlReader extends KmlBaseReader implements IGISInputStream {
 
     private final List<URI> gisNetworkLinks = new ArrayList<URI>();
 
-    private int maxLinkCount = 500;
+    private int maxLinkCount = 5000;
     private boolean maxLinkCountExceeded;
 
     private Proxy proxy;
