@@ -67,7 +67,12 @@ public class ClimateViewer {
 
             }
         }
+        String icon = null;
+        
         for (JsonNode x : n) {
+            if (x.has("icon"))                    
+                icon = x.get("icon").textValue();
+            
             if (x.isTextual()) {
                 currentSection = x.textValue();
             } else if (x.isObject() && x.has("section")) {
@@ -78,9 +83,12 @@ public class ClimateViewer {
                 final String id = x.get("layer").textValue();
                 final String url = x.get("kml").textValue();
                 final String name = x.get("name").textValue();
+                
 
                 Tag t = new Tag(id, name);
                 t.url(url);
+                if (icon!=null)
+                    t.icon(icon);
 
                 if (currentSection != null) {
                     t.inh.put(currentSection, 1.0);
@@ -94,19 +102,16 @@ public class ClimateViewer {
         }
 
         st.commit(bulk);
-        /*
-         executor.shutdown();
-         while (!executor.isTerminated()) {
-         }*/
+
     }
-
-    public static void _main(String[] args) throws Exception {
-
-        CachingProxyServer cache = new CachingProxyServer(16000, basePath);
-
-        ElasticSpacetime es = ElasticSpacetime.server("cv", false);
-        //new ClimateViewer(cache.proxy, layersFile, es, 1, 3);
-    }
+//
+//    public static void _main(String[] args) throws Exception {
+//
+//        CachingProxyServer cache = new CachingProxyServer(16000, basePath);
+//
+//        ElasticSpacetime es = ElasticSpacetime.server("cv", false);
+//        //new ClimateViewer(cache.proxy, layersFile, es, 1, 3);
+//    }
 
     public static String getSectionID(JsonNode x) {
         if (x.has("id")) {

@@ -24,6 +24,7 @@ public class Tag {
     public String name;
     public String description;
     public Map<String,Object> meta = new HashMap();
+    private String icon;
 
     public Tag(String id, String name) {
         this.id = id;
@@ -49,6 +50,9 @@ public class Tag {
                 b.field("inh", inh);
             if ((meta!=null) && (!meta.isEmpty()))
                 b.field("meta", meta);
+            if (icon!=null)
+                b.startObject("style").field("iconUrl", icon).endObject();
+            
             return b.endObject();
         } catch (IOException ex) {
             logger.warn(ex.toString());
@@ -58,6 +62,10 @@ public class Tag {
 
     public void setDescription(String d) {
         this.description = d;
+    }
+
+    public void icon(String icon) {
+        this.icon = icon;
     }
     
     

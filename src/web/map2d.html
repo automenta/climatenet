@@ -257,6 +257,11 @@ and open the template in the editor.
 
                 if (f.geom.type === "point")
                     f.geometry.type = "Point";
+                if (f.geom.type === "linestring")
+                    f.geometry.type = "LineString";
+                if (f.geom.type === "polygon")
+                    f.geometry.type = "Polygon";
+                
                 
                 if (!f.style)
                     f.style = { };
@@ -434,10 +439,7 @@ and open the template in the editor.
 
                 }
 
-                unknownLayers = _.map(_.keys(unknownLayers),
-                        function (l) {
-                            return encodeURIComponent(l);
-                        });
+                
 
                 
                 if (unknownLayers.length > 0)
@@ -566,6 +568,8 @@ and open the template in the editor.
             }
 
             function loadTags(layerIDs, callback) {
+                //layerIDs = _.map(layerIDs, encodeURIComponent);
+                        
                 $.getJSON('/tag/meta', {id: JSON.stringify(layerIDs)})
                     .done(function (r) {
                         updateTags(r);
@@ -574,6 +578,8 @@ and open the template in the editor.
                     .fail(ajaxFail);
             }
             function loadStyles(styleIDs, callback) {
+                //layerIDs = _.map(styleIDs, encodeURIComponent);
+                
                 $.getJSON('/style/meta', {id: JSON.stringify(styleIDs)})
                     .done(function (r) {
                         updateStyles(r);

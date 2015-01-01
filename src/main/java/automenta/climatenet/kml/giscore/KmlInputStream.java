@@ -837,7 +837,8 @@ public class KmlInputStream extends XmlInputStream implements IKml {
                 skipNextElement(stream, name);
                 return true;
             } else if (localname.equals(STYLE_URL)) {
-                feature.setStyleUrl(stream.getElementText()); // value trimmed to null
+                String st = stream.getElementText();
+                feature.setStyleUrl(st); // value trimmed to null
                 return true;
             } else if (localname.equals(TIME_SPAN) || localname.equals(TIME_STAMP)) {
                 handleTimePrimitive(feature, ee);

@@ -14,46 +14,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Base64;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.opensextant.geodesy.Geodetic2DPoint;
-import org.opensextant.giscore.DocumentType;
-import org.opensextant.giscore.data.DocumentTypeRegistration;
-import org.opensextant.giscore.data.FactoryDocumentTypeRegistry;
 import org.opensextant.giscore.events.ContainerEnd;
 import org.opensextant.giscore.events.ContainerStart;
 import org.opensextant.giscore.events.DocumentStart;
 import org.opensextant.giscore.events.Feature;
 import org.opensextant.giscore.events.IGISObject;
+import org.opensextant.giscore.events.Pair;
 import org.opensextant.giscore.events.Schema;
 import org.opensextant.giscore.events.SimpleField;
 import org.opensextant.giscore.events.SimpleField.Type;
 import org.opensextant.giscore.events.Style;
+import org.opensextant.giscore.events.StyleMap;
 import org.opensextant.giscore.events.StyleSelector;
 import org.opensextant.giscore.geometry.Geometry;
 import org.opensextant.giscore.geometry.Point;
-import org.opensextant.giscore.output.IGISOutputStream;
-import org.opensextant.giscore.output.kml.KmlOutputStream;
-import org.opensextant.giscore.output.shapefile.ShapefileOutputStream;
 import org.opensextant.giscore.utils.Color;
 
 /**
@@ -76,111 +69,84 @@ public class ImportKML implements Runnable {
     private final ElasticSpacetime st;
     private final String id;
     private final String url;
-    int serial = 1;
+    int serial;
 
-    Deque<String> path = new ArrayDeque();
     int numFeatures = 0;
     private String layer;
-    private BulkRequestBuilder bulk = null;
     private int BULK_SIZE = 1000;
 
     public String[] getPath(Deque<String> p) {
         return p.toArray(new String[p.size()]);
     }
 
-    public int transformKML(String layer, String urlString, ElasticSpacetime st, boolean esri, boolean kml) throws Exception {
+    public static interface GISVisitor {
+
+        public boolean on(IGISObject go, String[] path) throws IOException;
+
+        public void start(String layer);
+
+        public void end();
+    }
+
+    Deque<String> path = new ArrayDeque();
+
+    public void transformKML(String layer, String urlString, ElasticSpacetime st, final GISVisitor visitor) throws Exception {
         URL url = new URL(urlString);
         this.layer = layer;
 
-        /*Logger.getLogger(KmlInputStream.class).setLevel(Level.OFF);
-         Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
 
-        File temp = Files.createTempDirectory("kml" + layer).toFile();
-
-        String p = null;
-        //String p = basePath + "/" + layer;
-
-        //Files.deleteIfExists(Paths.get(p));
-        //if (!Files.exists(Paths.get(p)))
-        //  Files.createDirectory(Paths.get(p));
-        IGISOutputStream shpos = null;
-        ZipOutputStream esriOut = null;
-
         SimpleField layerfield = new SimpleField("layer", Type.STRING);
         layerfield.setLength(32);
-        SimpleField descriptionField = new SimpleField("description", Type.STRING);
-        SimpleField addressField = new SimpleField("address", Type.STRING);
-
-        if (esri) {
-            String outputFile = p + "/" + layer + ".shape.zip";
-            if (Files.exists(Paths.get(outputFile))) {
-                Files.delete(Paths.get(outputFile));
-            }
-            esriOut = new ZipOutputStream(new FileOutputStream(outputFile));
-
-            DocumentTypeRegistration docreg = FactoryDocumentTypeRegistry.get(DocumentType.Shapefile);
-
-            shpos = new ShapefileOutputStream(esriOut, new Object[]{temp}) {
-
-            };
-
-            //shpos = GISFactory.getOutputStream(DocumentType.Shapefile, esriOut, temp);
-            System.out.println("  ESRI Shapefile: Output file: " + outputFile);
-            System.out.println("  ESRI Shapefile: Temporary folder: " + temp);
-
-            Schema schema = new Schema(new URI("urn:climateviewer"));
-            schema.put(layerfield);
-            schema.put(addressField);
-            schema.put(descriptionField);
-
-            DocumentStart ds = new DocumentStart(DocumentType.Shapefile);
-            shpos.write(ds);
-
-            ContainerStart cs = new ContainerStart("Folder");
-            cs.setName(layer);
-            shpos.write(cs);
-            shpos.write(schema);
-        }
-
-        KmlOutputStream kout = null;
-        String kmlFile = p + "/" + layer + ".kml";
-        String geojsonFile = p + "/" + layer + ".geojson";
-
-        if (kml) {
-
-            FileOutputStream fout = new FileOutputStream(new File(kmlFile));
-
-            //String cmd = "ogr2ogr -F GeoJSON " + geojsonoutput + " /vsistdin/";
-            //ogr2ogr -update -append -f "PostGreSQL" PG:"host=localhost user=me dbname=cv" ccr01.kml
-            //String cmd = "ogr2ogr -update -append -skipFailures -F \"PostGreSQL\" PG:\"host=localhost user=me dbname=cv\" /vsistdin/";
-            //String[] cmdParm = { "/bin/sh", "-c", cmd };
-            //jsonproc = Runtime.getRuntime().exec(cmdParm);            
-            kout = new KmlOutputStream(fout, "UTF-8");
-
-            //TODO
-            //tee out to a pipe that executes:
-            //  {cat cvr01.kml } | ogr2ogr -F GeoJSON cvr01.json /vsistdin/
-            //     | ogr2ogr -update -append -f "PostGreSQL" PG:"host=localhost user=me dbname=cv" /vsistdin/
-        }
-
-        if (st != null) {
-            bulk = st.newBulk();
-        }
 
         final AtomicInteger exceptions = new AtomicInteger();
         final Set<Class> exceptionClass = new HashSet();
+
+        serial = 1;
+        path.clear();
+
+        visitor.start(layer);
 
         do {
 
             //for (IGISObject go; (go = reader.read()) != null;) {
             // do something with the gis object; e.g. check for placemark, NetworkLink, etc.
             try {
+
                 IGISObject go = reader.read();
-                if (!process(go)) {
+                if (go == null) {
                     break;
                 }
+
+                if (go instanceof DocumentStart) {
+                    DocumentStart ds = (DocumentStart) go;
+
+                    path.add(layer);
+
+                }
+
+                if (go instanceof ContainerEnd) {
+                    path.removeLast();
+                }
+
+                if ((go instanceof ContainerStart) || (go instanceof Feature)) {
+                    serial++;
+                }
+
+                if (!visitor.on(go, getPath(path))) {
+                    break;
+                }
+
+                //add to the path after container start is processed
+                if (go instanceof ContainerStart) {
+                    ContainerStart cs = (ContainerStart) go;
+                    //TODO startTime?
+                    //System.out.println(cs + " " + cs.getId());
+                    String i = getSerial(layer, serial);
+                    path.add(i);
+                }
+
             } catch (Throwable t) {
                 System.err.println(t);
                 exceptions.incrementAndGet();
@@ -189,7 +155,7 @@ public class ImportKML implements Runnable {
         } while (true);
 
 // get list of network links that were retrieved from step above
-        List<URI> networkLinks = reader.getNetworkLinks();
+        Set<URI> networkLinks = new HashSet(reader.getNetworkLinks());
 
         reader.close();
 
@@ -210,22 +176,23 @@ public class ImportKML implements Runnable {
                             /*if (visited.contains(ref))
                              return false;*/
                             //System.out.println("Loading NetworkLink: " + ref + " " + gisObj);
+                            String r = ref.toString();
+                            boolean pathChanged = false;
+                            if (!(!path.isEmpty()) && (path.getLast().equals(r))) {
+                                path.add(ref.toString());
+                                pathChanged = true;
+                            }
+
+                            serial++;
+
                             try {
+                                visitor.on(gisObj, getPath(path));
+                            } catch (Throwable t) {
+                                System.err.println(t);
+                            }
 
-                                String r = ref.toString();
-                                boolean pathChanged = false;
-                                if (!(!path.isEmpty()) && (path.getLast().equals(r))) {
-                                    path.add(ref.toString());
-                                    pathChanged = true;
-                                }
-
-                                process(gisObj);
-
-                                if (pathChanged)
-                                    path.removeLast();
-
-                            } catch (IOException ex) {
-                                System.err.println(ex);
+                            if (pathChanged) {
+                                path.removeLast();
                             }
 
                             return true;
@@ -245,33 +212,7 @@ public class ImportKML implements Runnable {
             System.err.println("  Exceptions: " + exceptions + " of " + exceptionClass);
         }
 
-        if (st != null) {
-            if (bulk != null) {
-                st.commit(bulk);
-                bulk = null;
-            }
-        }
-
-        if (esri) {
-            ContainerEnd ce = new ContainerEnd();
-            shpos.write(ce);
-
-            try {
-                shpos.close();
-            } catch (Exception e) {
-                System.err.println(e);
-            }
-
-            esriOut.flush();
-            esriOut.close();
-        }
-        if (kml) {
-            kout.close();
-            toGeoJSON(kmlFile, geojsonFile);
-            toPostgres(layer, geojsonFile, "localhost", "me", "cv");
-        }
-
-        return numFeatures;
+        visitor.end();
 
     }
 
@@ -325,8 +266,271 @@ public class ImportKML implements Runnable {
     @Override
     public void run() {
         try {
-            //logger.info(this + " run(): " + id);
-            int features = transformKML(id, url, st, false, false);
+            final Map<String, Style> styles = new HashMap();
+
+            //1. pre-process: collect style information
+            transformKML(id, url, st, new GISVisitor() {
+
+                Map<String, String> styleMap = new HashMap();
+
+                @Override
+                public void start(String layer) {
+                }
+
+                protected void onStyle(Style s) {
+                    String id = s.getId();
+                    styles.put(id, s);
+                }
+
+                protected void onStyleMap(StyleMap ss) {
+
+                    String ssid = ss.getId();
+                    if (ssid == null) {
+                        System.err.println("null id: " + ss);
+                        return;
+                    }
+                    Pair p = ss.getPair(StyleMap.NORMAL);
+                    if (p.getStyleSelector() instanceof Style) {
+                        styles.put(ssid, ((Style) p.getStyleSelector()));
+                    } else if (p.getStyleSelector() instanceof StyleMap) {
+                        //System.out.println("Unmanaged StyleMap: " + p);
+                        styleMap.put(ssid, p.getStyleUrl());
+                    }
+
+                    //TODO highlight?
+                }
+
+                @Override
+                public boolean on(IGISObject go, String[] path) throws IOException {
+
+                    if (go instanceof Style) {
+                        onStyle((Style) go);
+                    } else if (go instanceof StyleMap) {
+                        onStyleMap((StyleMap) go);
+                    }
+                    if (go instanceof ContainerStart) {
+                        ContainerStart cs = (ContainerStart) go;
+
+                        for (StyleSelector ss : cs.getStyles()) {
+                            if (ss instanceof Style) {
+                                onStyle((Style) ss);
+                            } else if (ss instanceof StyleMap) {
+                                onStyleMap((StyleMap) ss);
+                            }
+                        }
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public void end() {
+                    for (Map.Entry<String, String> e : styleMap.entrySet()) {
+                        String from = e.getKey();
+                        String to = e.getValue();
+                        Style toStyle = styles.get(to);
+                        if (toStyle == null) {
+                            System.err.println("Missing style: " + to);
+                            continue;
+                        }
+                        styles.put(from, toStyle);
+                    }
+                }
+
+            });
+
+            System.out.println(layer + " STYLES:  \n" + styles.keySet());
+
+            //2. process features
+            transformKML(id, url, st, new GISVisitor() {
+
+                private BulkRequestBuilder bulk = null;
+
+                @Override
+                public void start(String layer) {
+                    bulk = st.newBulk();
+                }
+
+                @Override
+                public boolean on(IGISObject go, String[] path) throws IOException {
+                    if (go == null) {
+                        return false;
+                    }
+
+                    if (st == null) {
+                        return false;
+                    }
+
+                    if (go instanceof ContainerStart) {
+                        ContainerStart cs = (ContainerStart) go;
+                        //TODO startTime?
+                        //System.out.println(cs + " " + cs.getId());
+
+                        XContentBuilder d;
+                        d = jsonBuilder().startObject().field("name", cs.getName());
+
+                        /*String styleUrl = cs.getStyleUrl();
+                         if (styleUrl != null) {
+                         if (styleUrl.startsWith("#")) {
+                         styleUrl = styleUrl.substring(1);
+                         }
+                         styleUrl = layer + "_" + styleUrl;
+                         System.err.println("Container styleUrl: " + styleUrl);
+                         d.field("styleUrl", styleUrl);
+                         }
+                         */
+                        String desc = cs.getDescription();
+                        if ((desc != null) && (desc.length() > 0)) {
+                            //filter 
+                            desc = filterHTML(desc);
+                            if (desc.length() > 0) {
+                                d.field("description", desc);
+                            }
+                        }
+
+                        d.field("path", path).endObject();
+
+                        String i = getSerial(layer, serial);
+                        bulk = st.add(bulk, "tag", i, d);
+
+                        bulk = updateBulk();
+                    }
+
+                    if (go instanceof Feature) {
+                        Feature f = (Feature) go;
+
+                        XContentBuilder fb = jsonBuilder().startObject();
+                        fb.field("name", f.getName());
+
+                        String desc = f.getDescription();
+                        if ((desc != null) && (desc.length() > 0)) {
+                            //filter 
+                            desc = filterHTML(desc);
+                            if (desc.length() > 0) {
+                                fb.field("description", desc);
+                            }
+                        }
+
+                        if (f.getSnippet() != null) {
+                            if (f.getSnippet().length() > 0) {
+                                fb.field("snippet", f.getSnippet());
+                            }
+                        }
+                        if (f.getStartTime() != null) {
+                            fb.field("startTime", f.getStartTime().getTime());
+                        }
+                        if (f.getEndTime() != null) {
+                            fb.field("endTime", f.getEndTime().getTime());
+                        }
+
+                        Geometry geo = f.getGeometry();
+                        if (geo != null) {
+                            if (geo instanceof Point) {
+                                Point pp = (Point) geo;
+                                Geodetic2DPoint c = pp.getCenter();
+                                double lat = c.getLatitudeAsDegrees();
+                                double lon = c.getLongitudeAsDegrees();
+
+                                //http://geojson.org/
+                                fb.startObject("geom").field("type", "point").field("coordinates", new double[]{lon, lat}).endObject();
+
+                            } else if (geo instanceof org.opensextant.giscore.geometry.Line) {
+                                org.opensextant.giscore.geometry.Line l = (org.opensextant.giscore.geometry.Line) geo;
+
+                                List<Point> lp = l.getPoints();
+                                double[][] points = toArray(lp);
+
+                                fb.startObject("geom").field("type", "linestring").field("coordinates", points).endObject();
+
+                            } else if (geo instanceof org.opensextant.giscore.geometry.Polygon) {
+                                org.opensextant.giscore.geometry.Polygon p = (org.opensextant.giscore.geometry.Polygon) geo;
+                                
+                                double[][] outerRing = toArray(p.getOuterRing().getPoints());
+                                //TODO handle inner rings
+
+                                fb.startObject("geom").field("type", "polygon").field("coordinates", new double[][][] {outerRing /* inner rings */}).endObject();
+                            }
+                            
+                            //TODO other types
+                        }
+
+                        Style styleInline = null;
+                        if (f.getStyle() != null) {
+
+                            if (f.getStyle() instanceof Style) {
+
+                                Style ss = (Style) f.getStyle();
+                                styleInline = ss;
+
+                            } else if (f.getStyle() instanceof StyleMap) {
+                                StyleMap ss = (StyleMap) f.getStyle();
+                                styleInline = styles.get(ss.getId());
+                                if (styleInline == null) {
+                                    System.err.println("Missing: " + ss.getId());
+                                }
+                            }
+
+                        }
+
+                        if ((f.getStyleUrl() != null) || (styleInline != null)) {
+
+                            fb.startObject("style");
+
+                            if (f.getStyleUrl() != null) {
+                                String su = f.getStyleUrl();
+                                if (su.startsWith("#")) {
+                                    su = su.substring(1);
+                                }
+
+                                Style s = styles.get(su);
+                                if (s == null) {
+                                    //System.err.println("Missing: " + f.getStyleUrl());
+                                } else {
+                                    styleJson(fb, s);
+                                }
+                            }
+
+                            if (styleInline != null) {
+                                styleJson(fb, styleInline);
+                            }
+
+                            fb.endObject();
+
+                        }
+
+                        fb.field("path", path);
+
+                        String fid = getSerial(layer, serial);
+                        bulk = st.add(bulk, "feature", fid, fb.endObject());
+                        numFeatures++;
+
+                        bulk = updateBulk();
+                    }
+
+                    if (go instanceof Schema) {
+                        //..
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public void end() {
+                    st.commit(bulk);
+                    bulk = null;
+                }
+
+                private BulkRequestBuilder updateBulk() {
+                    if (bulk.numberOfActions() < BULK_SIZE) {
+                        return bulk;
+                    } else {
+                        st.commit(bulk);
+                        bulk = null;
+                        return null;
+                    }
+                }
+
+            });
 
         } catch (Throwable e) {
             //e.printStackTrace();;
@@ -365,277 +569,98 @@ public class ImportKML implements Runnable {
         }
 
     }
-    
-    XContentBuilder styleJson(XContentBuilder fb, Style s) throws IOException {
-        
-        
 
-        String iconURL = s.getIconUrl();
-        if (iconURL!=null)
-            fb.field("iconURL", iconURL);
+    XContentBuilder stylemapJson(XContentBuilder fb, StyleMap s) throws IOException {
+        Pair normal = s.getPair(StyleMap.NORMAL);
+        //System.out.println(normal.getStyleUrl() + " " + normal.getStyleSelector());
+        return fb;
+    }
+
+    XContentBuilder styleJson(XContentBuilder fb, Style s) throws IOException {
+
+        //System.out.println("Applying style: " + s);
+        String iconUrl = s.getIconUrl();
+        if (iconUrl != null) {
+            fb.field("iconUrl", iconUrl);
+        }
 
         String baloonText = s.getBalloonText();
-        if (baloonText!=null)
+        if (baloonText != null) {
             fb.field("baloonText", baloonText);
-        
+        }
+
         /*Color iconColor = s.getIconColor();
-        if (iconColor!=null)
-            fb.field("iconColor", iconColor.getRed(), iconColor.getGreen(), iconColor.getBlue(), iconColor.getAlpha() );
+         if (iconColor!=null)
+         fb.field("iconColor", iconColor.getRed(), iconColor.getGreen(), iconColor.getBlue(), iconColor.getAlpha() );
         
         
-        Color lineColor = s.getLineColor();
-        if (lineColor!=null)
-            fb.field("lineColor", new Integer[] { lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), lineColor.getAlpha() } );
+         Color lineColor = s.getLineColor();
+         if (lineColor!=null)
+         fb.field("lineColor", new Integer[] { lineColor.getRed(), lineColor.getGreen(), lineColor.getBlue(), lineColor.getAlpha() } );
         
+         Color polyColor = s.getPolyColor();
+         if (polyColor!=null)
+         fb.field("polyColor", "rgba(" + polyColor.getRed() + "," + polyColor.getGreen()+ "," + polyColor.getBlue()+ "," + polyColor.getAlpha() + ")"  );
+         */
         Color polyColor = s.getPolyColor();
-        if (polyColor!=null)
-            fb.field("polyColor", "rgba(" + polyColor.getRed() + "," + polyColor.getGreen()+ "," + polyColor.getBlue()+ "," + polyColor.getAlpha() + ")"  );
-       */
-        Color polyColor = s.getPolyColor();
-        if (polyColor!=null)
-            fb.field("polyColor", polyColor.toString().substring("org.opensextant.giscore.utils.".length()) );
-        
+        if (polyColor != null) {
+            fb.field("polyColor", polyColor.toString().substring("org.opensextant.giscore.utils.".length()));
+        }
+
         Double lineWidth = s.getLineWidth();
-        if (lineWidth!=null)
+        if (lineWidth != null) {
             fb.field("lineWidth", lineWidth);
+        }
 
-        
-        
-        
         return fb;
+
+    }
+
+//    /*
+//    private synchronized boolean processStyle(Style s) throws IOException {
+//        String id = s.getId();
+//
+//        String fullStyleId = layer + "_" + id;
+//
+//        System.err.println("processStyle: " + s.getId() + " -> " + fullStyleId);
+//
+//        XContentBuilder fb = jsonBuilder().startObject();
+//        styleJson(fb, s);
+//        fb.endObject();
+//
+//        //use '_' instead of '#' which is reserved for URL encoding
+//        bulk = st.add(bulk, "style", fullStyleId, fb);
+//        updateBulk();
+//
+//        /*else {
+//         System.out.println(s);
+//         }*/
+//        return true;
+//
+//    }
+    /*
+     private String processStyleMap(StyleMap styleMap) throws IOException {
+     //System.out.println(styleMap.getId() + " " + styleMap.getPair(StyleMap.NORMAL));
+     if (styleMap.getPair(StyleMap.NORMAL).getStyleSelector() != null) {
+     processStyle((Style) styleMap.getPair(StyleMap.NORMAL).getStyleSelector());
+     }
+     String normalURL = styleMap.getPair(StyleMap.NORMAL).getStyleUrl();
+     if (normalURL.startsWith("#")) {
+     normalURL = normalURL.substring(1);
+     }
+     normalURL = layer + "_" + normalURL;
+     return normalURL;
+     }
+     */
+    public static double[][] toArray(List<Point> lp) {
+        double[][] points = new double[lp.size()][2];
         
+        for (int i = 0; i < points.length; i++) {
+            Geodetic2DPoint c = lp.get(i).getCenter();
+            points[i][0] = c.getLongitudeAsDegrees();
+            points[i][1] = c.getLatitudeAsDegrees();
+        }
+        return points;
     }
 
-    private synchronized boolean processStyle(Style s) throws IOException {
-        String id = s.getId();
-        
-
-
-        XContentBuilder fb = jsonBuilder().startObject();
-        styleJson(fb, s);
-        fb.endObject();
-
-        bulk = st.add(bulk, "style", id, fb);
-        updateBulk();
-        
-        /*else {
-            System.out.println(s);
-        }*/
-
-        return true;
-
-    }
-
-    private synchronized boolean process(IGISObject go) throws IOException {
-        if (go == null) {
-            return false;
-        }
-
-        if (st == null) {
-            return false;
-        }
-
-        if (go instanceof DocumentStart) {
-            DocumentStart ds = (DocumentStart) go;
-            XContentBuilder d;
-
-            /*
-             //System.out.println("Document " + ds.getType().name());
-             d = jsonBuilder().startObject()
-             .field("url", urlString)
-             .field("name", name);
-             d.endObject();
-
-             st.add("tag", layer, d);
-             */
-            path.add(layer);
-
-        }
-
-        if (go instanceof ContainerEnd) {
-            path.removeLast();
-        }
-
-        if (go instanceof ContainerStart) {
-            ContainerStart cs = (ContainerStart) go;
-            //TODO startTime?
-            //System.out.println(cs + " " + cs.getId());
-            String i = getSerial(layer, serial++);
-
-            XContentBuilder d;
-            d = jsonBuilder().startObject().field("name", cs.getName());
-
-            String styleURL = cs.getStyleUrl();
-            if (styleURL != null) {
-                if (styleURL.startsWith("#"))
-                    styleURL = styleURL.substring(1);
-                d.field("styleURL", styleURL);
-            }
-
-            for (StyleSelector ss : cs.getStyles()) {
-                if (ss instanceof Style) {
-                    processStyle((Style) ss);
-                }
-            }
-
-            String desc = cs.getDescription();
-            if ((desc != null) && (desc.length() > 0)) {
-                //filter 
-                desc = filterHTML(desc);
-                if (desc.length() > 0) {
-                    d.field("description", desc);
-                }
-            }
-
-            d.field("path", getPath(path)).endObject();
-
-            path.add(i);
-
-            bulk = st.add(bulk, "tag", i, d);
-
-            bulk = updateBulk();
-        }
-
-        if (go instanceof Feature) {
-            Feature f = (Feature) go;
-
-            XContentBuilder fb = jsonBuilder().startObject();
-            fb.field("name", f.getName());
-
-            String desc = f.getDescription();
-            if ((desc != null) && (desc.length() > 0)) {
-                //filter 
-                desc = filterHTML(desc);
-                if (desc.length() > 0) {
-                    fb.field("description", desc);
-                }
-            }
-
-            if (f.getSnippet() != null) {
-                if (f.getSnippet().length() > 0)
-                    fb.field("snippet", f.getSnippet());
-            }
-            if (f.getStartTime() != null) {
-                fb.field("startTime", f.getStartTime().getTime());
-            }
-            if (f.getEndTime() != null) {
-                fb.field("endTime", f.getEndTime().getTime());
-            }
-
-            Geometry geo = f.getGeometry();
-            if (geo != null) {
-                if (geo instanceof Point) {
-                    Point pp = (Point) geo;
-                    Geodetic2DPoint c = pp.getCenter();
-                    float lat = (float) c.getLatitudeAsDegrees();
-                    float lon = (float) c.getLongitudeAsDegrees();
-
-                    //http://geojson.org/
-                    fb.startObject("geom").field("type", "point").field("coordinates", new float[]{lon, lat}).endObject();
-
-                }
-                /*else if (g instanceof Line) {
-
-                 }*/
-                //TODO other types
-            }
-
-            if (f.getStyleUrl() != null) {
-                if (f.getStyleUrl().length() > 0) {
-                    String styleURL = f.getStyleUrl();
-                    if (styleURL.startsWith("#"))
-                        styleURL = styleURL.substring(1);
-                    fb.field("styleUrl",styleURL);
-                }
-            }
-            if (f.getStyle()!=null) {           
-                
-                if (f.getStyle() instanceof Style) {
-                    fb.startObject("style");
-                
-                    styleJson(fb, (Style)f.getStyle());
-                    
-                    fb.endObject();
-                }
-                
-            }
-
-            fb.field("path", getPath(path));
-
-            String fid = getSerial(layer, serial++);
-            bulk = st.add(bulk, "feature", fid, fb.endObject());
-            numFeatures++;
-
-            bulk = updateBulk();
-        }
-
-        if (go instanceof Schema) {
-            //..
-        }
-
-        if (go instanceof Style) {
-            processStyle((Style) go);
-        }
-
-        /*if (go instanceof Feature) {
-         Feature f = (Feature)go;
-         if (f.getStyle() != null) {
-         System.out.println(f.getStyle());
-         }
-         if (f.hasExtendedData()) {
-         System.out.println(f.getExtendedElements());
-         }
-         }*/
-//                if (esri) {
-//                    if (go instanceof Feature) {
-//                        Feature f = (Feature)go;                
-//
-//                        if (!f.getFields().isEmpty()) {
-//                            System.out.println("Fields: " + f.getFields());
-//                        }
-//                        if (!f.getExtendedElements().isEmpty()) {
-//                            System.out.println("Extended Elements: " + f.getExtendedElements());
-//                        }
-//                        for (Element e : f.getElements()) {
-//                            String n = e.getName();
-//                            switch (n) {
-//                                case "address":
-//                                    f.putData(addressField, e.getText());
-//                                    break;
-//                                default:
-//                                    System.err.println("Unknown element: " + e);
-//                                    break;
-//                            }
-//
-//                        }
-//                        String x = f.getDescription();
-//                        if (x!=null) {
-//                            f.putData(descriptionField, x);
-//                        }
-//
-//
-//                        //f.putData(null, kout);
-//                        //System.out.println(gisObj);
-//                    }                
-//                    else {
-//                        //System.err.println(gisObj.getClass() + " not handled");                     
-//                    }
-//
-//                    shpos.write(go);  
-//                }
-//                if (kml) {
-//                    kout.write(go);
-//                }
-        return true;
-    }
-
-    private BulkRequestBuilder updateBulk() {
-        if (bulk.numberOfActions() < BULK_SIZE) {
-            return bulk;
-        } else {
-            st.commit(bulk);
-            bulk = null;
-            return null;
-        }
-    }
 }
