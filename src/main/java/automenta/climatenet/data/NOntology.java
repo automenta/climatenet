@@ -35,7 +35,9 @@ abstract public class NOntology {
 
             @Override
             public void onTag(LinkedHashMap o) {
+                
                 String id = o.get("id").toString();
+                
                 String name = o.get("name").toString();
                 Object description = o.get("description");
                 List extend = (List) o.get("extend");

@@ -206,38 +206,41 @@ public class SpacetimeWebServer extends PathHandler {
                 switch (operation) {
                     case "update":
                         try {
-                            String kml = c.getSnapshot().get("meta").get("url").textValue();
+                            ObjectNode meta = (ObjectNode) c.getSnapshot().get("meta");
+                            if (meta!=null && meta.has("kmlLayer")) {
+                                String kml = meta.get("kmlLayer").textValue();
 
-                            {
-                                ObjectNode nc = c.getSnapshot();
-                                ObjectNode meta = (ObjectNode) nc.get("meta");
+                                {
+                                    ObjectNode nc = c.getSnapshot();
+                                    meta = (ObjectNode) nc.get("meta");
 
-                                meta.put("status", "Updating");
-                                c.commit(nc);
+                                    meta.put("status", "Updating");
+                                    c.commit(nc);
+                                }
+
+                                System.out.println("Updating " + c);
+
+                                try {
+                                    new ImportKML(db, cache.proxy, c.id, kml).run();
+                                } catch (Exception e) {
+                                    ObjectNode nc = c.getSnapshot();
+                                    meta = (ObjectNode) nc.get("meta");
+                                    meta.put("status", e.toString());
+                                    c.commit(nc);
+                                    throw e;
+                                }
+
+                                {
+                                    ObjectNode nc = c.getSnapshot();
+                                    meta = (ObjectNode) nc.get("meta");
+
+                                    meta.put("status", "Ready");
+                                    meta.put("modifiedAt", new Date().getTime());
+                                    c.commit(nc);
+
+                                }
+                             
                             }
-
-                            System.out.println("Updating " + c);
-
-                            try {
-                                new ImportKML(db, cache.proxy, c.id, kml).run();
-                            } catch (Exception e) {
-                                ObjectNode nc = c.getSnapshot();
-                                ObjectNode meta = (ObjectNode) nc.get("meta");
-                                meta.put("status", e.toString());
-                                c.commit(nc);
-                                throw e;
-                            }
-
-                            {
-                                ObjectNode nc = c.getSnapshot();
-                                ObjectNode meta = (ObjectNode) nc.get("meta");
-
-                                meta.put("status", "Ready");
-                                meta.put("modifiedAt", new Date().getTime());
-                                c.commit(nc);
-
-                            }
-                            //TODO save to DB
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

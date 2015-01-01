@@ -9,7 +9,7 @@ and open the template in the editor.
         <title>ClimateNet</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="lib/es6-shim.min.js"></script>
+        <!-- <script src="lib/es6-shim.min.js"></script> -->
         <script src="lib/jquery-2.1.1.min.js"></script>
         <script src="lib/lodash.min.js"></script>
         <script src="lib/graphlib.min.js"></script>
@@ -136,12 +136,14 @@ and open the template in the editor.
             var features = {};
             var tag = new graphlib.Graph({multigraph: true}); //https://github.com/cpettitt/graphlib/wiki
 
-            function addTileLayer(id, name, parent) {
+
+            function addTileLayer(lid, name, parent) {
+                var id = lid.replace(/\./g,'_');
                 var t = newTag(id);
                 t.name = name;
                 t.inh[parent] = 1.0;
                 
-                features[id] = t.features[id] = ( L.tileLayer.provider(id) );
+                features[id] = t.features[id] = ( L.tileLayer.provider(lid) );
                                
                 t.update();
                 
@@ -193,7 +195,7 @@ and open the template in the editor.
 
             }
             
-            function newWMSLayer(url) {
+            function newWMSLayer(opt) {
                 //var l = T.wmsLayer;
 
                 var o = {
@@ -206,11 +208,11 @@ and open the template in the editor.
                  if (l.crs == 'EPSG4326')
                  o.crs = L.CRS.EPSG4326;
                  }*/
-                var w = L.tileLayer.wms(url, o);
+                var w = L.tileLayer.wms(opt, o);
                 /*w.setOpacity(strength);
                 w.addTo(map);*/
         
-                features[url] = w;
+                features[opt.url] = w;
                 
                 return w;
             }
@@ -220,14 +222,16 @@ and open the template in the editor.
                 w.name = 'Weather';
                 
                 //https://github.com/leaflet-extras/leaflet-providers/blob/master/leaflet-providers.js
+                addTileLayer('OpenStreetMap.Mapnik', 'OpenStreetMap', 'Earth');        
+                /*
                 addTileLayer('OpenWeatherMap.Temperature', 'Temperature (OWM)', 'Weather');
                 addTileLayer('OpenWeatherMap.Clouds', 'Clouds (OWM)', 'Weather');
                                 
-                addTileLayer('OpenStreetMap.Mapnik', 'OpenStreetMap', 'Earth');
+                
                 addTileLayer('OpenStreetMap.BlackAndWhite', 'OpenStreetMap (Gray)', 'Earth');
                 
                 addTileLayer('Thunderforest.Landscape', 'Landscape (Thunderforest)', 'Earth');
-                
+                */
             }
             
             
@@ -249,7 +253,7 @@ and open the template in the editor.
             map.addControl(osmGeocoder);
                 
 
-            
+
             var ltree;
             function init() {
                 
@@ -270,13 +274,13 @@ and open the template in the editor.
                 addTileLayers();
                 
                 //Default: OSM layer
-                tag.node('OpenStreetMap.Mapnik').setOpacity(1.0);
+                tag.node('OpenStreetMap_Mapnik').setOpacity(1.0);
                 
-                updateTagIndex(renderLayerViews);
 
                 updateBounds();                
                 
-                setTimeout(loadTags, 0);
+                updateTagIndex(renderLayerViews);
+
             }
 
             var loadTags = _.throttle(function() {
@@ -398,7 +402,7 @@ and open the template in the editor.
                         //add to map
                         add = true;
                     }
-                    else if /*((prevOpacity > 0) && */(this.opacity < 0.01) {
+                    if /*((prevOpacity > 0) && */(this.opacity < 0.01) {
                         //remove from map
                         remove = true;
                     }                    
@@ -455,21 +459,15 @@ and open the template in the editor.
                     }
                 }*/
 
-                for (var i in r) {
-                    var f = r[i];
-                    addFeature(i, f);
-                }
-
                 var unknownLayers = {};
-
-                for (var fi in features) {
-                    var f = features[fi].data;
-                    if (!f) continue;
+                var updatedLayers =  { };
+                
+                for (var id in r) {
+                    var f = r[id];
                     
-                    var p = f.path;
-
-                    if (!p)
-                        continue;
+                    addFeature(id, f);
+                    
+                    var p = f.path || [];
 
                     //TODO cache known paths
                     
@@ -493,6 +491,7 @@ and open the template in the editor.
                             unknownLayers[layerID] = true;
                             
                         }
+                        updatedLayers[layerID] = true;
                               
                         if (layerNode.opacity > maxOpacity)
                             maxOpacity = layerNode.opacity;
@@ -500,44 +499,54 @@ and open the template in the editor.
                         
                         parent = layerID;
                                                 
-                        layerNode.features[fi] = f;
+                        layerNode.features[id] = f;
                     }
                     
-                    features[fi].setOpacity(maxOpacity);
+                    features[id].setOpacity(maxOpacity);
 
                 }
 
-                
-
+                                
+                function updateChangedLayers() {
+                    renderLayerView(_.keys(updatedLayers), false);
+                }
                 
                 if (unknownLayers.length > 0)
-                    loadTags(unknownLayers, renderLayerViews);
+                    loadTags(unknownLayers, updateChangedLayers);
                 else
-                    renderLayerViews();
+                    updateChangedLayers();
             }
             
             function renderLayerViews() {
-                renderLayerView($('#visibleLayers'), tag.sources());
+                renderLayerView(tag.sources(), true);
             }
             
-            var opacityChange = _.throttle(function(x) {
+            var updateOpacity = _.throttle(function(t, opacity) {
+                t.setOpacity(opacity);
+                setTimeout(loadTags, 0);                
+            }, renderPeriodMS);
+            
+            var opacityChange = function() {
                 var d = $(this).data('tag');
                 var opacity = $(this).val();
                 
                 var t = tag.node(d);
-                t.setOpacity(opacity);
-                
-                setTimeout(loadTags, 0);
-            }, renderPeriodMS);
+                updateOpacity(t, opacity);                
+            };
+            
+            function jq( myid ) {
+                return myid.replace( /(:|\.|\[|\]|\=)/g, "\\$1" ); 
+            }
+            function layerControlID(vid) { return 't_' + jq(vid); }
+            function layerControl(vid) { return $('#' + layerControlID(vid)); }
             
             function updateTagButton(x) {                
                 var d = $(this).data('tag');
                 window.open("watch.html?url=tag&operation=update&channels=" + d, "_blank", "toolbar=yes, scrollbars=yes, resizable=yes, top=500, left=500, width=400, height=400");
             }
 
-            function renderLayerView(vl, s) {
+            function renderLayerView(s, recurse) {
                 
-                vl.html('');
                              
                 if (s && s.length)
                     _.each(s, function (n) {
@@ -554,13 +563,19 @@ and open the template in the editor.
                         var count = _.size(v.features);
                         //nu.append('<li>' + name + ' ' + count + '</li>');
 
-                        var d = newEle('li');
                         
-                        var a = $('<a>' + name + ' (' + count + ')</a>').appendTo(d);                        
+                        var d = layerControl(v.id);
+                        if (d.length === 0) {
+                            d = newEle('li').attr('id', layerControlID(v.id));
+                            $('#visibleLayers').append(d);                        
+                        }
+                        
+                        d.html('');
+                        
+                        
+                        
+                        var a = $('<a><h6>' + name + ' (' + count + ')</h6></a>').appendTo(d);                        
                                                 
-                        if (v.meta)
-                            a.append(JSON.stringify(v.meta));
-                        
                         /*if (count > 0)*/ {
 
                             var opacity = $('<input class="opacitySlider" type="range" min="0" step="0.01" max="1.0"/>').appendTo(a);
@@ -570,22 +585,38 @@ and open the template in the editor.
                             opacity.change(opacityChange);
                         }
                         
-                        var updateButton = $('<button>*</button>').appendTo(a);
-                        updateButton.data('tag', n);
-                        updateButton.click(updateTagButton);
+                        if (v.meta) {
+                            if (v.meta.kmlLayer) {
+                                var updateButton = $('<button><i class="fa fa-refresh"></i></button>').appendTo(a);
+                                updateButton.data('tag', n);
+                                updateButton.click(updateTagButton);
+                            }
+                            
+                        }
                         
-                        
-                        var u  = newEle('ul').appendTo(d);
-
-                        renderLayerView(u, tag.successors( v.id ));
-
+                                              
                         if(count) {
                             d.addClass('enabled');
                         }
 
-                        //d.append(JSON.stringify(layer.successors(n)));
+                        if (recurse)
+                            renderLayerView(tag.successors( v.id ));
 
-                        vl.append(d);
+                        
+                        var parent = tag.predecessors( v.id );
+                        if (parent) {
+                            parent = parent[0];
+                            console.log(v.id + ' to ' + parent);
+                            //d.appendTo(layerControl(parent).find('ul'));
+                        }
+                        else {
+                            //root
+                            console.log(v.id + ' to root');
+                            //$('#visibleLayers').append(d);
+                        }
+                        
+                        
+                        
                     });
 
             }
@@ -603,6 +634,7 @@ and open the template in the editor.
 
             function updateTags(r) {
                 for (var i in r) {
+                    
                     var l = r[i];
                     
                     var n = tag.node(i);

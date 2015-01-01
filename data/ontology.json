@@ -569,10 +569,8 @@
       "id": "Earth",
       "name": "Earth",
       "description": "",
-      "icon": "icon\/earth.png",
-      "extend": [
-        "Thing"
-      ]    },
+      "icon": "icon\/earth.png"
+         },
     {
       "id": "Points of Interest",
       "name": "Points of Interest",

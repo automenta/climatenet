@@ -120,6 +120,8 @@ body {
 
 .opacitySlider {
     width: 50% !important;
+    float: left;
+    margin-right: 1em;
 }
 
 
@@ -175,9 +177,9 @@ body {
     }
 }
 
-.sidebar-nav li.enabled a {
+.sidebar-nav li.enabled a, .sidebar-nav li.enabled a h6 {
     color: black;
-    background-color: #857909 !important;
+    background-color: orange !important;
 }
 .sidebar_search {
     padding: 0;
