@@ -29,6 +29,7 @@ and open the template in the editor.
         <link rel="stylesheet" href="lib/leaflet/leaflet.css">
         <link rel="stylesheet" href="lib/leaflet/leaflet.osmgeocoder.css">
         <link rel="stylesheet" href="lib/leaflet/MarkerCluster.css">
+        <link rel="stylesheet" href="lib/leaflet/MarkerCluster.Default.css">
         
         <script src="lib/pnotify/pnotify.custom.min.js"></script>
         <link type="text/css" rel="stylesheet" href="lib/pnotify/pnotify.custom.min.css"/>
@@ -128,19 +129,22 @@ and open the template in the editor.
         <script>
             
 
-            var updatePeriodMS = 200;
-            var renderPeriodMS = 50;
+            var updatePeriodMS = 500;
+            var renderPeriodMS = 150;
 
             var features = {};
             var tag = new graphlib.Graph({multigraph: true}); //https://github.com/cpettitt/graphlib/wiki
-            var tagOpacity = { };
 
             function addTileLayer(id, name, parent) {
                 var t = newTag(id);
                 t.name = name;
                 t.inh[parent] = 1.0;
-                t.tileLayer = true;
+                
+                features[id] = t.features[id] = ( L.tileLayer.provider(id) );
+                               
                 t.update();
+                
+                tag.setNode(id, t);
             }
             
             function addTileLayers() {
@@ -176,6 +180,8 @@ and open the template in the editor.
             var osmGeocoder = new L.Control.OSMGeocoder();
             map.addControl(osmGeocoder);
                 
+
+            
             var ltree;
             function init() {
                 
@@ -184,43 +190,33 @@ and open the template in the editor.
                         $("#wrapper").toggleClass("active");
                 });
 
-                //Default: OSM layer
-                tagOpacity['OpenStreetMap.Mapnik'] = 1.0;
 
+                function nextUpdateBounds() {
+                    setTimeout(updateBounds, 0);
+                }
 
-
-                map.on('viewreset', updateBounds);
-                map.on('move', updateBounds);
-                map.on('resize', updateBounds);
+                map.on('viewreset', nextUpdateBounds);
+                map.on('moveend', nextUpdateBounds);
+                map.on('resize', nextUpdateBounds);
 
                 addTileLayers();
+                
+                //Default: OSM layer
+                tag.node('OpenStreetMap.Mapnik').setOpacity(1.0);
                 
                 updateTagIndex(renderLayerViews);
 
                 updateBounds();                
                 
-                setTimeout(renderTags, 0);
+                setTimeout(getTagMetadata, 0);
             }
 
-            var renderTags = _.throttle(function() {
+            var getTagMetadata = _.throttle(function() {
                 
-                map.eachLayer(function (layer) {
+                /*map.eachLayer(function (layer) {
                    layer.remove(); 
-                });
+                });*/
                 
-                _.each(tagOpacity, function(opacity, tagID) {
-                    if (opacity === 0) return;
-                    
-                    var t = tag.node(tagID);
-                    if (t.tileLayer) {
-                        var l = L.tileLayer.provider(tagID);
-                        l.setOpacity(opacity);
-                        l.addTo(map);
-                    }
-                   
-                   //var markers = new L.MarkerClusterGroup();
-                   //markers.addLayer(new L.Marker(getRandomLatLng(map)));
-                });
             }, renderPeriodMS);
 
             /*
@@ -251,35 +247,99 @@ and open the template in the editor.
                 if (f.geom.type === "point")
                     f.geometry.type = "Point";
                 
+                f.style = { };
+                f.style.opacity = 1.0;
+                
+                f.properties = { };
+                
+                if (f.name) {
+                    f.properties.name = f.name;
+                }
+                if (f.description) {
+                    f.properties.description = f.description;
+                }
+                
+                if (f.name && f.description)
+                    f.popupTemplate = "<strong>{name}</strong><br/>{description}";
+                else if (f.name)
+                    f.popupTemplate = "<strong>{name}</strong>";
+                else if (f.description)
+                    f.popupTemplate = "{description}";
+
                 //https://github.com/albburtsev/Leaflet.geojsonCSS
                 //L.geoJson.css(json).addTo(map);
-                var layer = L.geoJson(f, {
-                    /*style: function (feature) {
-                     return {color: feature.properties.color};
-                     },*/
-                    onEachFeature: function (feature, layer) {
-                        layer.bindPopup(feature.description);
+
+                var layer = L.geoJson.css(f);
+                layer.setOpacity = function(o) {
+                    for (var l in this._layers) {
+                        var ll = this._layers[l];
+                        if (ll.setOpacity)
+                            ll.setOpacity(o);
                     }
-                });
+                };
+                
                 layer.data = f;
                 features[id] = layer;
+                
                 layer.addTo(map);
             }
 
             function removeFeature(i) {
-                features[i].removeFrom(map);
-                delete features[i];
+                
+                //features[i].removeFrom(map);                
             }
             
             function newTag(layerID) {
                 var t = {
                     id: layerID, 
-                    name: undefined, featuresVisible: 0,
-                    features: new WeakSet(),
-                    inh: { }
+                    name: undefined,
+                    features: { },
+                    inh: { },
+                    opacity: 0
                 };
 
                 tag.setNode(layerID, t);
+                                
+                t.setOpacity = function(o) {
+                    
+                    var prevOpacity = t.opacity || 0;
+                    
+                    this.opacity = o;
+                    
+                    var add=false, remove=false;
+                    
+                    if /*((prevOpacity === 0) && */(this.opacity > 0.01) {
+                        //add to map
+                        add = true;
+                    }
+                    else if /*((prevOpacity > 0) && */(this.opacity < 0.01) {
+                        //remove from map
+                        remove = true;
+                    }                    
+                    
+                    for (var f in this.features) {
+                        var x = features[f];
+                        if (!x) {
+                            console.error('missing feature: ', f);
+                            continue;
+                        }
+                        
+                        if (x.setOpacity) {
+                            x.setOpacity(o);
+                        }
+                                                
+                        if (add) {                                                       
+                            if (x.addTo)
+                                x.addTo(map);
+                        }
+                        else if (remove) {
+                            if (x.remove)
+                                x.remove();
+                        }
+                        
+                    }
+
+                };
                 
                 t.update = function() {
                     if (this.inh) {
@@ -302,16 +362,12 @@ and open the template in the editor.
 
             function updateGeoJSONFeatures(r) {
 
-                _.each(tag.nodes(), function(l) {
-                    var n = tag.node(l);
-                    if (n)
-                        n.featuresVisible = 0;
-                });                
+                /*
                 for (var i in features) {
                     if (!r[i]) {
                         removeFeature(i);
                     }
-                }
+                }*/
 
                 for (var i in r) {
                     var f = r[i];
@@ -320,8 +376,10 @@ and open the template in the editor.
 
                 var unknownLayers = {};
 
-                for (var i in features) {
-                    var f = features[i].data;
+                for (var fi in features) {
+                    var f = features[fi].data;
+                    if (!f) continue;
+                    
                     var p = f.path;
 
                     if (!p)
@@ -332,27 +390,31 @@ and open the template in the editor.
                     var parent = null;
                     var layerNode = null;
                     
+                    var maxOpacity = 0.0;
+                    
                     for (var i = 0; i < p.length; i++) {
                         var layerID = p[i];
                         layerNode = tag.node(layerID);
                         
                         if (layerNode) {
-                            layerNode.featuresVisible = layerNode.featuresVisible + 1;
                         }
                         else {
-                            var layerNode = newTag(layerID);                            
+                            layerNode = newTag(layerID);                            
                             layerNode.inh[parent] = 1.0;
                             layerNode.update();
                             
                             unknownLayers[layerID] = true;
                         }
-                                                                        
-                        parent = layerID;
+                              
+                        if (layerNode.opacity > maxOpacity)
+                            maxOpacity = layerNode.opacity;
                         
-                        layerNode.features.add(f);
+                        parent = layerID;
+                                                
+                        layerNode.features[fi] = f;
                     }
                     
-                    
+                    features[fi].setOpacity(maxOpacity);
 
                 }
 
@@ -363,7 +425,7 @@ and open the template in the editor.
 
                 
                 if (unknownLayers.length > 0)
-                    renderTags(unknownLayers, renderLayerViews);
+                    getTagMetadata(unknownLayers, renderLayerViews);
                 else
                     renderLayerViews();
             }
@@ -372,19 +434,15 @@ and open the template in the editor.
                 renderLayerView($('#visibleLayers'), tag.sources());
             }
             
-            function opacityChange(x) {                
+            var opacityChange = _.throttle(function(x) {
                 var d = $(this).data('tag');
                 var opacity = $(this).val();
                 
-                if (opacity < 0.01) {
-                    delete tagOpacity[d];
-                }
-                else {
-                    tagOpacity[d] = opacity;
-                }
+                var t = tag.node(d);
+                t.setOpacity(opacity);
                 
-                setTimeout(renderTags, 0);
-            }
+                setTimeout(getTagMetadata, 0);
+            }, renderPeriodMS);
             
             function updateTagButton(x) {                
                 var d = $(this).data('tag');
@@ -407,7 +465,7 @@ and open the template in the editor.
                         }
 
                         var name = v.name || v.id;
-                        var count = v.featuresVisible;
+                        var count = _.size(v.features);
                         //nu.append('<li>' + name + ' ' + count + '</li>');
 
                         var d = $('<li></li>');
@@ -416,7 +474,7 @@ and open the template in the editor.
                         
                         
                         var opacity = $('<input class="opacitySlider" type="range" min="0" step="0.01" max="1.0"/>').appendTo(a);
-                        opacity.val(tagOpacity[n] || 0);
+                        opacity.val(v.opacity || 0);
                         opacity.data('tag', n);
                         
                         opacity.change(opacityChange);
@@ -477,7 +535,7 @@ and open the template in the editor.
                     .fail(ajaxFail);
             }
 
-            function renderTags(layerIDs, callback) {
+            function getTagMetadata(layerIDs, callback) {
                 $.getJSON('/tag/meta', {id: JSON.stringify(layerIDs)})
                     .done(function (r) {
                         updateLayerMetadata(r);

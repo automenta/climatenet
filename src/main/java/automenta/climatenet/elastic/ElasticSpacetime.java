@@ -9,6 +9,9 @@ import automenta.climatenet.Spacetime;
 import automenta.climatenet.Tag;
 import com.google.common.io.Files;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -62,7 +65,8 @@ public class ElasticSpacetime implements Spacetime {
      */
     protected final Client client;
     protected final String index;
-    protected boolean debug = false;
+    protected boolean debug = true;
+    private final ExecutorService bulkQueue;
 
     public static ElasticSpacetime temporary(String index) throws Exception {
         String dbPath = Files.createTempDir().getAbsolutePath();
@@ -111,6 +115,8 @@ public class ElasticSpacetime implements Spacetime {
         this.index = indexName;
 
         this.client = client;
+        
+        this.bulkQueue = Executors.newSingleThreadExecutor();
 
         //boolean existsIndex = true;
         //final IndicesExistsResponse res = client.admin().indices().prepareExists(indexName).execute().actionGet();
@@ -281,30 +287,39 @@ public class ElasticSpacetime implements Spacetime {
         return client.prepareBulk();
     }
 
-    public void commit(BulkRequestBuilder bulkRequest) {
-        if (debug)
-            System.out.println(this + " commiting " + bulkRequest.numberOfActions() + " actions");
+    public Future commit(final BulkRequestBuilder bulkRequest) {
         
-        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+        return bulkQueue.submit(new Runnable() {
 
-        if (bulkResponse.hasFailures()) {
-            System.err.println(bulkResponse.buildFailureMessage());
-        }
+            @Override
+            public void run() {
+                if (debug)
+                    System.out.println(this + " commiting " + bulkRequest.numberOfActions() + " actions");
+                
+                BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 
-        bulkRequest = null;
+                if (bulkResponse.hasFailures()) {
+                    System.err.println(bulkResponse.buildFailureMessage());
+                }
+                else if (debug)
+                    System.out.println(this + " committed");
+            }
+            
+        });
+
     }
 
     public BulkRequestBuilder add(BulkRequestBuilder bulkRequest, String type, String id, XContentBuilder n) {
         if (bulkRequest == null)
             bulkRequest = newBulk();
         
-        if (debug) {
+        /*if (debug) {
             try {
                 System.out.println(index + " " + type + " " + n.string());
             } catch (IOException ex) {
                 logger.warn(ex.toString());
             }
-        }
+        }*/
 
         bulkRequest.add(client.prepareIndex(index, type, id)
                 .setSource(n));
