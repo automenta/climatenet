@@ -62,7 +62,6 @@ public class ElasticSpacetime implements Spacetime {
      */
     protected final Client client;
     protected final String index;
-    protected BulkRequestBuilder bulkRequest;
     protected boolean debug = false;
 
     public static ElasticSpacetime temporary(String index) throws Exception {
@@ -278,12 +277,14 @@ public class ElasticSpacetime implements Spacetime {
         return response.getHits();
     }
 
-    public void bulkStart() {
-        bulkRequest = client.prepareBulk();
+    public BulkRequestBuilder newBulk() {
+        return client.prepareBulk();
     }
 
-    public void bulkEnd() {
-        System.out.println("  FINISH:" + bulkRequest.numberOfActions() + " ElasticSearch actions");
+    public void commit(BulkRequestBuilder bulkRequest) {
+        if (debug)
+            System.out.println(this + " commiting " + bulkRequest.numberOfActions() + " actions");
+        
         BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 
         if (bulkResponse.hasFailures()) {
@@ -293,7 +294,10 @@ public class ElasticSpacetime implements Spacetime {
         bulkRequest = null;
     }
 
-    public void add(String type, String id, XContentBuilder n) {
+    public BulkRequestBuilder add(BulkRequestBuilder bulkRequest, String type, String id, XContentBuilder n) {
+        if (bulkRequest == null)
+            bulkRequest = newBulk();
+        
         if (debug) {
             try {
                 System.out.println(index + " " + type + " " + n.string());
@@ -305,7 +309,9 @@ public class ElasticSpacetime implements Spacetime {
         bulkRequest.add(client.prepareIndex(index, type, id)
                 .setSource(n));
         //System.out.println(index + " " + type + " " + n + " " + response.getHeaders());
+        return bulkRequest;        
     }
+    
     public void update(String type, String id, String json) {
         if (debug) {
             System.out.println(index + " " + type + " " + json);
@@ -325,13 +331,9 @@ public class ElasticSpacetime implements Spacetime {
         client.close();
     }
 
-    public synchronized void bulk(Runnable transaction) {
-        bulkStart();
-        transaction.run();
-        bulkEnd();
-    }
+ 
 
-    public void addTag(Tag t) {
-        add("tag", t.id, t.toJSON(false));
+    public BulkRequestBuilder addTag(BulkRequestBuilder bulk, Tag t) {
+        return add(bulk, "tag", t.id, t.toJSON(false));
     }
 }

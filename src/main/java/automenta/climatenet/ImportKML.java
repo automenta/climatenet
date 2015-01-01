@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.opensextant.geodesy.Geodetic2DPoint;
@@ -85,6 +86,8 @@ public class ImportKML implements Runnable {
     Deque<String> path = new ArrayDeque();
     int numFeatures = 0;
     private String layer;
+    private BulkRequestBuilder bulk = null;
+    private int BULK_SIZE = 1000;
 
     public String[] getPath(Deque<String> p) {
         return p.toArray(new String[p.size()]);
@@ -187,7 +190,7 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         
         
         if (st!=null) {
-            st.bulkStart();
+            st.newBulk();
         }
 	
         
@@ -263,7 +266,10 @@ Logger.getLogger(AltitudeModeEnumType.class).setLevel(Level.OFF);*/
         }
 
         if (st!=null) {
-            st.bulkEnd();
+            if (bulk!=null) {
+                st.commit(bulk);
+                bulk = null;
+            }
         }
         
         if (esri) {
@@ -441,7 +447,9 @@ compressor.setCompressCss(true);               //compress inline css
                         path.add(i);
 
                         
-                        st.add("tag", i, d);
+                        bulk = st.add(bulk, "tag", i, d);
+                        
+                        bulk = updateBulk();
 
                     }
                     else if (go instanceof Feature) {
@@ -490,8 +498,10 @@ compressor.setCompressCss(true);               //compress inline css
                         //f.getStyleUrl()
 
                         String fid = getSerial(layer, serial++);
-                        st.add("feature", fid, fb.endObject());
+                        bulk = st.add(bulk, "feature", fid, fb.endObject());
                         numFeatures++;
+                        
+                        bulk = updateBulk();
                     }
                 }
 
@@ -537,5 +547,15 @@ compressor.setCompressCss(true);               //compress inline css
 //                }
                 
                 return true;
+    }
+
+    private BulkRequestBuilder updateBulk() {
+        if (bulk.numberOfActions() < BULK_SIZE)
+            return bulk;
+        else {
+            st.commit(bulk);
+            bulk = null;
+            return null;
+        }
     }
 }

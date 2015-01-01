@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * Schema.org and ActivityStreams Ontology import
@@ -18,35 +19,32 @@ import java.util.List;
 abstract public class SchemaOrg {
 
     public static void load(final ElasticSpacetime db) throws IOException {
-        db.bulk(new Runnable() {
+        final BulkRequestBuilder bulk = db.newBulk();
+        try {
+            new SchemaOrg() {
 
-            @Override
-            public void run() {
-                try {
-                    new SchemaOrg() {
+                @Override
+                public void onClass(String id, String label, List<String> supertypes, String comment) {
 
-                        @Override
-                        public void onClass(String id, String label, List<String> supertypes, String comment) {
+                    Tag t = new Tag(id, label);
+                    t.setDescription(comment);
+                    for (String s : supertypes) {
+                        t.inh.put(s, 1.0);
+                    }
 
-                            Tag t = new Tag(id, label);
-                            t.setDescription(comment);
-                            for (String s : supertypes)
-                                t.inh.put(s, 1.0);
-
-                            db.addTag(t);
-                        }
-
-                        @Override
-                        public void onProperty(String id, String label, List<String> domains, List<String> ranges, String comment) {
-                        }
-
-                    };
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    db.addTag(bulk, t);
                 }
-            }
 
-        });
+                @Override
+                public void onProperty(String id, String label, List<String> domains, List<String> ranges, String comment) {
+                }
+
+            };
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        db.commit(bulk);
 
     }
 
