@@ -69,28 +69,30 @@ function NodeFrame(spacegraph) {
         };
 
         f.hoverUpdate = function() {
-            var currentlyVisible = frameEle.is(':visible');
                         
             if (frameVisible) {
-                if (!currentlyVisible)
+                if (!this.currentlyVisible) {
+                    this.currentlyVisible = true;
                     frameEle.fadeIn();
+                }
             }
             else {                
-                if ((frameHiding===-1) && (currentlyVisible)) {
+                if ((frameHiding===-1) && (this.currentlyVisible)) {
                     frameHiding = setTimeout(function() {
                         //if still set for hiding, actually hide it
-                        if (!frameVisible)
+                        if (!frameVisible) {
                             frameEle.fadeOut(function() {
                                 f.hovered = null;
                                 frameEle.data('node', null);
                                 frameHiding = -1;
                             });
-
+                            this.currentlyVisible = false;
+                        }
                     }, frameTimeToFade);                
                 }
             }
             
-            if (currentlyVisible && f.hovered) {
+            if (this.currentlyVisible && f.hovered) {
                 spacegraph.positionNodeHTML(f.hovered, frameEle, frameNodePixelScale, frameNodeScale);
                 frameEle.data('node', f.hovered);
             }

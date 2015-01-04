@@ -1,7 +1,7 @@
 function spacegraph(ui, target, opt) {
     
     var commitPeriodMS = 300;
-    var widgetUpdatePeriodMS = 20;
+    var widgetUpdatePeriodMS = 5;
     var suppressCommit = false;
     
     var ready = function() {
@@ -15,6 +15,7 @@ function spacegraph(ui, target, opt) {
         this.on('layoutstop pan zoom', function (e) {
             updateAllWidgets();            
         });
+                
         
         this.on('data position select unselect add remove grab drag style', function (e) {
             
@@ -56,18 +57,10 @@ function spacegraph(ui, target, opt) {
         };
 
 
-        var baseDrawNode = this._private.renderer.drawNode;
+        /*var baseDrawNode = this._private.renderer.drawNode;
         this._private.renderer.drawNode = function (context, node, drawOverlayInstead) {
             baseDrawNode.apply(this, arguments);
-
-            if (widget(node)) {
-                
-                queueWidgetUpdate(node);
-                if (frame.hovered === node)
-                    setTimeout(frame.hoverUpdate, 0);
-            }
-            
-        };
+        };*/
 
         function widget(node) {
             if (node.data)
@@ -87,15 +80,18 @@ function spacegraph(ui, target, opt) {
 
             if (nextWidgetsToUpdate.length > 0) {
 
-                setTimeout(function () {
+                //setTimeout(function () {
                     widgetsToUpdate = {};
                     
                     for (var i = 0; i < nextWidgetsToUpdate.length; i++) {
                         var node = nextWidgetsToUpdate[i];
                         that.updateNodeWidget(node);
+                        if (frame.hovered === node)
+                            frame.hoverUpdate();
+                        
                     }
 
-                }, 0);
+                //}, 0);
             }
 
         }, widgetUpdatePeriodMS);
@@ -149,9 +145,10 @@ function spacegraph(ui, target, opt) {
         hideEdgesOnViewport: false,
         hideLabelsOnViewport: false,
         textureOnViewport: false, //true = higher performance, lower quality
-        motionBlur: true,
+        motionBlur: false,
         wheelSensitivity: 1,
-        //pixelRatio: 1
+        //pixelRatio: 0.25, //downsample pixels
+        pixelRatio: 1,
         initrender: function (evt) { /* ... */ },
         //renderer: { /* ... */},
         container: target[0]

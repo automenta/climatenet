@@ -78,10 +78,12 @@ function UI(e) {
             });
         }
 
+/*
         e.find('#ChannelMenu').append(
                 $('<li class="has-dropdown not-click"></li>').
                 append(button, dropdown).addClass(cclass)
                 ).foundation();
+        */
 
 
         /*
