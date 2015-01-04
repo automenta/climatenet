@@ -9,85 +9,129 @@ and open the template in the editor.
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
         <link rel="import" href="head.html">
+        
     </head>
     <body>
+        
+        <ul id="space"></ul>
+        
+        <div id="log"></div>
+        
     </body>
     <script>
-        function space() {
-            var s = {
-            };
-
-            var onChange = function (c) {
-                console.log('change', c);
-
-            };
-            var onRootChange = function (c) {
-                console.log('root change', c);
-            };
+        function Space() {
+            var that = this;
             
-            var changeHandler = function (changes) {
-                _.each(changes, function(c) {
-                    var o = c.object;
-                    var root = (o === s);
-
-
-                    
-                    if (root) {
-                            
-                        setTimeout(function() {
-                            
-                            var childKey = c.name;
-                            var child = s[childKey];
-                            
-                            console.log(c, 'root', childKey, child, c.type);
-
-                            if (c.type === 'add') {
-                                try {
-                                    Object.observe(child, changeHandler);
-                                }
-                                catch (typeError) {
-                                    //deleted before it could be observed
-                                }
-                            }
-                            else if (c.type === 'delete') {
-                                try {
-                                    Object.unobserve(child, changeHandler);
-                                }
-                                catch (typeError) {
-                                    //already deleted, shouldnt need to be unobserved
-                                }
-                            }
-                            
-                            onRootChange(c);
-
-                        }, 0);
-                    }
-                    else {
-                        setTimeout(function() {
-                            console.log(c);
-
-                            onChange(c);
-                            
-                        }, 0);
-                    }
-                });
+            that.changeHandler = function (changes) {                
+                if (Array.isArray(changes))
+                    _.each(changes, that.changeHandler);
+                else {
+                    var c = changes;
+                    setTimeout(that.onChange, 0, c, that);
+                };
             };
 
-            Object.observe(s, changeHandler);
-
-            return s;
+            Object.observe(that, that.changeHandler);            
         }
+        
+        Space.prototype.on = function (handler) {
+            if (!this._handlers) this._handlers = [];
+            this._handlers.push(handler);
+            return this;
+        };
+        
+        Space.prototype.off = function (handler) {
+            this._handlers.remove(handler);
+            return this;
+        };
+        
+        Space.prototype.onChange = function (c, space) {
+            
+            var childKey = c.name;
+            
+            if ((childKey[0] === '_') || (childKey==='onSpace')) return;
+            
+            var child = (childKey) ? c.object[childKey] : undefined;
+            c = _.clone(c);
+            c['value'] = child;
+                            
+            if ((c.object === space) && (childKey)) {                
 
-        var s = new space();
+                //console.log('root', c.type, c.name, child);
+
+                if (child) {
+                    
+                    if (c.type === 'add') {
+                        try {                                                        
+                            Object.observe(child, space.changeHandler);
+                        }
+                        catch (typeError) {                            
+                            console.error(typeError);
+                        }
+                        
+                        if (child.onSpace) child.onSpace(space);
+                    }
+                    else if (c.type === 'delete') {
+                        try {
+                            if (child.onSpace) child.onSpace(null);
+
+                            Object.unobserve(child, space.changeHandler);
+                        }
+                        catch (typeError) {
+                            //already deleted, shouldnt need to be unobserved
+                        }
+                    }
+                }
+                
+
+            }
+
+            var h = space._handlers;
+            if (h) {
+                for (var i = 0; i < h.length; i++)
+                    h[i](c, c.object, space);
+            }                
+        };
+
+
+
+
+        var s = new Space();
+        
+        s.on(function(e, object, space) {
+            //console.log(e, object, object===space ? 'root' : 'child');
+            $('#log').append(JSON.stringify(e) + '<br/>');
+
+
+            var id = e.name;            
+            
+            if (space[id] === e.value) {
+                //first level element of the space
+                
+                $('#' + id).remove();
+                $('<li><b>' + e.name + '</b>' + JSON.stringify(e) + '</li>').attr('id', id).appendTo('#space');
+            }
+        });
+        s.on(function(e, object, space) {
+            //console.log( JSON.stringify(e), object===space ? 'root' : 'child');
+        });
+        
         s.x = {};
         s.x.y = 1;
 
         s.y = {};
         s.y.x = 2;
-
-        delete s.x;
-
+        s.y.onSpace = function(s) {
+            console.log('y space aware');
+        };
+        
+        setTimeout(function() { delete s.x; }, 100);
+        setTimeout(function() { s.y.z = 4; }, 1110);
+        setTimeout(function() { s.y.z = 2; }, 3120);
+        setTimeout(function() { delete s.y; }, 4130);
+        
 
     </script>
 
