@@ -30,7 +30,7 @@ function spacegraph(ui, target, opt) {
             var target = e.cyTarget;
             if (target) {
                 if (widget(target)) {
-                    that.updateNodeWidget(target);
+                    setImmediate(that.updateNodeWidget, target); //that.updateNodeWidget(target);
                 }                    
                    
                 //console.log(this, that, target);
@@ -46,15 +46,18 @@ function spacegraph(ui, target, opt) {
         
 
 
-        var widgetsToUpdate = {};
+        
 
+        /*
         var baseRedraw = this._private.renderer.redraw;
+        
         this._private.renderer.redraw = function(options) {
             baseRedraw.apply(this, arguments);
 
             //frame.hoverUpdate();
                         
         };
+        */
 
 
         /*var baseDrawNode = this._private.renderer.drawNode;
@@ -72,7 +75,7 @@ function spacegraph(ui, target, opt) {
         
         var that = this;
         
-        var updateAllWidgets = this.updateAllWidgets = /*_.throttle(*/function() {
+        var updateAllWidgets = this.updateAllWidgets = _.throttle(function() {
             
             //TODO use an index to avoid iterating all nodes
             
@@ -81,7 +84,7 @@ function spacegraph(ui, target, opt) {
                    that.updateNodeWidget(x);
                }
             });
-        }/*, widgetUpdatePeriodMS)*/;
+        }, widgetUpdatePeriodMS);
 
 //            function scaleAndTranslate( _element , _x , _y, wx, wy )  {
 //                
@@ -125,8 +128,14 @@ function spacegraph(ui, target, opt) {
         wheelSensitivity: 1,
         //pixelRatio: 0.25, //downsample pixels
         pixelRatio: 1,
+        
         initrender: function (evt) { /* ... */ },
-        //renderer: { /* ... */},
+        
+        
+        renderer: { /* ... */
+            name: 'canvas',
+            showFps: true
+        },
         container: target[0]
     });
     
@@ -167,6 +176,7 @@ function spacegraph(ui, target, opt) {
             // NB: i indicates edge index in case of edgeType: 'node'
             return {};
         },
+        /*
         start: function (sourceNode) {
             // fired when edgehandles interaction starts (drag on handle)
         },
@@ -176,6 +186,7 @@ function spacegraph(ui, target, opt) {
         stop: function (sourceNode) {
             // fired when edgehandles interaction is stopped (either complete with added edges or incomplete)
         }
+        */
     };
 
     s.edgehandles( ehDefaults );    
@@ -205,14 +216,16 @@ function spacegraph(ui, target, opt) {
     };
     
     s.updateNodeWidget = function(node) {
+        var that = s;
+        
         var widget = node.data().widget; //html string
-        var wEle = this.widgets.get(node);
+        var wEle = that.widgets.get(node);
         var w = $(wEle);
 
         
         if (node.data().removed) {
             if (wEle) {
-                this.removeNodeWidget(node);
+                that.removeNodeWidget(node);
             }
             return;
         }
@@ -228,7 +241,7 @@ function spacegraph(ui, target, opt) {
          }
          }*/
 
-        var that = this;
+        
         
         if (!wEle) {
 
@@ -263,10 +276,10 @@ function spacegraph(ui, target, opt) {
             //TODO use MutationObservers
             w.bind("DOMSubtreeModified DOMAttrModified", commitWidgetChange); // Listen DOM changes
 
-            this.widgets.set(node, w[0]);
+            that.widgets.set(node, w[0]);
         }
 
-        this.positionNodeHTML(node, w, widget.pixelScale, widget.scale, widget.minPixels);
+        that.positionNodeHTML(node, w, widget.pixelScale, widget.scale, widget.minPixels);
 
     };
 
@@ -291,13 +304,17 @@ function spacegraph(ui, target, opt) {
             cw = parseInt(pixelScale*(pw/ph));
         }
         
+        var h = html[0];
+        var hcw = h.clientWidth, hch = h.clientHeight;
+        
+        
         //now get the effective clientwidth/height
-        if ((html[0].clientWidth!==cw) || (html[0].clientHeight!==ch)) {
-            html.css({
-                width:cw, height: ch
-            });
-            cw = html[0].clientWidth;
-            ch = html[0].clientHeight;
+        if ((hcw!==cw) || (hch!==ch)) {
+            
+            h.style.width = cw;
+            h.style.height = ch;
+            cw = hcw;
+            ch = hch;
         }
         
         //console.log(html[0].clientWidth, cw, html[0].clientHeight, ch);
@@ -314,43 +331,48 @@ function spacegraph(ui, target, opt) {
         //TODO check extents to determine node visibility for hiding off-screen HTML
         //for possible improved performance
 
-        var nextCSS = {};
         if (minPixels) {
-            var hidden = 'none' === html.css('display');
+            var hidden = ('none' === h.style.display);
             
             if ( Math.min(wy,wx) < minPixels/pixelScale ) {
                 if (!hidden) {
-                    html.css({display: 'none'});
+                    //html.css({display: 'none'});
+                    h.style.display = 'none';
                     return;
                 }
             }
             else {
                 if (hidden) {
-                    nextCSS['display'] = 'block';
+                    //nextCSS['display'] = 'block';
+                    h.style.display = 'block';
                 }
             }
         }
         
         //console.log(html, pos.x, pos.y, minPixels, pixelScale);
 
-        var mata, matb, matc, matd, px, py;
-        mata = wx;
+        var transformPrecision = 3;
+
+        var matb, matc, px, py;
+        wx = wx.toPrecision(transformPrecision);
         matb = 0;
         matc = 0;
-        matd = wy;
+        wy = wy.toPrecision(transformPrecision);
                 
         //parseInt here to reduce precision of numbers for constructing the matrix string
         //TODO replace this with direct matrix object construction involving no string ops        
         
-        px = pos.x- (scale*pw) / 2.0;
-        py = pos.y- (scale*ph) / 2.0;
+        px = (pos.x - (scale*pw) / 2.0).toPrecision(transformPrecision);
+        py = (pos.y - (scale*ph) / 2.0).toPrecision(transformPrecision);
         
         //px = parseInt(pos.x - pw / 2.0 + pw * paddingScale / 2.0); //'e' matrix element
         //py = parseInt(pos.y - ph / 2.0 + ph * paddingScale / 2.0); //'f' matrix element
         //px = pos.x;
         //py = pos.y;
-        nextCSS['transform'] = 'matrix(' + mata + ',' + matb + ',' + matc + ',' + matd + ',' + px + ',' + py + ')';
-        html.css(nextCSS);        
+        var tt = 'matrix(' + wx+ ',' + matb + ',' + matc + ',' + wy + ',' + px + ',' + py + ')';
+        //nextCSS['transform'] = tt;
+        //html.css(nextCSS);        
+        h.style.transform = tt;
     };
     
     s.nodeProcessor = [];
@@ -596,7 +618,7 @@ function spacegraph(ui, target, opt) {
             padding: 80
           }
         }, {
-            duration: 64
+            duration: 400
             /*step: function() {
             
             }*/

@@ -29,7 +29,7 @@ function NodeFrame(spacegraph) {
         //http://threedubmedia.com/code/event/drag/demo/resize2
         
         spacegraph.on('zoom', function(e) {
-            setTimeout(f.hoverUpdate, 0);
+            setImmediate(f.hoverUpdate);
         });
         
         spacegraph.on('mouseover mouseout mousemove', function(e) {
@@ -44,7 +44,7 @@ function NodeFrame(spacegraph) {
             }
 
             if (target && target.isNode && target.isNode()) {                
-                if (over || (f.hovered!==target)) {
+                if ((over || (f.hovered!==target)) && (frameHiding!==-1)) {
                     //cancel any hide fade
                     clearTimeout(frameHiding);
                     frameHiding = -1;
@@ -60,14 +60,14 @@ function NodeFrame(spacegraph) {
                 frameVisible = false;
             }
 
-            setTimeout(f.hoverUpdate, 0);
+            setImmediate(f.hoverUpdate);
 
         });
 
         f.hide = function() {
             frameVisible = false;
             this.hovered = null;
-            setTimeout(this.hoverUpdate, 0);
+            setImmediate(this.hoverUpdate);
 
             
             //TODO fadeOut almost works, but not completely. so hide() for now

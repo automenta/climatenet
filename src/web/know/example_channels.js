@@ -104,9 +104,9 @@ function newExampleChannel1() {
                 }
             },
             
-            /*{id: 'u', 
-                width: 48, height: 32, url: 'http://_wikipedia.org' },*/
-            /*
+            {id: 'u', 
+                width: 48, height: 32, url: 'http://wikipedia.org' },
+            
             {id: 'e',
                 width: 64,
                 height: 64,
@@ -116,8 +116,8 @@ function newExampleChannel1() {
                     scale: 0.9,
                     minPixels: 8,
                 }
-            },*/
-            /*
+            },
+            
             {id: 'e1',
                 width: 64,
                 height: 64,
@@ -128,7 +128,7 @@ function newExampleChannel1() {
                     minPixels: 16,
                 }
             }
-             */
+             
             
             //{id: 'f', parent: 'e'}
         ],
