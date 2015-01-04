@@ -270,7 +270,7 @@ function newPopupMenu(s) {
         }).animate({
             opacity: 1.0
         }, {
-            duration: 1000,
+            duration: 400,
             step: function( now, fx ){
                 for (var i = 0; i < items.length; i++) {
                     var a = (i / (items.length)) * Math.PI * 2.0;
