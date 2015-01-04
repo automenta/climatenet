@@ -3,6 +3,7 @@ function spacegraph(ui, target, opt) {
     var commitPeriodMS = 300;
     var widgetUpdatePeriodMS = 1;
     var suppressCommit = false;
+    var zoomDuration = 64; //ms
     
     var ready = function() {
 
@@ -30,7 +31,7 @@ function spacegraph(ui, target, opt) {
             var target = e.cyTarget;
             if (target) {
                 if (widget(target)) {
-                    setImmediate(that.updateNodeWidget, target); //that.updateNodeWidget(target);
+                    setTimeout(that.updateNodeWidget, 0, target); //that.updateNodeWidget(target);
                 }                    
                    
                 //console.log(this, that, target);
@@ -134,7 +135,7 @@ function spacegraph(ui, target, opt) {
         
         renderer: { /* ... */
             name: 'canvas',
-            showFps: true
+            showFps: false
         },
         container: target[0]
     });
@@ -305,14 +306,16 @@ function spacegraph(ui, target, opt) {
         }
         
         var h = html[0];
-        var hcw = h.clientWidth, hch = h.clientHeight;
+                
         
-        
-        //now get the effective clientwidth/height
-        if ((hcw!==cw) || (hch!==ch)) {
+        //get the effective clientwidth/height if it has been resized
+        if (( (cw+'px') !== h.style.width ) || ((ch + 'px') !== h.style.height)) {   
+            var hcw = h.clientWidth;
+            var hch = h.clientHeight;
             
             h.style.width = cw;
             h.style.height = ch;
+            
             cw = hcw;
             ch = hch;
         }
@@ -336,14 +339,12 @@ function spacegraph(ui, target, opt) {
             
             if ( Math.min(wy,wx) < minPixels/pixelScale ) {
                 if (!hidden) {
-                    //html.css({display: 'none'});
                     h.style.display = 'none';
                     return;
                 }
             }
             else {
                 if (hidden) {
-                    //nextCSS['display'] = 'block';
                     h.style.display = 'block';
                 }
             }
@@ -351,7 +352,7 @@ function spacegraph(ui, target, opt) {
         
         //console.log(html, pos.x, pos.y, minPixels, pixelScale);
 
-        var transformPrecision = 3;
+        var transformPrecision = 4;
 
         var matb, matc, px, py;
         wx = wx.toPrecision(transformPrecision);
@@ -618,7 +619,7 @@ function spacegraph(ui, target, opt) {
             padding: 80
           }
         }, {
-            duration: 400
+            duration: zoomDuration
             /*step: function() {
             
             }*/

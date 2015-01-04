@@ -4,7 +4,6 @@ body {
     height: 100%;
     border: 0;
     padding: 0;  
-    background-color: white;
 }
 body nav {
     position: fixed;
@@ -29,7 +28,7 @@ body nav {
 
 .widget {
     pointer-events: none;
-    z-index: 5000;
+    z-index: 6000;
 }
 
 .widget * {

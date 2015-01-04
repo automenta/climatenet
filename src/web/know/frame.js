@@ -29,7 +29,7 @@ function NodeFrame(spacegraph) {
         //http://threedubmedia.com/code/event/drag/demo/resize2
         
         spacegraph.on('zoom', function(e) {
-            setImmediate(f.hoverUpdate);
+            setTimeout(f.hoverUpdate, 0);
         });
         
         spacegraph.on('mouseover mouseout mousemove', function(e) {
@@ -53,6 +53,7 @@ function NodeFrame(spacegraph) {
                 if (f.hovered!==target) {
                     frameEle.hide();
                     frameVisible = true;
+                    frameEle[0].style.width = undefined; //reset width
                     frameEle.fadeIn();
                     f.hovered = target;
                 }
@@ -60,14 +61,15 @@ function NodeFrame(spacegraph) {
                 frameVisible = false;
             }
 
-            setImmediate(f.hoverUpdate);
+            
+            setTimeout(f.hoverUpdate, 0);
 
         });
 
         f.hide = function() {
             frameVisible = false;
             this.hovered = null;
-            setImmediate(this.hoverUpdate);
+            setTimeout(this.hoverUpdate, 0);
 
             
             //TODO fadeOut almost works, but not completely. so hide() for now
@@ -79,6 +81,7 @@ function NodeFrame(spacegraph) {
             if (frameVisible) {
                 if (!this.currentlyVisible) {
                     this.currentlyVisible = true;
+                    frameEle[0].style.width = undefined; //reset width
                     frameEle.fadeIn();
                 }
             }
@@ -184,6 +187,7 @@ function NodeFrame(spacegraph) {
                     node.cy().endBatch();
                 },
                 stop: function (event, ui) {
+                    frameEle[0].style.width = undefined; //reset width
 
                     frameEleResizing = false;
                 }
