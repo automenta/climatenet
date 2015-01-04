@@ -1,7 +1,7 @@
 function spacegraph(ui, target, opt) {
     
     var commitPeriodMS = 300;
-    var widgetUpdatePeriodMS = 5;
+    var widgetUpdatePeriodMS = 1;
     var suppressCommit = false;
     
     var ready = function() {
@@ -12,7 +12,7 @@ function spacegraph(ui, target, opt) {
 
         //http://js.cytoscape.org/#events/collection-events
         
-        this.on('layoutstop pan zoom', function (e) {
+        this.on('layoutready layoutstop pan zoom', function (e) {
             updateAllWidgets();            
         });
                 
@@ -29,9 +29,10 @@ function spacegraph(ui, target, opt) {
 
             var target = e.cyTarget;
             if (target) {
-                if (widget(target))
-                    queueWidgetUpdate(target);
-                
+                if (widget(target)) {
+                    that.updateNodeWidget(target);
+                }                    
+                   
                 //console.log(this, that, target);
                 //that.commit();
             }
@@ -51,9 +52,8 @@ function spacegraph(ui, target, opt) {
         this._private.renderer.redraw = function(options) {
             baseRedraw.apply(this, arguments);
 
-            frame.hoverUpdate();
-            
-            updateWidgets();
+            //frame.hoverUpdate();
+                        
         };
 
 
@@ -68,44 +68,20 @@ function spacegraph(ui, target, opt) {
             return undefined;
         }
 
-        function queueWidgetUpdate(node) {
-            widgetsToUpdate[node.id()] = node;
-        }
 
         
         var that = this;
-        var updateWidgets = this.updateWidgets = _.throttle(function () {
-
-            var nextWidgetsToUpdate = _.values(widgetsToUpdate);
-
-            if (nextWidgetsToUpdate.length > 0) {
-
-                //setTimeout(function () {
-                    widgetsToUpdate = {};
-                    
-                    for (var i = 0; i < nextWidgetsToUpdate.length; i++) {
-                        var node = nextWidgetsToUpdate[i];
-                        that.updateNodeWidget(node);
-                        if (frame.hovered === node)
-                            frame.hoverUpdate();
-                        
-                    }
-
-                //}, 0);
-            }
-
-        }, widgetUpdatePeriodMS);
-
         
-        var updateAllWidgets = _.throttle(function() {
+        var updateAllWidgets = this.updateAllWidgets = /*_.throttle(*/function() {
+            
+            //TODO use an index to avoid iterating all nodes
+            
             that.nodes().each(function(y,x) {                
                if (widget(x)) {
                    that.updateNodeWidget(x);
                }
             });
-        }, widgetUpdatePeriodMS);
-
-        
+        }/*, widgetUpdatePeriodMS)*/;
 
 //            function scaleAndTranslate( _element , _x , _y, wx, wy )  {
 //                
@@ -298,31 +274,35 @@ function spacegraph(ui, target, opt) {
     /** html=html dom element */
     s.positionNodeHTML = function(node, html, pixelScale, scale, minPixels) {
 
-        pixelScale = pixelScale || 128; //# pixels wide
+        pixelScale = parseFloat(pixelScale) || 128.0; //# pixels wide
 
-        var pos = node.renderedPosition();
         var pw = parseFloat(node.renderedWidth());
         var ph = parseFloat(node.renderedHeight());
         
-        scale = scale || 1.0;
+        scale = parseFloat(scale) || 1.0;
 
         var cw, ch;
         if (pw < ph) {
-            cw = pixelScale;
-            ch = pixelScale*(ph/pw);
+            cw = parseInt(pixelScale);
+            ch = parseInt(pixelScale*(ph/pw));
         }
         else {
-            ch = pixelScale;
-            cw = pixelScale*(pw/ph);
+            ch = parseInt(pixelScale);
+            cw = parseInt(pixelScale*(pw/ph));
         }
-        html.css({
-            width:cw, height: ch
-        });
-                
-        //now get the effective clientwidth/height
-        cw = html[0].clientWidth;
-        ch = html[0].clientHeight;
         
+        //now get the effective clientwidth/height
+        if ((html[0].clientWidth!==cw) || (html[0].clientHeight!==ch)) {
+            html.css({
+                width:cw, height: ch
+            });
+            cw = html[0].clientWidth;
+            ch = html[0].clientHeight;
+        }
+        
+        //console.log(html[0].clientWidth, cw, html[0].clientHeight, ch);
+        
+        var pos = node.renderedPosition();        
                 
         var globalToLocalW = pw / cw;
         var globalToLocalH = ph / ch;
@@ -350,6 +330,8 @@ function spacegraph(ui, target, opt) {
                 }
             }
         }
+        
+        //console.log(html, pos.x, pos.y, minPixels, pixelScale);
 
         var mata, matb, matc, matd, px, py;
         mata = wx;
@@ -442,7 +424,7 @@ function spacegraph(ui, target, opt) {
             }
             
             that.resize();
-
+            
             suppressCommit = false;
             
         });
@@ -614,7 +596,10 @@ function spacegraph(ui, target, opt) {
             padding: 80
           }
         }, {
-            duration: 384
+            duration: 64
+            /*step: function() {
+            
+            }*/
         });
     };
         

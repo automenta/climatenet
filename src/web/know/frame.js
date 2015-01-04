@@ -6,34 +6,39 @@ function NodeFrame(spacegraph) {
         hovered: null
     };
     
+    var frameVisible = false;
+    var frameTimeToFade = 2000; //ms
+    var frameHiding = -1;
+    var frameNodePixelScale = 300;
+    var frameNodeScale = 1.25;
+    var frameEleNode = null;
+    var frameEleResizing = false;
+    
+    
     $.get('know/frame.html', { "_": $.now() /* overrides cache */ }, function(x) {               
        
         $('#overlay').append( x );
 
         var frameEle = $('#nodeframe');
         f.hovered = null;
-        var frameVisible = false;
-        var frameTimeToFade = 2000; //ms
-        var frameHiding = -1;
-        var frameNodePixelScale = 300;
-        var frameNodeScale = 1.25;
 
+        
         initFrameDrag(f);
 
 
         //http://threedubmedia.com/code/event/drag/demo/resize2
-
-        spacegraph.on('pan zoom', function(e) {
+        
+        spacegraph.on('zoom', function(e) {
             setTimeout(f.hoverUpdate, 0);
         });
-
+        
         spacegraph.on('mouseover mouseout mousemove', function(e) {
 
             var target = e.cyTarget;
             var over = (e.type !== "mouseout");
 
-            if (frameEle.data('resizing')) {
-                target = frameEle.data('node');
+            if (frameEleResizing) {
+                target = frameEleNode;
                 frameEle.show();
                 over = true;    
             }
@@ -62,7 +67,8 @@ function NodeFrame(spacegraph) {
         f.hide = function() {
             frameVisible = false;
             this.hovered = null;
-            this.hoverUpdate();   
+            setTimeout(this.hoverUpdate, 0);
+
             
             //TODO fadeOut almost works, but not completely. so hide() for now
             frameEle.hide();
@@ -83,7 +89,7 @@ function NodeFrame(spacegraph) {
                         if (!frameVisible) {
                             frameEle.fadeOut(function() {
                                 f.hovered = null;
-                                frameEle.data('node', null);
+                                frameEleNode = null;
                                 frameHiding = -1;
                             });
                             this.currentlyVisible = false;
@@ -94,7 +100,7 @@ function NodeFrame(spacegraph) {
             
             if (this.currentlyVisible && f.hovered) {
                 spacegraph.positionNodeHTML(f.hovered, frameEle, frameNodePixelScale, frameNodeScale);
-                frameEle.data('node', f.hovered);
+                frameEleNode = f.hovered;
             }
 
         };
@@ -102,90 +108,93 @@ function NodeFrame(spacegraph) {
 
 
     });
+
+    function initFrameDrag(nodeFrame) {
+        var frameEle = $('#nodeframe');
+
+
+        var close = $('#nodeframe #close');
+        close.click(function() {
+            var node = frameEleNode;
+            if (node) {
+                var space = node.cy();
+
+                space.removeNode(node);            
+
+                frameEleNode = null;
+                nodeFrame.hide();
+            }
+        });
+
+        var se = $('#nodeframe #resizeSE');
+        $(function () {
+            //$( "#draggable" ).draggable({ revert: true });
+            se.draggable({
+                revert: true, 
+                helper: "clone",
+                appendTo: '#nodeframe #resizeSE',
+                //appendTo: "body",
+
+                //http://api.jqueryui.com/draggable/#event-drag
+                start: function (event, ui) {
+                    var node = frameEleNode;
+
+                    if (!node)
+                        return;
+
+                    var pos = node.position();
+                    if (!pos) {
+                        console.error('node ', node, 'has no position');
+                        return;
+                    }
+
+                    frameEleResizing = true;
+
+                    this.originalNode = node;
+                    this.originalPos = [ parseFloat(pos.x), parseFloat(pos.y) ];
+                    this.originalSize = [ node.width(), node.height(), node.renderedWidth(), node.renderedHeight() ];
+                    this.originalOffset = [ ui.offset.left, ui.offset.top ];
+                },
+                drag: function (event, ui) {
+
+                    var node = frameEleNode;
+                    if (node!==this.originalNode)
+                        return;
+
+                    var dx = parseFloat(ui.offset.left - this.originalOffset[0]);
+                    var dy = parseFloat(ui.offset.top - this.originalOffset[1]);
+
+                    var p = this.originalPos;
+                    var os = this.originalSize;
+
+                    var dw = dx * (os[0]/os[2]);
+                    var dh = dy * (os[1]/os[3]);
+                    var w = os[0] + dw;
+                    var h = os[1] + dh;
+                    var x = p[0] + dw/2.0;
+                    var y = p[1] + dh/2.0;
+
+
+                    node.cy().startBatch();
+                    node.position({ x: x, y: y });
+                    node.css({
+                            'width': w,
+                            'height': h
+                    });               
+                    node.cy().endBatch();
+                },
+                stop: function (event, ui) {
+
+                    frameEleResizing = false;
+                }
+
+            });
+        });
+    }
     
     return f;
 }
 
-function initFrameDrag(nodeFrame) {
-    var frameEle = $('#nodeframe');
-    
-    
-    var close = $('#nodeframe #close');
-    close.click(function() {
-        var node = frameEle.data('node');        
-        if (node) {
-            var space = node.cy();
-            
-            space.removeNode(node);            
-            
-            frameEle.data('node', null);
-            nodeFrame.hide();
-        }
-    });
-    
-    var se = $('#nodeframe #resizeSE');
-    $(function () {
-        //$( "#draggable" ).draggable({ revert: true });
-        se.draggable({
-            revert: true, 
-            helper: "clone",
-            appendTo: '#nodeframe #resizeSE',
-            //appendTo: "body",
-            
-            //http://api.jqueryui.com/draggable/#event-drag
-            start: function (event, ui) {
-                var node = frameEle.data('node');
-                
-                if (!node)
-                    return;
-                
-                var pos = node.position();
-                if (!pos) {
-                    console.error('node ', node, 'has no position');
-                    return;
-                }
-                
-                frameEle.data('resizing', true);
-                                
-                this.originalNode = node;
-                this.originalPos = [ parseFloat(pos.x), parseFloat(pos.y) ];
-                this.originalSize = [ node.width(), node.height(), node.renderedWidth(), node.renderedHeight() ];
-                this.originalOffset = [ ui.offset.left, ui.offset.top ];
-            },
-            drag: function (event, ui) {
-
-                var node = frameEle.data('node');
-                if (node!==this.originalNode)
-                    return;
-            
-                var dx = parseFloat(ui.offset.left - this.originalOffset[0]);
-                var dy = parseFloat(ui.offset.top - this.originalOffset[1]);
-                
-                var p = this.originalPos;
-                var os = this.originalSize;
-                
-                var dw = dx * (os[0]/os[2]);
-                var dh = dy * (os[1]/os[3]);
-                var w = os[0] + dw;
-                var h = os[1] + dh;
-                var x = p[0] + dw/2.0;
-                var y = p[1] + dh/2.0;
-
-
-                node.position({ x: x, y: y });
-                node.css({
-                        'width': w,
-                        'height': h
-                });               
-            },
-            stop: function (event, ui) {
-                
-                frameEle.data('resizing', false);
-            }
-
-        });
-    });
-}
 
 
 function newPopupMenu(s) {
