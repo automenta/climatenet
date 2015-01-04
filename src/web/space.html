@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="import" href="head.html">
+    </head>
+    <body>
+    </body>
+    <script>
+        function space() {
+            var s = {
+            };
+
+            var onChange = function (c) {
+                console.log('change', c);
+
+            };
+            var onRootChange = function (c) {
+                console.log('root change', c);
+            };
+            
+            var changeHandler = function (changes) {
+                _.each(changes, function(c) {
+                    var o = c.object;
+                    var root = (o === s);
+
+
+                    
+                    if (root) {
+                            
+                        setTimeout(function() {
+                            
+                            var childKey = c.name;
+                            var child = s[childKey];
+                            
+                            console.log(c, 'root', childKey, child, c.type);
+
+                            if (c.type === 'add') {
+                                try {
+                                    Object.observe(child, changeHandler);
+                                }
+                                catch (typeError) {
+                                    //deleted before it could be observed
+                                }
+                            }
+                            else if (c.type === 'delete') {
+                                try {
+                                    Object.unobserve(child, changeHandler);
+                                }
+                                catch (typeError) {
+                                    //already deleted, shouldnt need to be unobserved
+                                }
+                            }
+                            
+                            onRootChange(c);
+
+                        }, 0);
+                    }
+                    else {
+                        setTimeout(function() {
+                            console.log(c);
+
+                            onChange(c);
+                            
+                        }, 0);
+                    }
+                });
+            };
+
+            Object.observe(s, changeHandler);
+
+            return s;
+        }
+
+        var s = new space();
+        s.x = {};
+        s.x.y = 1;
+
+        s.y = {};
+        s.y.x = 2;
+
+        delete s.x;
+
+
+    </script>
+
+</html>

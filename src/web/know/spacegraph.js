@@ -1,7 +1,7 @@
 function spacegraph(ui, target, opt) {
     
-    var commitPeriodMS = 500;
-    var widgetUpdatePeriodMS = 50;
+    var commitPeriodMS = 300;
+    var widgetUpdatePeriodMS = 20;
     var suppressCommit = false;
     
     var ready = function() {

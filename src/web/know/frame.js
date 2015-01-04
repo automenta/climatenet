@@ -6,7 +6,7 @@ function NodeFrame(spacegraph) {
         hovered: null
     };
     
-    $.get('frame.html', { "_": $.now() /* overrides cache */ }, function(x) {               
+    $.get('know/frame.html', { "_": $.now() /* overrides cache */ }, function(x) {               
        
         $('#overlay').append( x );
 

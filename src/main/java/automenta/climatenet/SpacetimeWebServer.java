@@ -332,14 +332,12 @@ public class SpacetimeWebServer extends PathHandler {
         int webPort = 9090;
         int p2pPort = 9091;
         String peerID = UUID.randomUUID().toString();
+        final boolean peerEnable = false;
 
         SpacetimeWebServer s = new SpacetimeWebServer(
                 ElasticSpacetime.server("cv", false),
                 webPort);
 
-        final TomPeer peer = new TomPeer(
-                new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
-        peer.add(s.db);
 
         logger.info("Loading Schema.org (ontology)");
         SchemaOrg.load(s.db);
@@ -348,24 +346,30 @@ public class SpacetimeWebServer extends PathHandler {
         logger.info("Loading Netention (ontology)");
         NOntology.load(s.db);
 
-        s.addPrefixPath("/peer/index", new ChannelSnapshot(new ReadOnlyChannel<PeerBean>("/peer/index") {
-            @Override
-            public PeerBean nextValue() {
-                return peer.peer.peerBean();
-            }
-        }));
-        s.addPrefixPath("/peer/connection", new ChannelSnapshot(new ReadOnlyChannel("/peer/connection") {
-            @Override
-            public Object nextValue() {
-                return peer.peer.peer().connectionBean();
-            }
-        }));
-        s.addPrefixPath("/peer/route", new ChannelSnapshot(new ReadOnlyChannel("/peer/route") {
-            @Override
-            public Object nextValue() {
-                return peer.peer.peer().distributedRouting().peerMap();
-            }
-        }));
+        if (peerEnable) {
+            final TomPeer peer = new TomPeer(
+                    new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
+            peer.add(s.db);
+
+            s.addPrefixPath("/peer/index", new ChannelSnapshot(new ReadOnlyChannel<PeerBean>("/peer/index") {
+                @Override
+                public PeerBean nextValue() {
+                    return peer.peer.peerBean();
+                }
+            }));
+            s.addPrefixPath("/peer/connection", new ChannelSnapshot(new ReadOnlyChannel("/peer/connection") {
+                @Override
+                public Object nextValue() {
+                    return peer.peer.peer().connectionBean();
+                }
+            }));
+            s.addPrefixPath("/peer/route", new ChannelSnapshot(new ReadOnlyChannel("/peer/route") {
+                @Override
+                public Object nextValue() {
+                    return peer.peer.peer().distributedRouting().peerMap();
+                }
+            }));
+        }
 
         s.start();
     }
