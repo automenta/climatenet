@@ -5,7 +5,6 @@
  */
 package automenta.climatenet;
 
-import static automenta.climatenet.SpacetimeWebServer.json;
 import automenta.climatenet.data.ClimateViewer;
 import automenta.climatenet.data.NOntology;
 import automenta.climatenet.data.SchemaOrg;
@@ -14,12 +13,10 @@ import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
 import automenta.knowtention.Core;
-import static automenta.knowtention.Core.newJson;
 import automenta.knowtention.WebSocketCore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import static io.undertow.Handlers.resource;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -27,25 +24,24 @@ import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.handlers.resource.FileResourceManager;
 import io.undertow.util.Headers;
 import io.undertow.websockets.core.WebSocketChannel;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import net.tomp2p.connection.PeerBean;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+import static automenta.knowtention.Core.newJson;
+import static io.undertow.Handlers.resource;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
  *
@@ -335,7 +331,7 @@ public class SpacetimeWebServer extends PathHandler {
         final boolean peerEnable = false;
 
         SpacetimeWebServer s = new SpacetimeWebServer(
-                ElasticSpacetime.server("cv", false),
+                ElasticSpacetime.temporary("cv"), //ElasticSpacetime.server("cv", false),
                 webPort);
 
 
