@@ -7,15 +7,17 @@ package automenta.climatenet;
 
 import automenta.climatenet.elastic.ElasticSpacetime;
 import automenta.climatenet.p2p.TomPeer;
-import static automenta.climatenet.TestP2PDHT.bootstrap;
-import static automenta.climatenet.TestP2PDHT.createMasters;
 import automenta.climatenet.p2p.TomPeer.Answering;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.peers.PeerAddress;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static automenta.climatenet.TestP2PDHT.bootstrap;
+import static automenta.climatenet.TestP2PDHT.createMasters;
+import static junit.framework.TestCase.assertTrue;
 
 /**
  *
@@ -23,7 +25,8 @@ import org.junit.Test;
  */
 public class P2PQueryTest {
     
-    @Test public void testP2PQuery() throws Exception {
+    @Test
+    public void testP2PQuery() throws Exception {
             
             ElasticSpacetime es;
         

@@ -27,7 +27,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.1</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         
@@ -41,12 +41,12 @@
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>1.4.2</version>
+            <version>1.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.searchbox</groupId>
             <artifactId>jest</artifactId>
-            <version>0.1.4</version>        
+            <version>0.1.5</version>
         </dependency>
         
 <dependency>
@@ -60,12 +60,12 @@
 <dependency>
   <groupId>net.tomp2p</groupId>
   <artifactId>tomp2p-core</artifactId>
-  <version>5.0-Beta1</version>
+  <version>5.0-Beta6</version>
 </dependency>
 <dependency>
   <groupId>net.tomp2p</groupId>
   <artifactId>tomp2p-all</artifactId>
-  <version>5.0-Beta1</version>
+  <version>5.0-Beta6</version>
 </dependency>
                
         <dependency>
@@ -102,7 +102,7 @@
                 <dependency>
             <groupId>io.undertow</groupId>        
             <artifactId>undertow-core</artifactId>
-            <version>1.2.0.Beta6</version>
+            <version>1.2.0.Beta10</version>
         </dependency>   
         
         <dependency>
@@ -160,7 +160,7 @@
         <dependency>
             <groupId>com.ning</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>1.9.3</version>
+            <version>1.9.16</version>
         </dependency>
         <dependency>
             <groupId>com.spatial4j</groupId>

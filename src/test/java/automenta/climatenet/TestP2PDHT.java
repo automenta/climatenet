@@ -6,19 +6,14 @@
 package automenta.climatenet;
 
 import automenta.climatenet.p2p.TomPeer;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Random;
-import net.tomp2p.dht.FutureGet;
-import net.tomp2p.dht.FuturePut;
-import net.tomp2p.dht.FutureSend;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
-import net.tomp2p.peers.PeerAddress;
-import net.tomp2p.rpc.ObjectDataReply;
-import net.tomp2p.storage.Data;
+import net.tomp2p.peers.RTT;
+
+import java.io.IOException;
+import java.util.Random;
 
 /**
  *
@@ -58,7 +53,8 @@ public class TestP2PDHT {
         for (int i = 0; i < peers.length; i++) {
             for (int j = 0; j < peers.length; j++) {
                 if (i != j) {
-                    peers[i].peerBean().peerMap().peerFound(peers[j].peerAddress(), null, null);
+                    peers[i].peerBean().peerMap().peerFound(
+                            peers[j].peerAddress(), null, null, new RTT());
                 }
             }
         }
