@@ -69,8 +69,12 @@ public class ElasticSpacetime implements Spacetime {
     private final ExecutorService bulkQueue;
 
     public static ElasticSpacetime temporary(String index) throws Exception {
+        return temporary(index,-1);
+    }
+
+    public static ElasticSpacetime temporary(String index, int port) throws Exception {
         String dbPath = Files.createTempDir().getAbsolutePath();
-        final EmbeddedES e = new EmbeddedES(dbPath);
+        final EmbeddedES e = new EmbeddedES(dbPath, port);
         return new ElasticSpacetime(index, e.getClient(), true) {
 
             @Override
@@ -86,7 +90,7 @@ public class ElasticSpacetime implements Spacetime {
      * creates an embedded instance
      */
     public static ElasticSpacetime local(String index, String dbPath, boolean forceInit) throws Exception {
-        EmbeddedES e = new EmbeddedES(dbPath);
+        EmbeddedES e = new EmbeddedES(dbPath, -1);
         return new ElasticSpacetime(index, e.getClient(), forceInit);
     }
 

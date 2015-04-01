@@ -6,12 +6,14 @@
 package automenta.climatenet.elastic;
 
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
+
+import java.io.File;
+import java.io.IOException;
+
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 /**
@@ -24,14 +26,25 @@ public class EmbeddedES {
     private final String dataDirectory;
 
     public EmbeddedES() {
-        this( Files.createTempDir().getAbsolutePath() );
+        this(-1);
     }
 
-    public EmbeddedES(String dataDirectory) {
+    public EmbeddedES(int port) {
+        this( Files.createTempDir().getAbsolutePath(), port );
+    }
+
+
+    /** if port=-1, disables http server */
+    public EmbeddedES(String dataDirectory, int port) {
         this.dataDirectory = dataDirectory;
 
+        //http://www.elastic.co/guide/en/elasticsearch/reference/1.5/modules-http.html
         ImmutableSettings.Builder elasticsearchSettings = ImmutableSettings.settingsBuilder()
-                .put("http.enabled", "false")
+                .put("http.enabled", port != -1 ? "true" : "false")
+                .put("http.cors.enabled", true)
+                .put("http.cors.allow-origin ", "http://localhost:8080")
+                .put("http.port", port)
+                .put("http.compression_level", 0) //for now, leave at zero because it will assume local access
                 .put("path.data", dataDirectory);
 
         node = nodeBuilder()
@@ -63,6 +76,6 @@ public class EmbeddedES {
     }
     
     public static void main(String[] args) {
-        new EmbeddedES("/tmp/es1");
+        new EmbeddedES(9200);
     }
 }

@@ -331,7 +331,7 @@ public class SpacetimeWebServer extends PathHandler {
         final boolean peerEnable = false;
 
         SpacetimeWebServer s = new SpacetimeWebServer(
-                ElasticSpacetime.temporary("cv"), //ElasticSpacetime.server("cv", false),
+                ElasticSpacetime.temporary("cv", 9200), //ElasticSpacetime.server("cv", false),
                 webPort);
 
 
