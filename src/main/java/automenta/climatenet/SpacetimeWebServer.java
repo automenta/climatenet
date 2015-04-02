@@ -327,13 +327,22 @@ public class SpacetimeWebServer extends PathHandler {
                 .setDeploymentName("gui.war")
                         .setAllowNonStandardWrappers(true)
 
+
                         //.setResourceManager(new FileResourceManager(new File("src/main/webapp"), 1024))
                 .addServlets(
                         servlet("GUI", GUIServlet.class)
-                                .setAsyncSupported(true)
-                                .addInitParam("message", "Hello World")
-                                //.addInitParam("widgetset", "org.test.AppWidgetSet")
                                 .addMapping("/*")
+                                .setAsyncSupported(true)
+
+                                        //.addInitParam("message", "Hello World")
+                                .addInitParam("productionMode", "false")
+
+                                .addInitParam("UI", "automenta.climatenet.gui.DynaGUI")
+                        //.addInitParam("UI", DynaGUI.class.toString())
+
+                        //.addInitParam("widgetset", "org.test.AppWidgetSet")
+
+
 //                        servlet("VaadinServlet", VaadinServlet.class)
 //                                .addInitParam("ui", "org.test.MyVaadinUI").addInitParam("widgetset", "org.test.AppWidgetSet")
 //                                .addMapping("/*").addMapping("/VAADIN")
