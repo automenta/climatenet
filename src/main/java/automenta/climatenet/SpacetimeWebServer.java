@@ -17,11 +17,14 @@ import automenta.knowtention.WebSocketCore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.vaadin.server.VaadinServlet;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.handlers.resource.FileResourceManager;
+import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.util.Headers;
 import io.undertow.websockets.core.WebSocketChannel;
 import net.tomp2p.connection.PeerBean;
@@ -42,6 +45,10 @@ import java.util.*;
 import static automenta.knowtention.Core.newJson;
 import static io.undertow.Handlers.resource;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+import static io.undertow.servlet.Servlets.defaultContainer;
+import static io.undertow.servlet.Servlets.deployment;
+import static io.undertow.servlet.Servlets.servlet;
 
 /**
  *
@@ -155,6 +162,8 @@ public class SpacetimeWebServer extends PathHandler {
         this.db = db;
         this.host = host;
         this.port = port;
+
+
 
         cache = new CachingProxyServer(cacheProxyPort, cachePath);
 
@@ -310,6 +319,21 @@ public class SpacetimeWebServer extends PathHandler {
 
         });
 
+        DeploymentInfo servletBuilder = deployment()
+                .setClassLoader(getClass().getClassLoader())
+                .setContextPath("/myapp")
+                .setDeploymentName("test.war")
+                //.setResourceManager(new FileResourceManager(new File("src/main/webapp"), 1024))
+                .addServlets(
+                        servlet("VaadinServlet", VaadinServlet.class)
+                                .addInitParam("ui", "org.test.MyVaadinUI").addInitParam("widgetset", "org.test.AppWidgetSet")
+                                .addMapping("/*").addMapping("/VAADIN")
+                );
+
+        DeploymentManager manager = defaultContainer().addDeployment(servletBuilder);
+        manager.deploy();
+
+        addPrefixPath("/gui", manager.start());
     }
 
     public void start() {
