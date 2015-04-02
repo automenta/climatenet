@@ -166,7 +166,7 @@ public class SpacetimeWebServer extends PathHandler {
 
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
         addPrefixPath("/", resource(
-                new FileResourceManager(new File(clientPath), 100)).
+                new FileResourceManager(new File(clientPath), 100, true, "/")).
                 setDirectoryListingEnabled(false));
 
         Channel sourceIndex = new ReadOnlyChannel<SearchResponse>("/source/index") {
@@ -331,7 +331,7 @@ public class SpacetimeWebServer extends PathHandler {
         final boolean peerEnable = false;
 
         SpacetimeWebServer s = new SpacetimeWebServer(
-                ElasticSpacetime.temporary("cv", 9200), //ElasticSpacetime.server("cv", false),
+                ElasticSpacetime.serverOrLocal("localhost", "cv", false),
                 webPort);
 
 

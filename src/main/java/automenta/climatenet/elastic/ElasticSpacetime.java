@@ -8,10 +8,6 @@ package automenta.climatenet.elastic;
 import automenta.climatenet.Spacetime;
 import automenta.climatenet.Tag;
 import com.google.common.io.Files;
-import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -29,15 +25,20 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
 
 /**
  *
@@ -101,10 +102,31 @@ public class ElasticSpacetime implements Spacetime {
         return server(index, "localhost", 9300, forceInit);
     }
 
-    public static ElasticSpacetime server(String index, String hostport, boolean forceInit) throws Exception {
-        String[] hp = hostport.split(":");
-        String host = hp[0];
-        int port = Integer.parseInt(hp[1]);
+    /** tries to connect to a running ES server,
+     * but if that fails, opens an embedded instance based in the cache/ directory */
+    public static ElasticSpacetime serverOrLocal(String hostport, String index, boolean forceInit) throws Exception {
+        ElasticSpacetime e = null;
+        try {
+            e = server(index, hostport, 9300, forceInit);
+        }
+        catch (Exception x) {
+            e = local(index, "cache", forceInit);
+        }
+        return e;
+    }
+
+    public static ElasticSpacetime server(String hostport, String index, boolean forceInit) throws Exception {
+        String host;
+        int port;
+        try {
+            String[] hp = hostport.split(":");
+            host = hp[0];
+            port = Integer.parseInt(hp[1]);
+        }
+        catch (Exception e) {
+            host = hostport;
+            port = 9300;
+        }
         return server(index, host, port, forceInit);
     }
 
