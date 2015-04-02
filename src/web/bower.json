@@ -1,0 +1,10 @@
+{
+    "name":  "netention",
+    "version": "1.0.0",
+    "dependencies": {
+        "jquery": "latest",
+        "jquery-ui": "latest",
+        "cytoscape": "latest",
+        "cytoscape-edgehandles": "latest"
+    }
+}
