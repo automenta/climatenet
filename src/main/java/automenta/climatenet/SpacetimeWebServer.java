@@ -9,6 +9,7 @@ import automenta.climatenet.data.ClimateViewer;
 import automenta.climatenet.data.NOntology;
 import automenta.climatenet.data.SchemaOrg;
 import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.gui.GUIServlet;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
@@ -17,7 +18,6 @@ import automenta.knowtention.WebSocketCore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.vaadin.server.VaadinServlet;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -38,17 +38,15 @@ import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import static automenta.knowtention.Core.newJson;
 import static io.undertow.Handlers.resource;
+import static io.undertow.servlet.Servlets.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
-import static io.undertow.servlet.Servlets.defaultContainer;
-import static io.undertow.servlet.Servlets.deployment;
-import static io.undertow.servlet.Servlets.servlet;
 
 /**
  *
@@ -319,21 +317,33 @@ public class SpacetimeWebServer extends PathHandler {
 
         });
 
+        initGUI();
+    }
+
+    protected void initGUI() {
         DeploymentInfo servletBuilder = deployment()
                 .setClassLoader(getClass().getClassLoader())
-                .setContextPath("/myapp")
-                .setDeploymentName("test.war")
-                //.setResourceManager(new FileResourceManager(new File("src/main/webapp"), 1024))
+                .setContextPath("/gui")
+                .setDeploymentName("gui.war")
+                        //.setResourceManager(new FileResourceManager(new File("src/main/webapp"), 1024))
                 .addServlets(
-                        servlet("VaadinServlet", VaadinServlet.class)
-                                .addInitParam("ui", "org.test.MyVaadinUI").addInitParam("widgetset", "org.test.AppWidgetSet")
-                                .addMapping("/*").addMapping("/VAADIN")
+                        servlet("GUI", GUIServlet.class)
+                                .addInitParam("message", "Hello World")
+                                .addMapping("/*")
+//                        servlet("VaadinServlet", VaadinServlet.class)
+//                                .addInitParam("ui", "org.test.MyVaadinUI").addInitParam("widgetset", "org.test.AppWidgetSet")
+//                                .addMapping("/*").addMapping("/VAADIN")
                 );
 
         DeploymentManager manager = defaultContainer().addDeployment(servletBuilder);
         manager.deploy();
 
-        addPrefixPath("/gui", manager.start());
+        try {
+            addPrefixPath("/gui", manager.start());
+        } catch (ServletException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void start() {
