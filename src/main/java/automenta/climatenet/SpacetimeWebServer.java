@@ -325,10 +325,14 @@ public class SpacetimeWebServer extends PathHandler {
                 .setClassLoader(getClass().getClassLoader())
                 .setContextPath("/gui")
                 .setDeploymentName("gui.war")
+                        .setAllowNonStandardWrappers(true)
+
                         //.setResourceManager(new FileResourceManager(new File("src/main/webapp"), 1024))
                 .addServlets(
                         servlet("GUI", GUIServlet.class)
+                                .setAsyncSupported(true)
                                 .addInitParam("message", "Hello World")
+                                //.addInitParam("widgetset", "org.test.AppWidgetSet")
                                 .addMapping("/*")
 //                        servlet("VaadinServlet", VaadinServlet.class)
 //                                .addInitParam("ui", "org.test.MyVaadinUI").addInitParam("widgetset", "org.test.AppWidgetSet")
