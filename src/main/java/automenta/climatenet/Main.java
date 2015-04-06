@@ -71,7 +71,7 @@ public class Main {
             if (esPath!=null) {
                 e = ElasticSpacetime.local(esIndex, esPath, false);
             }
-            else if (esServer!=null) {
+            if (e == null || esServer!=null) {
                 e = ElasticSpacetime.serverOrLocal(esServer, esIndex, false);
             }
             

@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>?</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <script src="lib/webcomponents-lite.min.js"></script>
+        <script src="example_channels.js"></script>
+
+    </head>
+    <body class="spacegraph" oncontextmenu="return false;">
+
+        <div id="overlay"></div>
+
+        <div id="graph">
+            <!-- cytoscape render here -->
+        </div>
+        
+        <div id="widgets"></div>
+        
+    </body>
+
+    <script>
+        //document.addEventListener('DOMContentLoaded', function(){
+
+        //$(document).ready(function() {
+        function ready() {
+            var ui = UI($('body'));
+
+            var server = Websocket('socket', {
+                onOpen: function() {
+
+                    var s = window.s = spacegraph(ui, $('#graph'), {
+                        start: function() {
+
+                            //server.on('index', this.addChannel);
+                            //server.on('chat', this.addChannel);
+                            //server.on('source/index', this.addChannel);
+
+                            newPopupMenu(this);
+
+                            var index = new TagIndex(function(i) {
+                                var g = i.getGraph();
+                                var tagChannel = new Channel(g, server);
+                                console.log(g);
+                                s.addChannel(tagChannel);
+
+                            });
+                        }
+                    });
+
+                    //s.nodeProcessor.push(new ListToText());
+                    //s.nodeProcessor.push(new UrlToIFrame());
+
+
+
+
+                }
+            });
+
+        }
+
+        
+    </script>
+    
+    <link rel="import" onload="ready()" href="head.html">
+    <link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
+
+</html>

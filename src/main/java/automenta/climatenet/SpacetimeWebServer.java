@@ -9,7 +9,6 @@ import automenta.climatenet.data.ClimateViewer;
 import automenta.climatenet.data.NOntology;
 import automenta.climatenet.data.SchemaOrg;
 import automenta.climatenet.elastic.ElasticSpacetime;
-import automenta.climatenet.gui.GUIServlet;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
@@ -23,8 +22,6 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.handlers.resource.FileResourceManager;
-import io.undertow.servlet.api.DeploymentInfo;
-import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.util.Headers;
 import io.undertow.websockets.core.WebSocketChannel;
 import net.tomp2p.connection.PeerBean;
@@ -38,14 +35,12 @@ import org.elasticsearch.search.SearchHits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import static automenta.knowtention.Core.newJson;
 import static io.undertow.Handlers.resource;
-import static io.undertow.servlet.Servlets.*;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
@@ -317,47 +312,8 @@ public class SpacetimeWebServer extends PathHandler {
 
         });
 
-        initGUI();
     }
 
-    protected void initGUI() {
-        DeploymentInfo servletBuilder = deployment()
-                .setClassLoader(getClass().getClassLoader())
-                .setContextPath("/gui")
-                .setDeploymentName("gui.war")
-                        .setAllowNonStandardWrappers(true)
-
-
-                        //.setResourceManager(new FileResourceManager(new File("src/main/webapp"), 1024))
-                .addServlets(
-                        servlet("GUI", GUIServlet.class)
-                                .addMapping("/*")
-                                .setAsyncSupported(true)
-
-                                        //.addInitParam("message", "Hello World")
-                                .addInitParam("productionMode", "false")
-
-                                .addInitParam("UI", "automenta.climatenet.gui.DynaGUI")
-                        //.addInitParam("UI", DynaGUI.class.toString())
-
-                        //.addInitParam("widgetset", "org.test.AppWidgetSet")
-
-
-//                        servlet("VaadinServlet", VaadinServlet.class)
-//                                .addInitParam("ui", "org.test.MyVaadinUI").addInitParam("widgetset", "org.test.AppWidgetSet")
-//                                .addMapping("/*").addMapping("/VAADIN")
-                );
-
-        DeploymentManager manager = defaultContainer().addDeployment(servletBuilder);
-        manager.deploy();
-
-        try {
-            addPrefixPath("/gui", manager.start());
-        } catch (ServletException e) {
-            e.printStackTrace();
-        }
-
-    }
 
     public void start() {
         server.start();

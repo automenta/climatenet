@@ -5,9 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <script src="lib/webcomponents-lite.min.js"></script>
-        
+        <script src="example_channels.js"></script>
+
     </head>
-    <body  oncontextmenu="return false;">
+    <body class="spacegraph" oncontextmenu="return false;">
         <!--
         <nav class="top-bar" data-topbar role="navigation">
 
@@ -52,27 +53,26 @@
     </body>
 
     <script>
-        
         //document.addEventListener('DOMContentLoaded', function(){
 
         //$(document).ready(function() {
         function ready() {
             var ui = UI($('body'));
-        
+
             var server = Websocket('socket', {
                 onOpen: function() {
-                    
+
                     var s = window.s = spacegraph(ui, $('#graph'), {
-                        start: function() { 
+                        start: function() {
 
                             server.on('index', this.addChannel);
                             server.on('chat', this.addChannel);
                             server.on('source/index', this.addChannel);
 
                             newPopupMenu(this);
-                        }            
+                        }
                     });
-                    
+
                     s.nodeProcessor.push(new ListToText());
                     s.nodeProcessor.push(new UrlToIFrame());
 
@@ -80,10 +80,9 @@
 
                 }
             });
-        
+
         }
 
-        
         
     </script>
     

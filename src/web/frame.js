@@ -15,7 +15,7 @@ function NodeFrame(spacegraph) {
     var frameEleResizing = false;
     
     
-    $.get('know/frame.html', { "_": $.now() /* overrides cache */ }, function(x) {               
+    $.get('frame.html', { "_": $.now() /* overrides cache */ }, function(x) {               
        
         $('#overlay').append( x );
 

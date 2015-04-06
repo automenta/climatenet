@@ -8,6 +8,7 @@ package automenta.climatenet.elastic;
 import automenta.climatenet.Spacetime;
 import automenta.climatenet.Tag;
 import com.google.common.io.Files;
+import org.apache.log4j.helpers.LogLog;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -45,6 +46,11 @@ import static org.elasticsearch.index.query.QueryBuilders.geoShapeQuery;
  * @author me
  */
 public class ElasticSpacetime implements Spacetime {
+
+    static {
+        LogLog.setInternalDebugging(false);
+        LogLog.setQuietMode(true);
+    }
 
     public final static Logger logger = LoggerFactory.getLogger(ElasticSpacetime.class);
 
