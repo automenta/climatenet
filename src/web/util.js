@@ -2,7 +2,11 @@
 
 class Tag {
 
-    constructor(i, l/*tagJSON*/) {
+    constructor(id, data/*tagJSON*/) {
+
+        this.id = id;
+        this.name = data.name;
+        this.inh = data.inh;
 
         //var n = tag.node(i);
         //if (!n) {
@@ -36,6 +40,14 @@ class Tag {
         //n.update();
 
     }
+
+    getPanelHTML() {
+        var x = '<div style="width: 100%; height: 100%; color: black; background-color: orange; border: 2px solid black;">';
+        x += '<h1>' + this.name + '</h1>';
+        x += JSON.stringify(this.inh);
+        x += '</div>'
+        return x;
+    }
 }
 
 class TagIndex {
@@ -43,31 +55,7 @@ class TagIndex {
     constructor(callback) {
         "use strict";
 
-        this.tag = { };
-
-        var that = this;
-        $.getJSON('/tag/index')
-            .done(function(tagMap) {
-                for (var i in tagMap)
-                    that.updateTag(i, tagMap[i]);
-
-                if (callback)
-                    callback(that);
-            })
-            .fail(ajaxFail);
-
-        /*
-        $.getJSON('/tag/meta', {id: JSON.stringify(layerIDs)})
-            .done(function (r) {
-                updateTags(r);
-                if (callback)  callback();
-            })
-            .fail(ajaxFail);
-            */
-
-    }
-
-    getGraph() {
+        this.tag = new graphlib.Graph({multigraph: true});
 
         //TEMPORARY
         var x = {
@@ -102,124 +90,133 @@ class TagIndex {
             nodes: [],
             edges: []
         };
-        for (var t in this.tag) {
-            if (t.indexOf(' ')!=-1) {
-                console.error('invalid tag ID: ' + t);
+
+
+
+
+        this.channel = new Channel(x);
+
+
+        var that = this;
+        $.getJSON('/tag/index')
+            .done(function(tagMap) {
+
+                for (var i in tagMap)
+                    that.updateTag(i, tagMap[i]);
+
+                //add edges
+                var nn = that.tag.nodes();
+                for (var i = 0; i < nn.length; i++) {
+                    var t = that.tag.node(nn[i]);
+                    if (!t.inh) continue;
+
+                    for (var j in t.inh) {
+                        //var strength = t.inh[j];
+                        that.tag.setEdge(j, t.id);
+                    }
+                }
+
+                if (callback)
+                    callback(that);
+            })
+            .fail(ajaxFail);
+
+        /*
+        $.getJSON('/tag/meta', {id: JSON.stringify(layerIDs)})
+            .done(function (r) {
+                updateTags(r);
+                if (callback)  callback();
+            })
+            .fail(ajaxFail);
+            */
+
+    }
+
+
+    activateRoots(levels) {
+        var MAX_NODES = 4, count = 0;
+
+        var roots = [];
+
+        var nn = this.tag.nodes();
+        for (var i = 0; i < nn.length; i++) {
+            var t = this.tag.node(nn[i]);
+
+            var id = t.id;
+
+            //TODO temporary
+            if (id.indexOf(' ')!=-1) {
+                console.error('invalid tag ID: ' + id);
                 continue;
             }
 
-            x.nodes.push({
-                id: t,
-                //content: t,
-                style: {
-                    shape: 'rectangle',
-                    height: 25,
-                    width: 25
-                }
-            } );
+            var parent = this.tag.predecessors( id );
+            if (parent.length > 0) {
+                continue;
+            }
+
+            roots.push(t);
+
+            this.activate(id, levels);
+
+            if (count++ == MAX_NODES) break; //TEMPORARY
         }
-        return x;
 
+        return roots;
+    }
 
-                //{id: 'b',
-                //    style: {
-                //        shape: 'triangle',
-                //        height: 24,
-                //        width: 16
-                //    }
-                //},
+    activate(t, levels) {
 
-                /*{id: 'b1', parent: 'p',
-                 style: { _content: 'x', shape: 'triangle', height: 4, width: 4 }
-                 },*/
-                /*{id: 'b2', parent: 'p',
-                 style: { _content: 'y', shape: 'triangle', width: 8, height: 8 }
-                 },
-                 {id: 'b3', parent: 'p',
-                 style: { _content: 'z', shape: 'triangle', width: 8, height: 8 }
-                 },
-                 */
-                /*{
-                 id: 'serial' + parseInt(Math.random()*100),
-                 width: 16,
-                 height: 16,
+        if (typeof(t) === "string") t = this.tag.node(t);
 
-                 widget: {
-                 html: "<div contenteditable='true' class='editable' style='overflow: auto; resizable: both'></div>",
-                 scale: 0.8,
-                 style: {width: '300px', height: '300px'},
-                 },
-                 },*/
-                //{id: 'd',
-                //    form: {
-                //        value: {
-                //            firstname: 'First',
-                //            surname: 'Last',
-                //            age: 0
-                //        },
-                //        style: {width: '300px', height: '260px'},
-                //        scale: 1
-                //    },
-                //    widget: {
-                //        html: '<x-metawidget id="metawidget1" path="person"></x-metawidget>',
-                //        style: {},
-                //        //html: '<iframe width="600px" height="600px" src="http://enenews.com"></iframe><br/><button>x</button>',
-                //        scale: 1,
-                //        pixelScale: 300.0,
-                //        minPixels: 2,
-                //    },
-                //    style: {
-                //        height: "24",
-                //        width: "24",
-                //        opacity: 0.75
-                //    }
-                //},
-                ///*{id: 'u',
-                // width: 48, height: 32, url: 'http://wikipedia.org'},*/
-                //{id: 'e',
-                //    width: 64,
-                //    height: 64,
-                //    widget: {
-                //        html: '<div style="width: 100%; height: 100%; background-color: orange; border: 2px solid black;"><div contenteditable="true" class="editable">WTF</div><br/><button>OK</button></div>',
-                //        style: {},
-                //        scale: 0.9,
-                //        minPixels: 8,
-                //    }
-                //},
-                //{id: 'e1',
-                //    width: 64,
-                //    height: 64,
-                //    widget: {
-                //        html: '<div style="background-color: green; border: 2px solid black;"><div contenteditable="true" class="editable">OR(AND(F,B),Z) => X</div><br/><button>OK</button></div>',
-                //        style: {},
-                //        scale: 0.9,
-                //        minPixels: 16,
-                //    }
-                //}
+        //TODO temporary
+        if (t.id.indexOf(' ')!=-1) {
+            console.error('invalid tag ID: ' + t.id);
+            return null;
+        }
 
+        var w = {
+            id: t.id,
+            style: {
+                shape: 'rectangle',
+                width: 64,
+                height: 32
+            },
+            widget: {
+                html: t.getPanelHTML(),
+                style: {},
+                scale: 0.9,
+                pixelScale: 320.0,
+                minPixels: 8
+            }
+        };
 
-                //{id: 'f', parent: 'e'}
-        //    ],
-        //    edges: [
-        //        {id: 'eb', source: 'e', target: 'b',
-        //            style: {
-        //                'line-color': 'blue',
-        //                'line-width': '44'
-        //            }
-        //        },
-        //        {id: 'db', source: 'd', target: 'b'},
-        //        //{id: 'b1b2', source: 'b1', target: 'b2'},
-        //        //{id: 'b1b3', source: 'b1', target: 'b3'}
-        //        //{id: 'eb', source: 'e', target: 'b'}
-        //    ]
-        //};
+        this.channel.data.nodes.push(w);
 
+        if (levels > 0) {
+            var children = this.tag.successors(t.id);
+            for (var i = 0; i < children.length; i++) {
+                var v = this.activate(children[i], levels - 1);
+                if (v) {
+                    //create edge from this node to child
+                    var edgeID = t.id + '_' + children[i];
+                    var e = {id: edgeID, source: t.id, target: children[i],
+                            style: {
+                                'line-color': 'white',
+                                'line-width': '64'
+                            }
+                        };
+                    this.channel.data.edges.push(e);
+                }
+            }
+        }
 
+        return w;
     }
 
     updateTag(i,l) {
         "use strict";
-        this.tag[i] = new Tag(l);
+        this.tag.setNode(i, new Tag(i, l));
     }
 
 

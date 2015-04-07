@@ -39,18 +39,23 @@
 
                             newPopupMenu(this);
 
+                            s.nodeProcessor.push(new ListToText());
+                            s.nodeProcessor.push(new UrlToIFrame());
+
                             var index = new TagIndex(function(i) {
-                                var g = i.getGraph();
-                                var tagChannel = new Channel(g, server);
-                                console.log(g);
-                                s.addChannel(tagChannel);
+
+                                var roots = i.activateRoots(1);
+//                                _.each(roots, (r) => {
+//                                    i.expand(r);
+//                                });
+
+                                s.addChannel(i.channel);
 
                             });
                         }
                     });
 
-                    //s.nodeProcessor.push(new ListToText());
-                    //s.nodeProcessor.push(new UrlToIFrame());
+
 
 
 
