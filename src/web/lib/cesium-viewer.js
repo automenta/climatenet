@@ -389,9 +389,15 @@ terrainProviders.push(new Cesium.ProviderViewModel({
 */  
 
 
-var viewer = new Cesium.Viewer('cesiumContainer',{timeline: true, imageryProvider: false, baseLayerPicker: false, clock:clock, terrainProvider: false  });
+var viewer = new Cesium.Viewer('cesiumContainer',
+    {timeline: false, imageryProvider: false,
+        baseLayerPicker: false,
+        animation: false,
+        clock:clock,
+        skyAtmosphere: false,
+        terrainProvider: false  });
 
-viewer.timeline.zoomTo(startTime, endTime);
+//viewer.timeline.zoomTo(startTime, endTime);
 
 // add baseLayerPicker
 var baseLayerPicker = new Cesium.BaseLayerPicker('baseLayerPickerContainer', {globe: viewer.scene, imageryProviderViewModels: imageryViewModels, terrainProviderViewModels : terrainProviders  });
@@ -433,7 +439,7 @@ var viewModel = {
 Cesium.knockout.track(viewModel);
 
 var baseLayers = viewModel.baseLayers;
-        
+
 function setupLayers() {
     // Create all the base layers that this example will support.
     // These base layers aren't really special.  It's possible to have multiple of them
@@ -536,7 +542,7 @@ function addNASALayerOption(label, layerName, alpha, show) {
     };
     var layer = imageryLayers.addImageryProvider(createDailyProvider());
     layer.alpha = Cesium.defaultValue(alpha, 0.5);
-    layer.show = Cesium.defaultValue(show, true);
+    layer.show = Cesium.defaultValue(show, false);
     layer.name = label;
     Cesium.knockout.track(layer, ['alpha', 'show', 'name']);
 }
@@ -545,7 +551,7 @@ function addNASALayerOption(label, layerName, alpha, show) {
 function addAdditionalLayerOption(name, imageryProvider, alpha, show) {
     var layer = imageryLayers.addImageryProvider(imageryProvider);
     layer.alpha = Cesium.defaultValue(alpha, 0.5);
-    layer.show = Cesium.defaultValue(show, true);
+    layer.show = Cesium.defaultValue(show, false);
     layer.name = name;
     Cesium.knockout.track(layer, ['alpha', 'show', 'name']);
 }
@@ -566,8 +572,9 @@ var toolbar = document.getElementById('toolbar');
 Cesium.knockout.applyBindings(viewModel, toolbar);
 
 Cesium.knockout.getObservable(viewModel, 'selectedLayer').subscribe(function(baseLayer) {
+
     // Handle changes to the drop-down base layer selector.
-    var activeLayerIndex = 0;
+    var activeLayerIndex = -1;
     var numLayers = viewModel.layers.length;
     for (var i = 0; i < numLayers; ++i) {
         if (viewModel.isSelectableLayer(viewModel.layers[i])) {
@@ -575,6 +582,9 @@ Cesium.knockout.getObservable(viewModel, 'selectedLayer').subscribe(function(bas
             break;
         }
     }
+
+    if (activeLayerIndex == -1) return;
+
     var activeLayer = viewModel.layers[activeLayerIndex];
     var show = activeLayer.show;
     var alpha = activeLayer.alpha;
