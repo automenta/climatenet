@@ -3,7 +3,7 @@
 function spacegraph(ui, target, opt) {
 
     var commitPeriodMS = 300;
-    var widgetUpdatePeriodMS = 1;
+    var widgetUpdatePeriodMS = 10;
     var suppressCommit = false;
     var zoomDuration = 64; //ms
 
@@ -91,10 +91,9 @@ function spacegraph(ui, target, opt) {
         if (target2) target = target2; //extra parameter to match the callee's list
 
         if (widget(target)) {
-            if (target.data().updating) {
-                clearTimeout(target.data().updating);
+            if (!target.data().updating) {
+                target.data().updating = setTimeout(s.updateNodeWidget, widgetUpdatePeriodMS, target); //that.updateNodeWidget(target);
             }
-            target.data().updating = setTimeout(s.updateNodeWidget, 0, target); //that.updateNodeWidget(target);
         }
     }
 
@@ -128,6 +127,7 @@ function spacegraph(ui, target, opt) {
         motionBlur: false,
         wheelSensitivity: 1,
         //pixelRatio: 0.25, //downsample pixels
+        //pixelRatio: 0.5,
         pixelRatio: 1,
 
         initrender: function (evt) { /* ... */ },
@@ -231,7 +231,7 @@ function spacegraph(ui, target, opt) {
         var widget = data.widget; //html string
         //if (!widget) return;
 
-        data.updating = false;
+        data.updating = null;
 
         var that = s;
 
