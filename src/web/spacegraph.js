@@ -7,6 +7,8 @@ function spacegraph(ui, target, opt) {
     var suppressCommit = false;
     var zoomDuration = 64; //ms
 
+    var overlaylayer = $('#overlay'); //TODO use relative to the root element
+
     var ready = function() {
 
         var that = this;
@@ -270,7 +272,7 @@ function spacegraph(ui, target, opt) {
                 attr('id', wid).
                 addClass('widget').
                 css(style).
-                appendTo('#widgets');
+                appendTo(overlaylayer);
 
             setWidgetHTML();
 

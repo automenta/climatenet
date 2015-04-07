@@ -43,7 +43,7 @@ class Tag {
 
     getPanelHTML() {
         var x = '<div style="width: 100%; height: 100%; color: black; background-color: orange; border: 2px solid black;">';
-        x += '<h1>' + this.name + '</h1>';
+        x += '<b>' + this.name + '</b>';
         x += JSON.stringify(this.inh);
         x += '</div>'
         return x;
@@ -65,7 +65,8 @@ class TagIndex {
                     'content': 'data(content)',
                     'text-valign': 'center',
                     'text-halign': 'center',
-                    'shape': 'rectangle'
+                    'shape': 'rectangle',
+                    'font-size': '8px',
                 },
                 '$node > node': {
                     'padding-top': '2px',
@@ -182,22 +183,37 @@ class TagIndex {
             return null;
         }
 
-        var n = {
-            id: t.id,
-            content: t.name,
-            style: {
-                shape: 'rectangle',
-                width: 64,
-                height: 32
-            }
-            /*widget: {
-                html: t.getPanelHTML(),
-                style: {},
-                scale: 0.9,
-                pixelScale: 320.0,
-                minPixels: 8
-            }*/
-        };
+        var n;
+        if (Math.random() < 0.5) {
+            var n = {
+                id: t.id,
+                style: {
+                    shape: 'rectangle',
+                    width: 160,
+                    height: 120
+                },
+                widget: {
+                 html: t.getPanelHTML(),
+                 style: {},
+                 scale: 0.9,
+                 pixelScale: 160.0,
+                 minPixels: 8
+                }
+            };
+
+        }
+        else {
+            var n = {
+                id: t.id,
+                content: t.name,
+                style: {
+                    shape: 'rectangle',
+                    width: 160,
+                    height: 120
+                }
+            };
+
+        }
 
         nodes.push(n);
 
