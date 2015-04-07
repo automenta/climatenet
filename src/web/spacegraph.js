@@ -274,7 +274,8 @@ function spacegraph(ui, target, opt) {
 
             setWidgetHTML();
 
-            function commitWidgetChange(e) {
+            var commitWidgetChange = function (e) {
+                "use strict";
 
                 var oh = w[0].innerHTML;
 
@@ -287,7 +288,7 @@ function spacegraph(ui, target, opt) {
                     //TODO only commit the channel this node belongs to
                     that.commit();
                 }
-            }
+            };
 
             //TODO use MutationObservers
             if (widget.live)
@@ -500,7 +501,6 @@ function spacegraph(ui, target, opt) {
 
         this.updateChannel(c);
 
-        this.setLayout(s.currentLayout);
 
         ui.addChannel(this, c);
 
@@ -509,11 +509,11 @@ function spacegraph(ui, target, opt) {
         c.on('graphChange', l = function(graph, nodesAdded, edgesAdded, nodesRemoved, edgesRemoved) {
             "use strict";
 
-            console.log('graph change', nodesAdded);
             that.updateChannel(c);
-            that.layout();
         });
         this.listeners[c.id()] = l;
+
+        this.setLayout(s.currentLayout);
 
     };
 
@@ -649,7 +649,7 @@ function spacegraph(ui, target, opt) {
         s.animate({
             fit: {
                 eles: ele,
-                padding: 80
+                padding: 120
             }
         }, {
             duration: zoomDuration

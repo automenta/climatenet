@@ -137,6 +137,8 @@ class TagIndex {
         var MAX_NODES = 9, count = 0;
 
         var roots = [];
+        var nodes = [];
+        var edges = [];
 
         var nn = this.tag.nodes();
         for (var i = 0; i < nn.length; i++) {
@@ -157,15 +159,20 @@ class TagIndex {
 
             roots.push(t);
 
-            this.activate(id, levels);
+            this.graphize(id, levels, nodes, edges);
 
             if (count++ == MAX_NODES) break; //TEMPORARY
         }
 
+        this.channel.add(nodes, edges);
+
         return roots;
     }
 
-    activate(t, levels) {
+    //nodes and edges are arrays which new elements are stored.
+    // after the root callee returns, they can be added to a spacegraph all at once
+    graphize(t, levels, nodes, edges) {
+
 
         if (typeof(t) === "string") t = this.tag.node(t);
 
@@ -175,31 +182,31 @@ class TagIndex {
             return null;
         }
 
-        var w = {
+        var n = {
             id: t.id,
+            content: t.name,
             style: {
                 shape: 'rectangle',
                 width: 64,
                 height: 32
-            },
-            widget: {
+            }
+            /*widget: {
                 html: t.getPanelHTML(),
                 style: {},
                 scale: 0.9,
                 pixelScale: 320.0,
                 minPixels: 8
-            }
+            }*/
         };
 
-        this.channel.addNode(w);
-        //this.channel.data.nodes.push(w);
+        nodes.push(n);
+
 
         if (levels > 0) {
             var children = this.tag.successors(t.id);
-            var ee = [];
 
             for (var i = 0; i < children.length; i++) {
-                var v = this.activate(children[i], levels - 1);
+                var v = this.graphize(children[i], levels - 1, nodes, edges);
                 if (v) {
                     //create edge from this node to child
                     var edgeID = t.id + '_' + children[i];
@@ -209,16 +216,14 @@ class TagIndex {
                                 'line-width': '64'
                             }
                         };
-                    ee.push(e);
+                    edges.push(e);
 
                 }
             }
 
-            if (ee.length > 0)
-                this.channel.addEdge(ee);
         }
 
-        return w;
+        return n;
     }
 
     updateTag(i,l) {
@@ -365,22 +370,24 @@ class Channel extends EventEmitter {
     //TODO batch version of addNode([n])
     addNode(n) {
         this.data.nodes.push(n);
-        this.emit('graphChange', [this, n, null, null, null]);
+        this.emit('graphChange', [this, [n], null, null, null]);
     }
 
     addEdge(e) {
-        if (Array.isArray(e)) {
-            for (var i = 0; i < e.length; i++)
-                this.data.edges.push(e[i]);
-        }
-        else {
-            //individual value
-            this.data.edges.push(e);
-            e = [e];
-        }
-        this.emit('graphChange', [this, null, e, null, null]);
+        this.data.edges.push(e);
+        this.emit('graphChange', [this, null, [e], null, null]);
     }
-    
+
+
+    //nodes and edges are arrays
+    add(nodes, edges) {
+        var that = this;
+        _.each(nodes, function(n) { that.data.nodes.push(n); });
+        _.each(edges, function(e) { that.data.edges.push(e); });
+        //nodes.forEach(this.data().nodes.push); //??
+        //edges.forEach(this.data().edges.push);
+        this.emit('graphChange', [this, nodes, edges, null, null]);
+    }
 }
 
 class SocketChannel extends Channel {
@@ -495,17 +502,17 @@ function Websocket(path, conn) {
             var chan = conn.subs[chanID];
             if (!chan) {
                 chan = new Channel( channelData, conn );
-                if (window.s)
-                    window.s.addChannel(chan);
-                                
+                //if (window.s)
+                  //  window.s.addChannel(chan);
+
                 if (conn.onChange)
                     conn.onChange(chan);
             }
             else {
                 chan.data = channelData;
-                if (window.s)
-                    window.s.updateChannel(chan);
-                
+                //if (window.s)
+                  //  window.s.updateChannel(chan);
+
                 if (conn.onChange)
                     conn.onChange(chan);                
             }
@@ -522,8 +529,8 @@ function Websocket(path, conn) {
 
                 jsonpatch.apply(c.data, patch);
                 
-                if (window.s)
-                    window.s.addChannel(c);                
+                //if (window.s)
+                   // window.s.addChannel(c);
                 
                 if (conn.onChange)
                     conn.onChange(c);

@@ -15,12 +15,15 @@
 .ui-pnotify {
     z-index: 2000;
 }
-#graph, #widgets, #overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
+#graph {
+    width: 100%;
+    height: 100%;
+}
+#widgets, #overlay {
+    position: absolute;
     width: 100%;
     height: 100%;                    
+    z-index: 5000;
 }
 #widgets, #overlay {
     pointer-events: none;    

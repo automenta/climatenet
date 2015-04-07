@@ -7,16 +7,18 @@
         <script src="lib/webcomponents-lite.min.js"></script>
         <script src="example_channels.js"></script>
     </head>
-    <body class="spacegraph" oncontextmenu="return false;">
+    <body>
+        <div style="float: right; width: 75%; height: 75%" class="spacegraph" oncontextmenu="return false;">
 
-        <div id="overlay"></div>
+            <div id="overlay"></div>
 
-        <div id="graph">
-            <!-- cytoscape render here -->
+            <div id="graph">
+                <!-- cytoscape render here -->
+            </div>
+
+            <div id="widgets"></div>
+
         </div>
-        
-        <div id="widgets"></div>
-        
     </body>
 
     <script>
@@ -29,7 +31,7 @@
             var server = Websocket('socket', {
                 onOpen: function() {
 
-                    var s = window.s = spacegraph(ui, $('#graph'), {
+                    var s = spacegraph(ui, $('#graph'), {
                         start: function() {
 
                             //server.on('index', this.addChannel);

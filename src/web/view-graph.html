@@ -114,7 +114,7 @@
             var server = Websocket('socket', {
                 onOpen: function() {
                     
-                    var s = window.s = spacegraph(ui, $('#graph'), {
+                    var s = spacegraph(ui, $('#graph'), {
                         start: function() {
                             server.on('index', this.addChannel);
                             server.on('chat', this.addChannel);
