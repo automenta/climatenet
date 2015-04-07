@@ -134,7 +134,7 @@ class TagIndex {
 
 
     activateRoots(levels) {
-        var MAX_NODES = 4, count = 0;
+        var MAX_NODES = 9, count = 0;
 
         var roots = [];
 
@@ -191,10 +191,13 @@ class TagIndex {
             }
         };
 
-        this.channel.data.nodes.push(w);
+        this.channel.addNode(w);
+        //this.channel.data.nodes.push(w);
 
         if (levels > 0) {
             var children = this.tag.successors(t.id);
+            var ee = [];
+
             for (var i = 0; i < children.length; i++) {
                 var v = this.activate(children[i], levels - 1);
                 if (v) {
@@ -206,9 +209,13 @@ class TagIndex {
                                 'line-width': '64'
                             }
                         };
-                    this.channel.data.edges.push(e);
+                    ee.push(e);
+
                 }
             }
+
+            if (ee.length > 0)
+                this.channel.addEdge(ee);
         }
 
         return w;
@@ -224,36 +231,118 @@ class TagIndex {
 }
 
 
-var Channel = function (initialData, connection) {
+var DEFAULT_MAX_LISTENERS = 12;
 
-    var synchPeriodMS = 1500;
+function error(message, args){
+    console.error.apply(console, [message].concat(args))
+    console.trace()
+}
 
-    //set channel name
-    if (typeof(initialData)==="string")
-        initialData = { id: initialData };
-    
-    var c = {
-        ui: null,
-        data: initialData,
-        socket: connection,
-        prev: {},
-        id: function () {
-            return this.data.id;
+//TODO use ES6 Map for better performance: http://jsperf.com/map-vs-object-as-hashes/2
+class EventEmitter {
+    constructor(){
+        this._maxListeners = DEFAULT_MAX_LISTENERS
+        this._events = {}
+    }
+    on(type, listener) {
+        if(typeof listener != "function") {
+            throw new TypeError()
         }
-    };
+        var listeners = this._events[type] ||(this._events[type] = [])
+        if(listeners.indexOf(listener) != -1) {
+            return this
+        }
+        listeners.push(listener)
+        if(listeners.length > this._maxListeners) {
+            error(
+                "possible memory leak, added %i %s listeners, "+
+                "use EventEmitter#setMaxListeners(number) if you " +
+                "want to increase the limit (%i now)",
+                listeners.length,
+                type,
+                this._maxListeners
+            )
+        }
+        return this
+    }
+    once(type, listener) {
+        var eventsInstance = this
+        function onceCallback(){
+            eventsInstance.off(type, onceCallback)
+            listener.apply(null, arguments)
+        }
+        return this.on(type, onceCallback)
+    }
+    off(type, listener) {
+        if(typeof listener != "function") {
+            throw new TypeError()
+        }
+        var listeners = this._events[type]
+        if(!listeners || !listeners.length) {
+            return this
+        }
+        var indexOfListener = listeners.indexOf(listener)
+        if(indexOfListener == -1) {
+            return this
+        }
+        listeners.splice(indexOfListener, 1)
+        return this
+    }
+    emit(type, args){
+        var listeners = this._events[type]
+        if(!listeners || !listeners.length) {
+            return false
+        }
+        listeners.forEach(function(fn) { fn.apply(null, args) })
+        return true
+    }
+    setMaxListeners(newMaxListeners){
+        if(parseInt(newMaxListeners) !== newMaxListeners) {
+            throw new TypeError()
+        }
+        this._maxListeners = newMaxListeners
+    }
+}
 
-    c.init = function (ui) {
+class Channel extends EventEmitter {
+
+    //EVENTS
+    //.on("graphChange", function(graph, nodesAdded, edgesAdded, nodesRemoved, edgesRemoved) {
+
+    constructor(initialData) {
+        super();
+
+
+        this.ui = null;
+        this.data = initialData || { };
+        this.prev = { };
+        this.commit = function() { }; //empty
+
+        //set channel name
+        if (typeof(initialData)==="string")
+            initialData = { id: initialData };
+
+
+        if (!this.data.nodes) this.data.nodes =[];
+        if (!this.data.edges) this.data.edges =[];
+
+    }
+
+
+    init(ui) {
         this.ui = ui;
+    }
 
-        //this.commit();
-    };
-    
-    c.destroy = function() {
-        
-    };
+    id() {
+        return this.data.id;
+    }
+
+    clear() {
+        //TODO
+    }
 
 
-    c.removeNode = function(n) {
+    removeNode(n) {
         n.data().removed = true;
 
         var removedAny = false;
@@ -264,59 +353,82 @@ var Channel = function (initialData, connection) {
                 return false;
             }
         });
-                        
+
+        if (removedAny)
+            this.emit('graphChange', [this, null, null, n, null]);
+
         return removedAny;
-    };
-    
-    c.addNode = function(n) {
-        
-        if (!this.data)
-            this.data = { };
-        
-        if (!this.data.nodes)
-            this.data.nodes = [];
-        
-        c.data.nodes.push(n);
-    
-    };
-    
-    c.commit = _.throttle(function () {
+    }
 
-        if (!this.socket || !this.socket.opened) {
-            return;
+    //TODO: removeEdge
+
+    //TODO batch version of addNode([n])
+    addNode(n) {
+        this.data.nodes.push(n);
+        this.emit('graphChange', [this, n, null, null, null]);
+    }
+
+    addEdge(e) {
+        if (Array.isArray(e)) {
+            for (var i = 0; i < e.length; i++)
+                this.data.edges.push(e[i]);
         }
+        else {
+            //individual value
+            this.data.edges.push(e);
+            e = [e];
+        }
+        this.emit('graphChange', [this, null, e, null, null]);
+    }
+    
+}
 
-        /** include positions in update only if p is defined and is object */
-        if (this.data.p && typeof(this.data.p)==="object") {
-            //get positions
-            var eles = this.ui.elements();
-            var P = {};
-            for (var i = 0; i < eles.length; i++) {
-                var ele = eles[i];
-                //console.log( ele.id() + ' is ' + ( ele.selected() ? 'selected' : 'not selected' ) );
-                var p = ele.position();
-                var x = p.x;
-                if (!isFinite(x))
-                    continue;
-                var y = p.y;
-                P[ele.id()] = [parseInt(x), parseInt(y)];
+class SocketChannel extends Channel {
+
+    constructor(initialData,connection) {
+
+        super(initialData);
+
+        this.socket = connection;
+
+        var synchPeriodMS = 1500;
+
+        this.commit = _.throttle(function() {
+            if (!this.socket || !this.socket.opened) {
+                return;
             }
-            this.data.p = P; //positions; using 1 character because this is updated frequently
-        }
 
-        //https://github.com/Starcounter-Jack/Fast-JSON-Patch
-        var diff = jsonpatch.compare(this.prev, this.data);
+            /** include positions in update only if p is defined and is object */
+            if (this.data.p && typeof(this.data.p)==="object") {
+                //get positions
+                var eles = this.ui.elements();
+                var P = {};
+                for (var i = 0; i < eles.length; i++) {
+                    var ele = eles[i];
+                    //console.log( ele.id() + ' is ' + ( ele.selected() ? 'selected' : 'not selected' ) );
+                    var p = ele.position();
+                    var x = p.x;
+                    if (!isFinite(x))
+                        continue;
+                    var y = p.y;
+                    P[ele.id()] = [parseInt(x), parseInt(y)];
+                }
+                this.data.p = P; //positions; using 1 character because this is updated frequently
+            }
 
-        this.prev = _.clone(this.data, true);
+            //https://github.com/Starcounter-Jack/Fast-JSON-Patch
+            var diff = jsonpatch.compare(this.prev, this.data);
 
-        if (diff.length > 0) {
-            this.socket.send(['p' /*patch*/, this.data.id, diff]);
-        }
+            this.prev = _.clone(this.data, true);
 
-    }, synchPeriodMS);
+            if (diff.length > 0) {
+                this.socket.send(['p' /*patch*/, this.data.id, diff]);
+            }
 
-    return c;
-};
+        }, synchPeriodMS);
+
+    }
+}
 
 
 /** creates a websocket connection object */

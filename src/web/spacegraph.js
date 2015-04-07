@@ -1,91 +1,76 @@
+"use strict";
+
 function spacegraph(ui, target, opt) {
-    
+
     var commitPeriodMS = 300;
     var widgetUpdatePeriodMS = 1;
     var suppressCommit = false;
     var zoomDuration = 64; //ms
-    
+
     var ready = function() {
 
         var that = this;
-        
-        opt.start.apply(this);                
+
+        opt.start.apply(this);
 
         //http://js.cytoscape.org/#events/collection-events
-        
-        this.on('layoutready layoutstop pan zoom', function (e) {
-            updateAllWidgets();            
-        });
-                
-        
+
+
         this.on('data position select unselect add remove grab drag style', function (e) {
-            
+
             if (suppressCommit)
                 return;
-            
+
             /*console.log( evt.data.foo ); // 'bar'
-             
+
              var node = evt.cyTarget;
              console.log( 'tapped ' + node.id() );*/
 
             var target = e.cyTarget;
             if (target) {
-                if (widget(target)) {
-                    setTimeout(that.updateNodeWidget, 0, target); //that.updateNodeWidget(target);
-                }                    
-                   
+                refresh(target);
                 //console.log(this, that, target);
                 //that.commit();
             }
-            
+
         });
-        
+
 
         //overlay framenode --------------        
         var frame = NodeFrame(this);
-        
-        
 
-
-        
 
         /*
-        var baseRedraw = this._private.renderer.redraw;
-        
-        this._private.renderer.redraw = function(options) {
-            baseRedraw.apply(this, arguments);
+         var baseRedraw = this._private.renderer.redraw;
 
-            //frame.hoverUpdate();
-                        
-        };
-        */
+         this._private.renderer.redraw = function(options) {
+         baseRedraw.apply(this, arguments);
+
+         //frame.hoverUpdate();
+
+         };
+         */
 
 
         /*var baseDrawNode = this._private.renderer.drawNode;
-        this._private.renderer.drawNode = function (context, node, drawOverlayInstead) {
-            baseDrawNode.apply(this, arguments);
-        };*/
-
-        function widget(node) {
-            if (node.data)
-                return node.data().widget;
-            return undefined;
-        }
+         this._private.renderer.drawNode = function (context, node, drawOverlayInstead) {
+         baseDrawNode.apply(this, arguments);
+         };*/
 
 
-        
+
+
         var that = this;
-        
+
         var updateAllWidgets = this.updateAllWidgets = _.throttle(function() {
-            
-            //TODO use an index to avoid iterating all nodes
-            
-            that.nodes().each(function(y,x) {                
-               if (widget(x)) {
-                   that.updateNodeWidget(x);
-               }
-            });
+
+            if (suppressCommit) return;
+
+            that.nodes().each(refresh);
+
         }, widgetUpdatePeriodMS);
+
+        this.on('layoutready layoutstop pan zoom', updateAllWidgets);
 
 //            function scaleAndTranslate( _element , _x , _y, wx, wy )  {
 //                
@@ -96,8 +81,23 @@ function spacegraph(ui, target, opt) {
 //            }        
     };
 
-    
-    
+    function widget(node) {
+        if (node.data)
+            return node.data().widget;
+        return undefined;
+    }
+
+    function refresh(target, target2) {
+        if (target2) target = target2; //extra parameter to match the callee's list
+
+        if (widget(target)) {
+            if (target.data().updating) {
+                clearTimeout(target.data().updating);
+            }
+            target.data().updating = setTimeout(s.updateNodeWidget, 0, target); //that.updateNodeWidget(target);
+        }
+    }
+
     opt = _.defaults(opt, {
         layout: {
             name: 'cose',
@@ -129,21 +129,21 @@ function spacegraph(ui, target, opt) {
         wheelSensitivity: 1,
         //pixelRatio: 0.25, //downsample pixels
         pixelRatio: 1,
-        
+
         initrender: function (evt) { /* ... */ },
-        
-        
+
+
         renderer: { /* ... */
             name: 'canvas',
             showFps: false
         },
         container: target[0]
     });
-    
-    
+
+
     var s = cytoscape(opt);
-    
-    
+
+
     // EdgeHandler: the default values of each option are outlined below:
     var ehDefaults = {
         preview: true, // whether to show added edges preview before releasing selection
@@ -178,28 +178,35 @@ function spacegraph(ui, target, opt) {
             return {};
         },
         /*
-        start: function (sourceNode) {
-            // fired when edgehandles interaction starts (drag on handle)
-        },
-        complete: function (sourceNode, targetNodes, addedEntities) {
-            // fired when edgehandles is done and entities are added
-        },
-        stop: function (sourceNode) {
-            // fired when edgehandles interaction is stopped (either complete with added edges or incomplete)
-        }
-        */
+         start: function (sourceNode) {
+         // fired when edgehandles interaction starts (drag on handle)
+         },
+         complete: function (sourceNode, targetNodes, addedEntities) {
+         // fired when edgehandles is done and entities are added
+         },
+         stop: function (sourceNode) {
+         // fired when edgehandles interaction is stopped (either complete with added edges or incomplete)
+         }
+         */
     };
 
-    s.edgehandles( ehDefaults );    
-    
-    
+    s.edgehandles( ehDefaults );
+
+
     s.channels = { };
+    s.listeners = { };
     s.defaultChannel = undefined;
-    s.widgets = new WeakMap(); //node -> widget DOM element
+    s.widgets = new Map(); //node -> widget DOM element
     s.currentLayout = {
-        name: 'cose'
+        name: 'cosefast'
+        //name: 'grid' //cose implementation is slow as fuck becaause it has all these log debug statements and string generation that serves no purpose but at least its pretty
+        //name: 'arbor'
+
+        //name: 'breadthfirst',
+        //circle:true,
+        //directed:true
     };
-    
+
     function wrapInData(d) {
         var w = { data: d };
         if (d.style)
@@ -207,30 +214,38 @@ function spacegraph(ui, target, opt) {
         else {
             //style defaults?
         }
-        
+
         return w;
     }
 
     s.removeNodeWidget = function(node) {
-        $('#widget_' + node.id()).remove();                
+        $('#widget_' + node.id()).remove();
         this.widgets.delete(node);
     };
-    
-    s.updateNodeWidget = function(node) {
+
+    s.updateNodeWidget = function(node, nodeOverride) {
+
+        if (nodeOverride) node = nodeOverride;
+
+        var data = node.data();
+        var widget = data.widget; //html string
+        //if (!widget) return;
+
+        data.updating = false;
+
         var that = s;
-        
-        var widget = node.data().widget; //html string
-        var wEle = that.widgets.get(node);
+
+        var wEle = that.widgets.get(node.id());
         var w = $(wEle);
 
-        
-        if (node.data().removed) {
+
+        if (data.removed) {
             if (wEle) {
                 that.removeNodeWidget(node);
             }
             return;
         }
-        
+
         function setWidgetHTML() {
             w.html(widget.html).data('when', Date.now());
         }
@@ -242,8 +257,8 @@ function spacegraph(ui, target, opt) {
          }
          }*/
 
-        
-        
+
+
         if (!wEle) {
 
             var style = widget.style || {};
@@ -252,10 +267,10 @@ function spacegraph(ui, target, opt) {
 
             var wid = 'widget_' + node.id();
             w = $('<div></div>').
-                    attr('id', wid).
-                    addClass('widget').
-                    css(style).
-                    appendTo('#widgets');
+                attr('id', wid).
+                addClass('widget').
+                css(style).
+                appendTo('#widgets');
 
             setWidgetHTML();
 
@@ -275,16 +290,17 @@ function spacegraph(ui, target, opt) {
             }
 
             //TODO use MutationObservers
-            w.bind("DOMSubtreeModified DOMAttrModified", commitWidgetChange); // Listen DOM changes
+            if (widget.live)
+                w.bind("DOMSubtreeModified DOMAttrModified", commitWidgetChange); // Listen DOM changes
 
-            that.widgets.set(node, w[0]);
+            that.widgets.set(node.id(), w[0]);
         }
 
         that.positionNodeHTML(node, w, widget.pixelScale, widget.scale, widget.minPixels);
 
     };
 
-    
+
     /** html=html dom element */
     s.positionNodeHTML = function(node, html, pixelScale, scale, minPixels) {
 
@@ -292,7 +308,7 @@ function spacegraph(ui, target, opt) {
 
         var pw = parseFloat(node.renderedWidth());
         var ph = parseFloat(node.renderedHeight());
-        
+
         scale = parseFloat(scale) || 1.0;
 
         var cw, ch;
@@ -304,39 +320,39 @@ function spacegraph(ui, target, opt) {
             ch = parseInt(pixelScale);
             cw = parseInt(pixelScale*(pw/ph));
         }
-        
+
         var h = html[0];
-                
-        
+
+
         //get the effective clientwidth/height if it has been resized
-        if (( (cw+'px') !== h.style.width ) || ((ch + 'px') !== h.style.height)) {   
+        if (( (cw+'px') !== h.style.width ) || ((ch + 'px') !== h.style.height)) {
             var hcw = h.clientWidth;
             var hch = h.clientHeight;
-            
+
             h.style.width = cw;
             h.style.height = ch;
-            
+
             cw = hcw;
             ch = hch;
         }
-        
+
         //console.log(html[0].clientWidth, cw, html[0].clientHeight, ch);
-        
-        var pos = node.renderedPosition();        
-                
+
+        var pos = node.renderedPosition();
+
         var globalToLocalW = pw / cw;
         var globalToLocalH = ph / ch;
-        
+
         var wx = scale * globalToLocalW;
         var wy = scale * globalToLocalH;
-        
-                    
+
+
         //TODO check extents to determine node visibility for hiding off-screen HTML
         //for possible improved performance
 
         if (minPixels) {
             var hidden = ('none' === h.style.display);
-            
+
             if ( Math.min(wy,wx) < minPixels/pixelScale ) {
                 if (!hidden) {
                     h.style.display = 'none';
@@ -349,7 +365,7 @@ function spacegraph(ui, target, opt) {
                 }
             }
         }
-        
+
         //console.log(html, pos.x, pos.y, minPixels, pixelScale);
 
         var transformPrecision = 4;
@@ -359,13 +375,13 @@ function spacegraph(ui, target, opt) {
         matb = 0;
         matc = 0;
         wy = wy.toPrecision(transformPrecision);
-                
+
         //parseInt here to reduce precision of numbers for constructing the matrix string
         //TODO replace this with direct matrix object construction involving no string ops        
-        
+
         px = (pos.x - (scale*pw) / 2.0).toPrecision(transformPrecision);
         py = (pos.y - (scale*ph) / 2.0).toPrecision(transformPrecision);
-        
+
         //px = parseInt(pos.x - pw / 2.0 + pw * paddingScale / 2.0); //'e' matrix element
         //py = parseInt(pos.y - ph / 2.0 + ph * paddingScale / 2.0); //'f' matrix element
         //px = pos.x;
@@ -375,55 +391,55 @@ function spacegraph(ui, target, opt) {
         //html.css(nextCSS);        
         h.style.transform = tt;
     };
-    
+
     s.nodeProcessor = [];
-    
+
     s.updateNode = function(n) {
         for (var i = 0; i < this.nodeProcessor.length; i++)
             s.nodeProcessor[i].apply(n);
     };
-    
+
     s.updateChannel = function(c) {
-        
-        
+
+
         //TODO assign channel reference to each edge as done above with nodes
-        
+
         var e = {
             nodes: c.data.nodes ? c.data.nodes.map(wrapInData) : [], // c.data.nodes,
             edges: c.data.edges ? c.data.edges.map(wrapInData) : [] //c.data.edges
-        };        
-            
+        };
+
         var that = this;
         this.batch(function() {
 
             suppressCommit = true;
-            
+
             if (c.data.style) {
                 var s = [       ];
-                for (sel in c.data.style) {
+                for (var sel in c.data.style) {
                     s.push({
-                       selector: sel,
-                       css: c.data.style[sel]
+                        selector: sel,
+                        css: c.data.style[sel]
                     });
                 }
 
                 if (s.length > 0) {
                     //TODO merge style; this will replace it with c's        
 
-                    that.style().clear();        
+                    that.style().clear();
 
                     that.style().fromJson(s);
                     that.style().update();
                 }
             }
 
-/*
-            for (var i = 0; i < e.nodes.length; i++) {
-                var n = e.nodes[i];
-                if (n.data && n.data.id)
-                    that.remove('#' + n.data.id);
-            }
-            */
+            /*
+             for (var i = 0; i < e.nodes.length; i++) {
+             var n = e.nodes[i];
+             if (n.data && n.data.id)
+             that.remove('#' + n.data.id);
+             }
+             */
 
             that.add( e );
 
@@ -432,7 +448,7 @@ function spacegraph(ui, target, opt) {
                 var n = e.nodes[i];
                 if (n.data && n.data.id) {
                     var nn = that.nodes('#' + n.data.id);
-                    
+
                     that.updateNode(nn);
 
                     var ep = nn.position();
@@ -441,72 +457,87 @@ function spacegraph(ui, target, opt) {
                         var cx = 0.5 * (ex.x1 + ex.x2);
                         var cy = 0.5 * (ex.y1 + ex.y2);
 
-                        nn.position({ x: cx, y: cy });                        
+                        nn.position({ x: cx, y: cy });
                     }
-                }                    
+                }
             }
-            
+
             that.resize();
-            
+
             suppressCommit = false;
-            
+
         });
-        
+
     };
-    
+
     /** set and force layout update */
     s.setLayout = function(l){
 
         this.currentLayout = l;
-        delete this.currentLayout.eles;
-        
+        if (this.currentLayout.eles)
+            delete this.currentLayout.eles;
+
         //http://js.cytoscape.org/#layouts
         /*var layout = this.makeLayout(this.currentLayout);
-        layout.run();            */
+         layout.run();            */
         this.layout(this.currentLayout);
     };
-    
+
     s.addChannel = function(c) {
-        
+
         //var nodesBefore = this.nodes().size();
-        
+
         this.channels[c.id()] = c;
-    
+
+
         if (!s.defaultChannel) {
             console.log('Default channel: ' + c.id());
             s.defaultChannel = c;
         }
-        
+
         if (c.ui!==this)
             c.init(this);
-      
+
         this.updateChannel(c);
-       
-        this.setLayout(s.currentLayout);        
-    
+
+        this.setLayout(s.currentLayout);
+
         ui.addChannel(this, c);
-        
-        
+
+        var that = this;
+        var l;
+        c.on('graphChange', l = function(graph, nodesAdded, edgesAdded, nodesRemoved, edgesRemoved) {
+            "use strict";
+
+            console.log('graph change', nodesAdded);
+            that.updateChannel(c);
+            that.layout();
+        });
+        this.listeners[c.id()] = l;
+
     };
-    
+
     s.removeChannel = function(c) {
+
+        c.off("graphChange", this.listeners[c.id()]);
 
         //remove all nodes, should remove all connected edges too
         for (var i = 0; i < c.data.nodes; i++) {
             var nodeID = c.data.nodes[i].id;
             this.remove('#' + nodeID);
         }
-        
+
         //TODO remove style
-        
+
         delete this.channels[c.id()];
-        c.destroy();
-        
+        delete this.listeners[c.id()];
+        //c.destroy();
+
         this.layout();
-        
+
         ui.removeChannel(c);
     };
-    
+
     s.commit = _.throttle(function() {
         for (i in this.channels) {
             var c = this.channels[i];
@@ -514,19 +545,20 @@ function spacegraph(ui, target, opt) {
         }
     }, commitPeriodMS);
 
-        // ----------------------
+    // ----------------------
 
     s.on('cxttapstart', function(e) {
         var target = e.cyTarget;
 
-        if (!target) {                
+        if (!target) {
             this.zoomTo();
         }
         else {
             this.zoomTo(target);
         }
     });
-    
+
+    //DEPRECATED, move to a channel
     s.newNode = function(c, type, pos, param) {
 
         notify('Adding: ' + type);
@@ -571,60 +603,61 @@ function spacegraph(ui, target, opt) {
         if (n) {
 
             c.addNode(n);
-            
+
             this.updateChannel(c);
 
             /*
-            if (!pos) {
-                var ex = this.extent();
-                var cx = 0.5 * (ex.x1 + ex.x2);
-                var cy = 0.5 * (ex.y1 + ex.y2);
-                pos = {x: cx, y: cy};
-            }
-            */
+             if (!pos) {
+             var ex = this.extent();
+             var cx = 0.5 * (ex.x1 + ex.x2);
+             var cy = 0.5 * (ex.y1 + ex.y2);
+             pos = {x: cx, y: cy};
+             }
+             */
             if (pos)
                 this.getElementById(n.id).position(pos);
 
             c.commit();
 
         }
-        
+
     };
-    
+
+    //DEPRECATED, move to a channel
     s.removeNode = function(n) {
         for (var ch in this.channels) {
             var c = this.channels[ch];
-            
+
             if (c.removeNode(n)) {
                 c.commit();
             }
         }
-        
+
         n.remove();
     };
-    
-    
+
+
 
     s.zoomTo = function(ele) {
         var pos;
         if (!ele || !ele.position)
-            pos = { x: 0, y: 0 };        
-        else 
+            pos = { x: 0, y: 0 };
+        else
             pos = ele.position();
 
 
         s.animate({
-          fit: {
-            eles: ele,
-            padding: 80
-          }
+            fit: {
+                eles: ele,
+                padding: 80
+            }
         }, {
             duration: zoomDuration
             /*step: function() {
-            
-            }*/
+
+             }*/
         });
     };
-        
+
     return s;
 };

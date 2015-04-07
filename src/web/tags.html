@@ -6,7 +6,6 @@
 
         <script src="lib/webcomponents-lite.min.js"></script>
         <script src="example_channels.js"></script>
-
     </head>
     <body class="spacegraph" oncontextmenu="return false;">
 
@@ -44,12 +43,10 @@
 
                             var index = new TagIndex(function(i) {
 
-                                var roots = i.activateRoots(1);
-//                                _.each(roots, (r) => {
-//                                    i.expand(r);
-//                                });
+                                i.activateRoots(1);
 
                                 s.addChannel(i.channel);
+
 
                             });
                         }
