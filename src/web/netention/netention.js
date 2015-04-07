@@ -744,28 +744,28 @@ function netention(router) {
         },
         //TODO rename to 'load initial objects' or something
         getLatestObjects: function(num, onFinished) {
-            $.getJSON('/object/latest/' + num + '/json', function(objs) {
-                $N.notice(objs);
-                onFinished();
-            }, function(err) {
-                onFinished(err);
-            });
+            $.getJSON('/object/latest/' + num + '/json')
+                .done(function (objs) {
+                    $N.notice(objs);
+                    onFinished();
+                })
+                .fail(onFinished);
         },
         getUserObjects: function(onFinished) {
-            $.getJSON('/object/tag/User/json', function(objs) {
-                $N.notice(objs);
-                onFinished();
-            }, function(err) {
-                onFinished(err);
-            });
+            $.getJSON('/object/tag/User/json')
+                .done(function (objs) {
+                    $N.notice(objs);
+                    onFinished();
+                })
+                .fail(onFinished);
         },
         getAuthorObjects: function(userID, onFinished) {
-            $.getJSON('/object/author/' + userID + '/json', function(j) {
-                $N.notice(j);
-                onFinished(null, j);
-            }, function(err) {
-                onFinished(err);
-            });            
+            $.getJSON('/object/author/' + userID + '/json')
+                .done(function (j) {
+                    $N.notice(j);
+                    onFinished(null, j);
+                })
+                .fail(onFinished);
         },
         getChannel: function(channel, callback) {
             if ($N.channels[channel]) {
