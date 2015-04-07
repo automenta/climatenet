@@ -6,17 +6,26 @@
 
         <script src="lib/webcomponents-lite.min.js"></script>
         <script src="example_channels.js"></script>
+        <style>
+            #graphcanvas {
+                float: right; width: 75%; height: 100%;
+            }
+            #sidebar {
+                position: absolute;
+                float:left;
+                height: 100%;
+                width: 25.5%;
+                font-size: 200%;
+                background-color: black;
+                opacity: 0.8;
+                z-index:6000;
+            }
+        </style>
     </head>
+
     <body>
-        <div style="float: right; width: 75%; height: 100%" class="spacegraph" oncontextmenu="return false;">
-
-            <div id="overlay"></div>
-
-            <div id="graph">
-                <!-- cytoscape render here -->
-            </div>
-
-        </div>
+        <div id="sidebar"></div>
+        <div id="graphcanvas" class="spacegraph"></div>
     </body>
 
     <script>
@@ -24,12 +33,12 @@
 
         //$(document).ready(function() {
         function ready() {
-            var ui = UI($('body'));
+
 
             var server = Websocket('socket', {
                 onOpen: function() {
 
-                    var s = spacegraph(ui, $('#graph'), {
+                    var s = spacegraph(ui, $('#graphcanvas'), {
                         start: function() {
 
                             //server.on('index', this.addChannel);
@@ -52,6 +61,52 @@
                         }
                     });
 
+                    $('#sidebar').append($('<a href="#">F</a>').click(function() {
+                        s.setLayout({
+                            name: 'cose',
+
+                            refresh: 1, //4,
+                            iterations: 10,
+                            randomize: false
+
+
+                        });
+                    }));
+                    $('#sidebar').append($('<a href="#">G</a>').click(function() {
+                        s.setLayout({
+                            name: 'grid'
+                        });
+                    }));
+                    $('#sidebar').append($('<a href="#">C</a>').click(function() {
+                        s.setLayout({
+                            name: 'concentric'
+                        });
+                    }));
+                    $('#sidebar').append($('<a href="#">T</a>').click(function() {
+                        s.setLayout({
+                            name: 'breadthfirst'
+                        });
+                    }));
+                    $('#sidebar').append($('<a href="#">t</a>').click(function() {
+                        s.setLayout({
+                            name: 'breadthfirst',
+                            directed: true,
+                            boundingBox: { x1: 0, y1: 0, x2: 100, y2: 800 } //vertical
+                        });
+                    }));
+                    $('#sidebar').append($('<a href="#">S</a>').click(function() {
+                        s.setLayout({
+                            name: 'breadthfirst',
+                            circle: true
+                        });
+                    }));
+                    $('#sidebar').append($('<a href="#">R</a>').click(function() {
+                        s.setLayout({
+                            name: 'random'
+                        });
+                    }));
+
+                    var ui = UI($('#sidebar'), s);
 
 
 

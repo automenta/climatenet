@@ -135,7 +135,7 @@ class TagIndex {
 
 
     activateRoots(levels) {
-        var MAX_NODES = 9, count = 0;
+        var MAX_NODES = 4, count = 0;
 
         var roots = [];
         var nodes = [];
@@ -209,7 +209,7 @@ class TagIndex {
                 style: {
                     shape: 'rectangle',
                     width: 160,
-                    height: 120
+                    height: 120,
                 }
             };
 
@@ -224,15 +224,31 @@ class TagIndex {
             for (var i = 0; i < children.length; i++) {
                 var v = this.graphize(children[i], levels - 1, nodes, edges);
                 if (v) {
-                    //create edge from this node to child
-                    var edgeID = t.id + '_' + children[i];
-                    var e = {id: edgeID, source: t.id, target: children[i],
+
+                    if (Math.random() < 0.5 && !(n.widget)) {
+                        //create parent child containment; only works for non-widgets if the width/height are not specified
+
+                        delete n.style.width;
+                        delete n.style.height;
+
+                        v.parent = t.id;
+                        console.log(v);
+                    }
+                    else {
+
+                        //create edge from this node to child
+                        var edgeID = t.id + '_' + children[i];
+                        var e = {
+                            id: edgeID, source: t.id, target: children[i],
                             style: {
-                                'line-color': 'white',
-                                'line-width': '64'
+                                'opacity': 0.5,
+                                //'target-arrow-shape': 'triangle',
+                                'line-color': 'purple',
+                                'width': 25
                             }
                         };
-                    edges.push(e);
+                        edges.push(e);
+                    }
 
                 }
             }

@@ -1,13 +1,20 @@
 "use strict";
 
-function spacegraph(ui, target, opt) {
+function spacegraph(ui, targetWrapper, opt) {
+
+    //<div id="overlay"></div>
+    var overlaylayer = $('<div class="overlay"/>').prependTo(targetWrapper);
+
+    //<div id="graph"><!-- cytoscape render here --></div>
+    var target = $('<div class="graph"/>').appendTo(targetWrapper);
+
+    targetWrapper.attr('oncontextmenu', "return false;");
 
     var commitPeriodMS = 300;
     var widgetUpdatePeriodMS = 10;
     var suppressCommit = false;
     var zoomDuration = 64; //ms
 
-    var overlaylayer = $('#overlay'); //TODO use relative to the root element
 
     var ready = function() {
 
@@ -144,6 +151,7 @@ function spacegraph(ui, target, opt) {
 
 
     var s = cytoscape(opt);
+    s.overlay = overlaylayer;
 
 
     // EdgeHandler: the default values of each option are outlined below:
@@ -460,7 +468,10 @@ function spacegraph(ui, target, opt) {
                         var cx = 0.5 * (ex.x1 + ex.x2);
                         var cy = 0.5 * (ex.y1 + ex.y2);
 
-                        nn.position({ x: cx, y: cy });
+                        try {
+                            nn.position({x: cx, y: cy});
+                        }
+                        catch (e) { }
                     }
                 }
             }
@@ -476,14 +487,21 @@ function spacegraph(ui, target, opt) {
     /** set and force layout update */
     s.setLayout = function(l){
 
-        this.currentLayout = l;
-        if (this.currentLayout.eles)
-            delete this.currentLayout.eles;
+        if (this.currentLayout)
+            if (this.currentLayout.stop)
+                this.currentLayout.stop();
+
+        var layout = this.makeLayout(l);
+        this.currentLayout = layout;
+        layout.run();
+        //this.layout(this.currentLayout);
+
+        /*if (this.currentLayout.eles)
+            delete this.currentLayout.eles;*/
 
         //http://js.cytoscape.org/#layouts
-        /*var layout = this.makeLayout(this.currentLayout);
-         layout.run();            */
-        this.layout(this.currentLayout);
+
+
     };
 
     s.addChannel = function(c) {
@@ -498,13 +516,10 @@ function spacegraph(ui, target, opt) {
             s.defaultChannel = c;
         }
 
-        if (c.ui!==this)
+        if (c.ui!==this) //???
             c.init(this);
 
         this.updateChannel(c);
-
-
-        ui.addChannel(this, c);
 
         var that = this;
         var l;

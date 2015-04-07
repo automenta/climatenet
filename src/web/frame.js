@@ -17,7 +17,7 @@ function NodeFrame(spacegraph) {
     
     $.get('frame.html', { "_": $.now() /* overrides cache */ }, function(x) {               
        
-        $('#overlay').append( x );
+        spacegraph.overlay.append( x );
 
         var frameEle = $('#nodeframe');
         f.hovered = null;
@@ -237,7 +237,7 @@ function newPopupMenu(s) {
         }
         
         var menu = prevMenu = $('#ContextPopup').clone();
-        menu.appendTo('#overlay');
+        menu.appendTo(s.overlay);
         menu.destroy = function() {
             if (prevMenu === this)
                 prevMenu = null;
