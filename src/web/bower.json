@@ -16,6 +16,7 @@
         "fontawesome": "latest",
         "metawidget": "latest",
         "pnotify": "latest",
-        "lodash": "latest"
+        "lodash": "latest",
+        "semantic": "latest"
     }
 }

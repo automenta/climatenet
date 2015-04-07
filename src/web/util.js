@@ -232,7 +232,6 @@ class TagIndex {
                         delete n.style.height;
 
                         v.parent = t.id;
-                        console.log(v);
                     }
                     else {
 
