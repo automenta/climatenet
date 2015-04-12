@@ -393,7 +393,7 @@ function newChatInput(onSend) {
 
     d.append(newShoutLine());
 
-    var webcamButton = $('<button title="Add Webcam..."><img style="height: 0.8em" src="icon/play.png"></button>');
+    var webcamButton = $('<button title="Add Webcam..."><img style="height: 0.8em" src="../icon/play.png"></button>');
     webcamButton.click(function() {
         newWebcamWindow(function(imgURL) {
             if (onSend)

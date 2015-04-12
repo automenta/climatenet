@@ -1,34 +1,34 @@
 <html>
-    <head>
-        <title>?</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+    <title>?</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <script src="lib/webcomponents-lite.min.js"></script>
-        <script src="example_channels.js"></script>
-        <style>
-            #graphcanvas {
-                float: right; width: 75%; height: 100%;
-            }
-            #sidebar {
-                position: absolute;
-                float:left;
-                height: 100%;
-                width: 25.5%;
-                font-size: 200%;
-                background-color: black;
-                opacity: 0.8;
-                z-index:6000;
-            }
-        </style>
-    </head>
+    <script src="lib/webcomponents-lite.min.js"></script>
+    <script src="example_channels.js"></script>
+    <style>
+        #graphcanvas {
+        float: right; width: 75%; height: 100%;
+        }
+        #sidebar {
+        position: absolute;
+        float:left;
+        height: 100%;
+        width: 25.5%;
+        font-size: 200%;
+        background-color: black;
+        opacity: 0.8;
+        z-index:6000;
+        }
+    </style>
+</head>
 
-    <body>
-        <div id="sidebar"></div>
-        <div id="graphcanvas" class="spacegraph"></div>
-    </body>
+<body>
+<div id="sidebar"></div>
+<div id="graphcanvas" class="spacegraph"></div>
+</body>
 
-    <script>
+<script>
         //document.addEventListener('DOMContentLoaded', function(){
 
         //$(document).ready(function() {
@@ -50,17 +50,42 @@
                             s.nodeProcessor.push(new ListToText());
                             s.nodeProcessor.push(new UrlToIFrame());
 
-                            var index = new TagIndex(function(i) {
 
-                                i.activateRoots(1);
-
-                                s.addChannel(i.channel);
-
-
-                            });
                         }
                     });
 
+                    window.s = s;
+
+                    $('#sidebar').append($('<button>Tags</button>').click(function() {
+                        s.clear();
+
+                        var index = new TagIndex(function(i) {
+                                i.activateRoots(1);
+                                s.addChannel(i.channel);
+                        });
+                    }));
+                    $('#sidebar').append($('<button>Widget Test</button>').click(function() {
+                        s.clear();
+                        s.addChannel(new Channel( {
+                            id: 'widgetTest',
+                            nodes: [{
+                                id: 'e',
+                                width: 64,
+                                height: 64,
+                                widget: {
+                                    html: '<div style="width: 100%; height: 100%; background-color: orange; border: 2px solid black;"><div contenteditable="true" class="editable">WTF</div><br/><button>OK</button></div>',
+                                    style: {  },
+                                    scale: 0.9,
+                                    minPixels: 8,
+                                }
+                            }]
+
+                        }));
+                    }));
+                    $('#sidebar').append($('<button>Types Demo</button>').click(function() {
+                        s.clear();
+                        s.addChannel(new Channel( newExampleChannel1() ));
+                    }));
                     $('#sidebar').append($('<a href="#">F</a>').click(function() {
                         s.setLayout({
                             name: 'cose',
@@ -118,9 +143,13 @@
         }
 
         
-    </script>
-    
-    <link rel="import" onload="ready()" href="head.html">
-    <link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
+
+
+
+
+</script>
+
+<link rel="import" onload="ready()" href="head.html">
+<link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
 
 </html>

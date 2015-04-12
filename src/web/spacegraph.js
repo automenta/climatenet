@@ -229,8 +229,9 @@ function spacegraph(ui, targetWrapper, opt) {
     }
 
     s.removeNodeWidget = function(node) {
-        $('#widget_' + node.id()).remove();
-        this.widgets.delete(node);
+        var nodeID = node.id();
+        s.widgets.delete(nodeID);
+        $('#widget_' + nodeID).remove();
     };
 
     s.updateNodeWidget = function(node, nodeOverride) {
@@ -238,76 +239,17 @@ function spacegraph(ui, targetWrapper, opt) {
         if (nodeOverride) node = nodeOverride;
 
         var data = node.data();
-        var widget = data.widget; //html string
+
         //if (!widget) return;
 
         data.updating = null;
 
-        var that = s;
+        var wEle = s.widgets.get(node.id());
+        if (!wEle) return;
 
-        var wEle = that.widgets.get(node.id());
-        var w = $(wEle);
+        var widget = data.widget; //html string
 
-
-        if (data.removed) {
-            if (wEle) {
-                that.removeNodeWidget(node);
-            }
-            return;
-        }
-
-        function setWidgetHTML() {
-            w.html(widget.html).data('when', Date.now());
-        }
-
-        /*if (w) {
-         var whenLastModified = w.data('when');
-         if (whenLastModified < Date.now()) {
-
-         }
-         }*/
-
-
-
-        if (!wEle) {
-
-            var style = widget.style || {};
-            style.position = 'fixed';
-            style.transformOrigin = '0 0';
-
-            var wid = 'widget_' + node.id();
-            w = $('<div></div>').
-                attr('id', wid).
-                addClass('widget').
-                css(style).
-                appendTo(overlaylayer);
-
-            setWidgetHTML();
-
-            var commitWidgetChange = function (e) {
-                "use strict";
-
-                var oh = w[0].innerHTML;
-
-                //this is probably less efficient than going from DOM to JSON directly
-                var html = html2json(oh);
-
-                if (html !== widget.html) {
-                    widget.html = html;
-
-                    //TODO only commit the channel this node belongs to
-                    that.commit();
-                }
-            };
-
-            //TODO use MutationObservers
-            if (widget.live)
-                w.bind("DOMSubtreeModified DOMAttrModified", commitWidgetChange); // Listen DOM changes
-
-            that.widgets.set(node.id(), w[0]);
-        }
-
-        that.positionNodeHTML(node, w, widget.pixelScale, widget.scale, widget.minPixels);
+        s.positionNodeHTML(node, $(wEle), widget.pixelScale, widget.scale, widget.minPixels);
 
     };
 
@@ -454,11 +396,15 @@ function spacegraph(ui, targetWrapper, opt) {
 
             that.add( e );
 
+            var channelID = c.id();
+
             //add position if none exist
             for (var i = 0; i < e.nodes.length; i++) {
                 var n = e.nodes[i];
                 if (n.data && n.data.id) {
                     var nn = that.nodes('#' + n.data.id);
+
+                    nn.addClass(channelID);
 
                     that.updateNode(nn);
 
@@ -491,9 +437,20 @@ function spacegraph(ui, targetWrapper, opt) {
             if (this.currentLayout.stop)
                 this.currentLayout.stop();
 
-        var layout = this.makeLayout(l);
+        var layout;
+        if (l.name) {
+            layout = this.makeLayout(l);
+        }
+        else {
+            layout = l;
+        }
+
         this.currentLayout = layout;
-        layout.run();
+
+        if (layout)
+            layout.run();
+
+
         //this.layout(this.currentLayout);
 
         /*if (this.currentLayout.eles)
@@ -530,29 +487,50 @@ function spacegraph(ui, targetWrapper, opt) {
         });
         this.listeners[c.id()] = l;
 
-        this.setLayout(s.currentLayout);
+        if (s.currentLayout)
+            this.setLayout(s.currentLayout);
 
+    };
+
+    s.clear = function() {
+        console.log('clear ', this.channels);
+        for (var c in this.channels) {
+            var chan = s.channels[c];
+            console.log('removing ', chan);
+            s.removeChannel(chan);
+        }
     };
 
     s.removeChannel = function(c) {
 
         c.off("graphChange", this.listeners[c.id()]);
 
+        s.nodes('.' + c.id()).remove();
+        /*
         //remove all nodes, should remove all connected edges too
-        for (var i = 0; i < c.data.nodes; i++) {
-            var nodeID = c.data.nodes[i].id;
-            this.remove('#' + nodeID);
+        for (var i = 0; i < c.data.nodes.length; i++) {
+            var node = c.data.nodes[i]
+            var nodeID = node.id;
+            var cnode = s.nodes('#' + nodeID)[0];
+            if (cnode) {
+                s.remove('#' + nodeID);
+            }
+//            else {
+//                console.log('could not remove missing ', node);
+//            }
         }
+        */
 
         //TODO remove style
 
-        delete this.channels[c.id()];
-        delete this.listeners[c.id()];
+        delete s.channels[c.id()];
+        delete s.listeners[c.id()];
         //c.destroy();
 
-        this.layout();
+        s.layout();
 
-        ui.removeChannel(c);
+        if (ui)
+            ui.removeChannel(c);
     };
 
     s.commit = _.throttle(function() {
@@ -573,6 +551,66 @@ function spacegraph(ui, targetWrapper, opt) {
         else {
             this.zoomTo(target);
         }
+    });
+
+    s.on('add', function(e) {
+
+        var node = e.cyTarget;
+
+        var data = node.data();
+        var widget = data.widget; //html string
+        if (!widget) return;
+
+        var wEle = s.widgets.get(node.id());
+        if (wEle) return; //widget already exists?
+
+        /*if (w) {
+         var whenLastModified = w.data('when');
+         if (whenLastModified < Date.now()) {
+         }
+         }*/
+
+        var style = widget.style || {};
+        style.position = 'fixed';
+        style.transformOrigin = '0 0';
+
+        var wid = 'widget_' + node.id();
+        var w = $('<div></div>').
+            attr('id', wid).
+            addClass('widget').
+            css(style).
+            appendTo(overlaylayer);
+
+        w.html(widget.html).data('when', Date.now());
+
+//            var commitWidgetChange = function (e) {
+//                "use strict";
+//
+//                var oh = w[0].innerHTML;
+//
+//                //this is probably less efficient than going from DOM to JSON directly
+//                var html = html2json(oh);
+//
+//                if (html !== widget.html) {
+//                    widget.html = html;
+//
+//                    //TODO only commit the channel this node belongs to
+//                    that.commit();
+//                }
+//            };
+//
+//            //TODO use MutationObservers
+//            if (widget.live)
+//                w.bind("DOMSubtreeModified DOMAttrModified", commitWidgetChange); // Listen DOM changes
+
+        s.widgets.set(node.id(), w[0]);
+    });
+
+    s.on('remove', function(e) {
+        var node = e.cyTarget;
+
+        //attempt to remove an associated widget (html div in overlay)
+        s.removeNodeWidget(node);
     });
 
     //DEPRECATED, move to a channel
