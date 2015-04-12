@@ -54,7 +54,7 @@ class GraphView extends NView {
 class Map2DView extends NView {
 
     constructor() {
-        super("map2d", "Map (2D)", "road");
+        super("Map (2D)", "road");
     }
 
     start(v, cb) {
@@ -71,6 +71,71 @@ class Map2DView extends NView {
         if (this.map!=null) {
             this.map.remove();
             this.map = null;
+        }
+    }
+
+}
+
+//this is a hack to make Cesium's require.js work with Netention's screwed up util/ client-server code-sharing
+var exports = undefined;
+var modules = undefined;
+
+/** spacegraph (via cytoscape.js) */
+class Map3DView extends NView {
+
+    constructor() {
+        super("Map (3D)", "globe");
+    }
+
+    start(v, cb) {
+
+        var that = this;
+
+        var init = function() {
+
+            var u = uuid();
+            var d = newDiv(u);
+            v.append(d);
+
+            //http://cesiumjs.org/refdoc.html
+            var viewer = new Cesium.Viewer(u /*'cesiumContainer'*/, {
+                timeline: false,
+                homeButton: false,
+                animation: false,
+                cesiumLogo: false
+            });
+            $('.cesium-widget-credits').remove();
+            $('.cesium-viewer').css('height', '100%');
+            $(viewer.cesiumLogo).remove();
+            //$(viewer.timeline).remove();
+            //$(viewer.animation).remove();
+
+            that.viewer = viewer;
+
+            v.append(viewer);
+        };
+
+        //ensure Cesium loaded
+        if (!this.cesiumLoaded) {
+
+            this.cesiumLoaded = true;
+
+            loadCSS('lib/cesium/Widgets/CesiumWidget/CesiumWidget.css');
+
+            $LAB
+                .script('lib/cesium/Cesium.js')
+                .wait(init);
+
+        }
+        else {
+            init();
+        }
+    }
+
+    stop() {
+        if (that.viewer) {
+            that.viewer.destroy()
+            that.viewer = null;
         }
     }
 

@@ -740,3 +740,26 @@ function uuid() {
     }
     return randomstring;
 }
+
+
+function loadCSS(url, med) {
+    $(document.head).append(
+        $("<link/>")
+            .attr({
+                rel: "stylesheet",
+                type: "text/css",
+                href: url,
+                media: (med !== undefined) ? med : ""
+            })
+    );
+}
+
+function loadJS(url) {
+    $(document.head).append(
+        $("<script/>")
+            .attr({
+                type: "text/javascript",
+                src: url
+            })
+    );
+}
