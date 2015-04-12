@@ -2,13 +2,15 @@
 
 function spacegraph(targetWrapper, opt) {
 
+    targetWrapper.addClass("spacegraph");
+
     //<div id="overlay"></div>
     var overlaylayer = $('<div class="overlay"/>').prependTo(targetWrapper);
 
     //<div id="graph"><!-- cytoscape render here --></div>
     var target = $('<div class="graph"/>').appendTo(targetWrapper);
 
-    targetWrapper.attr('oncontextmenu', "return false;");
+    target.attr('oncontextmenu', "return false;");
 
     var commitPeriodMS = 300;
     var widgetUpdatePeriodMS = 10;

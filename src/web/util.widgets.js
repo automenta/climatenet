@@ -5,13 +5,20 @@ function TagIndexAccordion(tagIndex) {
         var id = tag.id;
         var label = tag.name || tag.content || id;
 
-        var y = $('<div class="title"/>').text(label);
+        var y = $('<div class="title small"/>').text(label);
         var z = $('<div class="content"/>').attr('tag', id);
         parent.append(y, z);
     }
 
 
+    //http://semantic-ui.com/modules/accordion.html#/settings
+
     var x = $('<div class="ui styled accordion" style="max-height: 100%; overflow: scroll" />').accordion({
+
+        exclusive: false,
+
+        duration: 150,
+
         onOpen: function (e, z) {
 
             //console.log('open',this, e,z);

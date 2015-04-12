@@ -219,11 +219,10 @@ function newPopupMenu(s) {
         
     };
     
-    s.on('click', function(e) {
+    s.on('tap', function(e) {
         var target = e.cyTarget;
         var position = e.cyPosition;
-        
-        
+
         if (target.isNode) {
             //hit an element (because its isNode function is defined)
             return;

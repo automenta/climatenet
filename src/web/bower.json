@@ -17,6 +17,7 @@
         "metawidget": "latest",
         "pnotify": "latest",
         "lodash": "latest",
-        "semantic": "latest"
+        "semantic": "latest",
+        "backbone": "latest"
     }
 }

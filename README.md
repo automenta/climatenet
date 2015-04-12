@@ -61,3 +61,9 @@ http://climateviewer.com/about/
         *   Overlay rendering
         *   Normalize Lat/Lon (it goes out of bounds if continue around earth)
     *   Cesium*   ..
+
+
+## Run in App mode
+```
+chromium --app=http://localhost:9090/graph.html --incognito
+```
