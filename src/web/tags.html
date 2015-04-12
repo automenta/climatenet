@@ -14,9 +14,9 @@
         position: absolute;
         float:left;
         height: 100%;
-        width: 25.5%;
+        width: 25%;
         font-size: 200%;
-        background-color: black;
+        /*background-color: black;*/
         opacity: 0.8;
         z-index:6000;
         }
@@ -24,7 +24,7 @@
 </head>
 
 <body>
-<div id="sidebar"></div>
+<div id="sidebar" class="ui inverted menu"></div>
 <div id="graphcanvas" class="spacegraph"></div>
 </body>
 
@@ -56,15 +56,83 @@
 
                     window.s = s;
 
-                    $('#sidebar').append($('<button>Tags</button>').click(function() {
+                    var menu = $('#sidebar');
+                    menu.append($('<button>Tags</button>').click(function() {
                         s.clear();
 
                         var index = new TagIndex(function(i) {
                                 i.activateRoots(1);
                                 s.addChannel(i.channel);
                         });
+                        s.layout({name:'random'});
                     }));
-                    $('#sidebar').append($('<button>Widget Test</button>').click(function() {
+
+
+                    menu.append($('<button>Video</button>').click(function() {
+
+                        var uuid = ('x' + parseInt(5000 * Math.random()));
+                        s.addChannel(c = new Channel( {
+                            id: uuid,
+                            nodes: [{
+                                id: uuid + 'z',
+                                width: 64,
+                                height: 64,
+                                widget: {
+                                    html: '<iframe width="560" height="315" src="https://www.youtube.com/embed/vDpGq4QWyUs" frameborder="0" allowfullscreen></iframe>',
+                                    style: {  },
+                                    scale: 0.8,
+                                    minPixels: 8,
+                                    pixelScale: 300
+                                }
+                            },
+                            {
+                                id: uuid + 'a',
+                                width: 64,
+                                height: 64,
+                                widget: {
+                                    html: '<div style="width: 100%; height: 100%;"><div contenteditable="true" class="editable">http://www.thepostignoranceproject.com The queens military industrialized military EARTH RAPING , EARTH KILLING, HUMANITY KILLING colony called the united States of fake Christians; HAS NOW officially admitted to 100% taking over of our last place SOCIAL MEDIA; AS THE GREAT FAKE CHRISTIAN NATION GENOCIDES the earth, as THE united states of USURY BURNS, no one fiddles Fascism on balco, ignorance on balco, neo feudalism on balco colonialism on balco; fake Christians on balco. NOT ME POST IGNORANCE kevin d. blanch 4/7/2015 </div><br/></div>',
+                                    style: {  },
+                                    scale: 0.9,
+                                    minPixels: 8,
+                                    pixelScale: 200
+                                }
+                            }
+
+                            ]
+                        }));
+
+                        notify('fuck google you ');
+                    }));
+
+                    menu.append($('<button>Wikipedia</button>').click(function() {
+                        var c;
+                        var h = $('<div style="width:100%">');
+                        var tb = $('<input type="text" placeholder="topic"/>').appendTo(h);
+                        var bb = $('<button>Wikipedia</button>').appendTo(h);
+                        bb.click(function() {
+                            var url = 'http://en.m.wikipedia.org/wiki/' + tb.val();
+                            h.html('<iframe style="width: 100%; height: 100%" src="' + url + '"></iframe>');
+                        });
+                        //'<div style="width: 100%; height: 100%; background-color: orange; border: 2px solid black;"><div contenteditable="true" class="editable">WTF</div><br/><button>OK</button></div>'
+
+                        var uuid = ('x' + parseInt(5000 * Math.random()));
+                        s.addChannel(c = new Channel( {
+                            id: uuid,
+                            nodes: [{
+                                id: uuid + 'z',
+                                width: 64,
+                                height: 64,
+                                widget: {
+                                    html: h,
+                                    style: {  },
+                                    scale: 0.8,
+                                    minPixels: 8,
+                                    pixelScale: 300
+                                }
+                            }]
+                        }));
+                    }));
+                    menu.append($('<button>Widget Test</button>').click(function() {
                         s.clear();
                         s.addChannel(new Channel( {
                             id: 'widgetTest',
@@ -79,14 +147,24 @@
                                     minPixels: 8,
                                 }
                             }]
-
                         }));
+                        s.layout({name:'random'});
                     }));
-                    $('#sidebar').append($('<button>Types Demo</button>').click(function() {
+                    menu.append($('<button>Types Demo</button>').click(function() {
                         s.clear();
                         s.addChannel(new Channel( newExampleChannel1() ));
                     }));
-                    $('#sidebar').append($('<a href="#">F</a>').click(function() {
+
+                    menu.append('<hr/>');
+
+                    menu.append($('<button>CLEAR</button>').click(function() {
+                        s.clear();
+                    }));
+
+                    menu.append('<hr/>');
+
+                    menu.append('<i class="random icon"></i>');
+                    menu.append($('<a href="#">F</a>').click(function() {
                         s.setLayout({
                             name: 'cose',
 
@@ -97,41 +175,41 @@
 
                         });
                     }));
-                    $('#sidebar').append($('<a href="#">G</a>').click(function() {
+                    menu.append($('<a href="#">G</a>').click(function() {
                         s.setLayout({
                             name: 'grid'
                         });
                     }));
-                    $('#sidebar').append($('<a href="#">C</a>').click(function() {
+                    menu.append($('<a href="#">C</a>').click(function() {
                         s.setLayout({
                             name: 'concentric'
                         });
                     }));
-                    $('#sidebar').append($('<a href="#">T</a>').click(function() {
+                    menu.append($('<a href="#">T</a>').click(function() {
                         s.setLayout({
                             name: 'breadthfirst'
                         });
                     }));
-                    $('#sidebar').append($('<a href="#">t</a>').click(function() {
+                    menu.append($('<a href="#">t</a>').click(function() {
                         s.setLayout({
                             name: 'breadthfirst',
                             directed: true,
                             boundingBox: { x1: 0, y1: 0, x2: 100, y2: 800 } //vertical
                         });
                     }));
-                    $('#sidebar').append($('<a href="#">S</a>').click(function() {
+                    menu.append($('<a href="#">S</a>').click(function() {
                         s.setLayout({
                             name: 'breadthfirst',
                             circle: true
                         });
                     }));
-                    $('#sidebar').append($('<a href="#">R</a>').click(function() {
+                    menu.append($('<a href="#">R</a>').click(function() {
                         s.setLayout({
                             name: 'random'
                         });
                     }));
 
-                    var ui = UI($('#sidebar'), s);
+                    var ui = UI(menu, s);
 
 
 
