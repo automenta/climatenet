@@ -1,6 +1,6 @@
 "use strict";
 
-function spacegraph(ui, targetWrapper, opt) {
+function spacegraph(targetWrapper, opt) {
 
     //<div id="overlay"></div>
     var overlaylayer = $('<div class="overlay"/>').prependTo(targetWrapper);
@@ -205,7 +205,6 @@ function spacegraph(ui, targetWrapper, opt) {
 
     s.channels = { };
     s.listeners = { };
-    s.defaultChannel = undefined;
     s.widgets = new Map(); //node -> widget DOM element
     s.currentLayout = {
         name: 'cosefast'
@@ -468,14 +467,6 @@ function spacegraph(ui, targetWrapper, opt) {
         this.channels[c.id()] = c;
 
 
-        if (!s.defaultChannel) {
-            console.log('Default channel: ' + c.id());
-            s.defaultChannel = c;
-        }
-
-        if (c.ui!==this) //???
-            c.init(this);
-
         this.updateChannel(c);
 
         var that = this;
@@ -493,10 +484,8 @@ function spacegraph(ui, targetWrapper, opt) {
     };
 
     s.clear = function() {
-        console.log('clear ', this.channels);
         for (var c in this.channels) {
             var chan = s.channels[c];
-            console.log('removing ', chan);
             s.removeChannel(chan);
         }
     };
@@ -506,20 +495,6 @@ function spacegraph(ui, targetWrapper, opt) {
         c.off("graphChange", this.listeners[c.id()]);
 
         s.nodes('.' + c.id()).remove();
-        /*
-        //remove all nodes, should remove all connected edges too
-        for (var i = 0; i < c.data.nodes.length; i++) {
-            var node = c.data.nodes[i]
-            var nodeID = node.id;
-            var cnode = s.nodes('#' + nodeID)[0];
-            if (cnode) {
-                s.remove('#' + nodeID);
-            }
-//            else {
-//                console.log('could not remove missing ', node);
-//            }
-        }
-        */
 
         //TODO remove style
 
@@ -529,8 +504,6 @@ function spacegraph(ui, targetWrapper, opt) {
 
         s.layout();
 
-        if (ui)
-            ui.removeChannel(c);
     };
 
     s.commit = _.throttle(function() {

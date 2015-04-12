@@ -1,92 +1,260 @@
 <html>
-    <head>
-        <title>?</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+    <title>?</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <script src="lib/webcomponents-lite.min.js"></script>
-        <script src="example_channels.js"></script>
-
-    </head>
-    <body class="spacegraph" oncontextmenu="return false;">
-        <!--
-        <nav class="top-bar" data-topbar role="navigation">
-
-
-            <section class="top-bar-section">
-            
-                <ul id="ChannelMenu" class="left">
-                    
-                </ul>
-                
-                <ul class="right">
-                    <li><a href="#what">What</a></li>
-                    <li><a href="#who">Who</a></li>
-                    <li><a href="#where">Where</a></li>
-                    <li><a href="#when">When</a></li>
-                    <li><a href="#why">Why</a></li>
-
-                    <li class="has-dropdown">
-                        <a href="#">Now</a>        
-                        <ul class="dropdown">
-                            <li><a href="#">Be</a></li>
-                            <li><a href="#">Do</a></li>                            
-                            <li><a href="#">Know</a></li>
-                            <li class="active"><a href="#">Active link in dropdown</a></li>
-                        </ul>
-                    </li>
-                </ul>
-
-
-            </section>
-        </nav>
-        -->
-
-        <div id="overlay"></div>
-
-        <div id="graph">
-            <!-- cytoscape render here -->
-        </div>
-        
-        <div id="widgets"></div>
-        
-    </body>
-
-    <script>
-        //document.addEventListener('DOMContentLoaded', function(){
-
-        //$(document).ready(function() {
-        function ready() {
-            var ui = UI($('body'));
-
-            var server = Websocket('socket', {
-                onOpen: function() {
-
-                    var s = spacegraph(ui, $('#graph'), {
-                        start: function() {
-
-                            server.on('index', this.addChannel);
-                            server.on('chat', this.addChannel);
-                            server.on('source/index', this.addChannel);
-
-                            newPopupMenu(this);
-                        }
-                    });
-
-                    s.nodeProcessor.push(new ListToText());
-                    s.nodeProcessor.push(new UrlToIFrame());
-
-                    s.addChannel(new Channel( newExampleChannel1(), server));
-
-                }
-            });
-
+    <!-- script src="lib/webcomponents-lite.min.js"></script> -->
+    <script src="example_channels.js"></script>
+    <style>
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
 
-        
-    </script>
-    
-    <link rel="import" onload="ready()" href="head.html">
-    <link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
+        #graphcanvas {
+            float: right;
+            width: 75%;
+            height: 100%;
+        }
+
+        #sidebar {
+            position: absolute;
+            float: left;
+            height: 100%;
+            width: 25%;
+            font-size: 150%;
+            /*background-color: black;*/
+            opacity: 0.8;
+            z-index: 6000;
+        }
+    </style>
+</head>
+
+<body>
+<div id="sidebar" class="ui inverted menu"></div>
+<div id="graphcanvas" class="spacegraph"></div>
+</body>
+
+<script>
+    function ready() {
+
+
+        var s = spacegraph($('#graphcanvas'), {
+            start: function () {
+
+                newPopupMenu(this);
+
+                s.nodeProcessor.push(new ListToText());
+                s.nodeProcessor.push(new UrlToIFrame());
+
+            }
+        });
+
+        window.s = s;
+
+        var menu = $('#sidebar');
+        menu.append($('<button>Tag Graph</button>').click(function () {
+            s.clear();
+
+            var index = new TagIndex(function (i) {
+                i.activateRoots(1, 4);
+                s.addChannel(i.channel);
+            });
+            s.layout({name: 'random'});
+        }));
+
+        menu.append($('<button>Tag Accordion</button>').click(function () {
+
+            //http://semantic-ui.com/modules/accordion.html#/examples
+            var index = new TagIndex(function (i) {
+
+                s.addChannel(c = new Channel({
+                    nodes: [{
+                        width: 64,
+                        height: 64,
+                        widget: {
+                            html: new TagIndexAccordion(i),
+                            scale: 0.8,
+                            minPixels: 8,
+                            pixelScale: 300
+                        }
+                    }]
+                }));
+            });
+        }));
+
+        menu.append($('<button>Text</button>').click(function () {
+            s.addChannel(new Channel({
+                nodes: [{
+                    width: 64,
+                    height: 64,
+                    widget: {
+                        html: '<div style="width: 100%; height: 100%;"><div contenteditable="true" class="editable">...</div><br/></div>',
+                        style: {},
+                        scale: 0.9,
+                        minPixels: 8,
+                        pixelScale: 200
+                    }
+                }]
+            }));
+
+        }));
+
+        menu.append($('<button>Map 2D</button>').click(function () {
+
+            var mapWrap = $('<div style="width: 400px; height: 400px;"></div>');
+
+            setTimeout(function() {
+                var map = L.map(mapWrap[0]);
+                map.setView([51.505, -0.09], 13);
+
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            }, 0);
+
+            s.addChannel(new Channel({
+                nodes: [{
+                    width: 400, //matches above dimensions
+                    height: 400,
+                    widget: {
+                        html: mapWrap,
+                        style: {},
+                        scale: 0.9,
+                        minPixels: 8,
+                        pixelScale: 400
+                    }
+                }]
+            }));
+        }));
+
+        menu.append($('<button>Video</button>').click(function () {
+
+            s.addChannel(new Channel({
+                nodes: [{
+                    width: 64,
+                    height: 64,
+                    widget: {
+                        html: '<iframe width="560" height="315" src="https://www.youtube.com/embed/vDpGq4QWyUs" frameborder="0" allowfullscreen></iframe>',
+                        style: {},
+                        scale: 0.8,
+                        minPixels: 8,
+                        pixelScale: 300
+                    }
+                }]
+            }));
+
+        }));
+
+        menu.append($('<button>Wikipedia</button>').click(function () {
+
+            var h = $('<div style="width:100%">');
+            var tb = $('<input type="text" placeholder="topic"/>').appendTo(h);
+            var bb = $('<button>Wikipedia</button>').appendTo(h);
+            bb.click(function () {
+                var url = 'http://en.m.wikipedia.org/wiki/' + tb.val();
+                h.html('<iframe style="width: 100%; height: 100%" src="' + url + '"></iframe>');
+            });
+            //'<div style="width: 100%; height: 100%; background-color: orange; border: 2px solid black;"><div contenteditable="true" class="editable">WTF</div><br/><button>OK</button></div>'
+
+            s.addChannel(new Channel({
+                nodes: [{
+                    width: 64,
+                    height: 64,
+                    widget: {
+                        html: h,
+                        style: {},
+                        scale: 0.8,
+                        minPixels: 8,
+                        pixelScale: 300
+                    }
+                }]
+            }));
+        }));
+        menu.append($('<button>Widget Test</button>').click(function () {
+            s.clear();
+            s.addChannel(new Channel({
+                id: 'widgetTest',
+                nodes: [{
+                    width: 64,
+                    height: 64,
+                    widget: {
+                        html: '<div style="width: 100%; height: 100%; background-color: orange; border: 2px solid black;"><div contenteditable="true" class="editable">WTF</div><br/><button>OK</button></div>',
+                        style: {},
+                        scale: 0.9,
+                        minPixels: 8
+                    }
+                }]
+            }));
+            s.layout({name: 'random'});
+        }));
+        menu.append($('<button>Types Demo</button>').click(function () {
+            s.clear();
+            s.addChannel(new Channel(newExampleChannel1()));
+        }));
+
+        menu.append('<hr/>');
+
+        menu.append($('<button>CLEAR</button>').click(function () {
+            s.clear();
+        }));
+
+        menu.append('<hr/>');
+
+        menu.append('<i class="random icon"></i>');
+        menu.append($('<a href="#">F</a>').click(function () {
+            s.setLayout({
+                name: 'cose',
+
+                refresh: 4, //4,
+                iterations: 8,
+                randomize: true
+            });
+        }));
+        menu.append($('<a href="#">G</a>').click(function () {
+            s.setLayout({
+                name: 'grid'
+            });
+        }));
+        menu.append($('<a href="#">C</a>').click(function () {
+            s.setLayout({
+                name: 'concentric'
+            });
+        }));
+        menu.append($('<a href="#">T</a>').click(function () {
+            s.setLayout({
+                name: 'breadthfirst'
+            });
+        }));
+        menu.append($('<a href="#">t</a>').click(function () {
+            s.setLayout({
+                name: 'breadthfirst',
+                directed: true,
+                boundingBox: {x1: 0, y1: 0, x2: 100, y2: 800} //vertical
+            });
+        }));
+        menu.append($('<a href="#">S</a>').click(function () {
+            s.setLayout({
+                name: 'breadthfirst',
+                circle: true
+            });
+        }));
+        menu.append($('<a href="#">R</a>').click(function () {
+            s.setLayout({
+                name: 'random'
+            });
+        }));
+    }
+
+</script>
+
+<link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
+
+<link rel="import" onload="ready()" href="head.html">
+
+<link rel="import" href="head.leaflet.html">
+<link rel="stylesheet" href="map2d.css">
 
 </html>

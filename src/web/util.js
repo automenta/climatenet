@@ -134,8 +134,8 @@ class TagIndex {
     }
 
 
-    activateRoots(levels) {
-        var MAX_NODES = 4, count = 0;
+    activateRoots(levels, MAX_NODES) {
+        var count = 0;
 
         var roots = [];
         var nodes = [];
@@ -145,13 +145,14 @@ class TagIndex {
         for (var i = 0; i < nn.length; i++) {
             var t = this.tag.node(nn[i]);
 
-            var id = t.id;
-
-            //TODO temporary
-            if (id.indexOf(' ')!=-1) {
+            //TODO temporary - should be filtered by server
+            if (!t || !t.id || t.id.indexOf(' ')!=-1) {
                 console.error('invalid tag ID: ' + id);
                 continue;
             }
+
+            var id = t.id;
+
 
             var parent = this.tag.predecessors( id );
             if (parent.length > 0) {
@@ -162,7 +163,7 @@ class TagIndex {
 
             this.graphize(id, levels, nodes, edges);
 
-            if (count++ == MAX_NODES) break; //TEMPORARY
+            if (MAX_NODES && count++ == MAX_NODES) break;
         }
 
         this.channel.add(nodes, edges);
@@ -350,17 +351,32 @@ class Channel extends EventEmitter {
 
 
         this.ui = null;
-        this.data = initialData || { };
+
         this.prev = { };
         this.commit = function() { }; //empty
 
         //set channel name
         if (typeof(initialData)==="string")
             initialData = { id: initialData };
-
+        this.data = initialData || { };
+        if (!this.data.id) {
+            //assign random uuid
+            this.data.id = uuid();
+        }
 
         if (!this.data.nodes) this.data.nodes =[];
         if (!this.data.edges) this.data.edges =[];
+
+        var u = uuid();
+        var uc = 0;
+
+        var ensureID = function(x) {
+            if (!x.id) x.id = u + (uc++);
+        };
+
+        //assign unique uuid to any nodes missing an id
+        _.each(this.data.nodes, ensureID);
+        _.each(this.data.edges, ensureID);
 
     }
 
@@ -696,3 +712,31 @@ function urlQuery(variable) {
 var ajaxFail = function (v, m) {
     console.error('AJAJ Err:', v, m);
 };
+
+
+function uuid() {
+    //Mongo _id = 12 bytes (BSON) = Math.pow(2, 12*8) = 7.922816251426434e+28 permutations
+    //UUID = 128 bit = Math.pow(2, 128) = 3.402823669209385e+38 permutations
+
+    //RFC 2396 - Allowed characters in a URI - http://www.ietf.org/rfc/rfc2396.txt
+    //		removing all that would confuse jquery
+    //var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz-_.!~*\'()";
+    //var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz-_";
+
+    //TODO recalculate this
+    //70 possible chars
+    //	21 chars = 5.58545864083284e+38 ( > UUID) permutations
+    //		if we allow author+objectID >= 21 then we can guarantee approximate sparseness as UUID spec
+    //			so we should choose 11 character Nobject UUID length
+
+    //TODO recalculate, removed the '-' which affects some query selectors if - is first
+    var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz_";
+
+    var string_length = 11;
+    var randomstring = '';
+    for (var i = 0; i < string_length; i++) {
+        var rnum = Math.floor(Math.random() * chars.length);
+        randomstring += chars[rnum];
+    }
+    return randomstring;
+}
