@@ -5,12 +5,14 @@
  */
 package automenta.knowtention.channel;
 
+import automenta.climatenet.ElasticChannel;
+import automenta.climatenet.elastic.ElasticSpacetime;
 import automenta.knowtention.Channel;
-import automenta.knowtention.Channel.JTransaction;
 import automenta.knowtention.Core;
 import automenta.knowtention.Runner;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,7 +27,7 @@ import java.util.logging.Logger;
  * Watches a file for changes ("tail -f"), creating new nodes for each line with
  * appropriate metadata
  */
-public class LineFileChannel extends Runner {
+public class FileTailWindow extends Runner {
 
     final String id;
     long delayPeriodMS = 1000;
@@ -34,7 +36,11 @@ public class LineFileChannel extends Runner {
     int numLines = 3;
     Channel channel;
 
-    public LineFileChannel(String id, Channel c, String filename) {        
+    public FileTailWindow(ElasticSpacetime e, String id, String filename) {
+        this(id, new ElasticChannel(e, id, "feature"), filename);
+    }
+
+    public FileTailWindow(String id, Channel c, String filename) {
         this.channel = c;
         this.id = id;
         this.file = new File(filename);
@@ -108,13 +114,13 @@ public class LineFileChannel extends Runner {
                 fileInputStream = null;
                 
             } catch (Exception ex) {
-                Logger.getLogger(LineFileChannel.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(FileTailWindow.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         try {
             channel.close();
         } catch (IOException ex) {
-            Logger.getLogger(LineFileChannel.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(FileTailWindow.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -171,8 +177,8 @@ public class LineFileChannel extends Runner {
     private synchronized void update(final List<String> lines) {
         
         
-        channel.tx(new JTransaction() {
-            @Override public ObjectNode run() {                
+//        channel.tx(new JTransaction() {
+//            @Override public ObjectNode run() {
                 
                 ArrayNode l = Core.newJson.arrayNode();
                 
@@ -180,15 +186,14 @@ public class LineFileChannel extends Runner {
                     l.add(lines.get(i));
                 
                 ObjectNode o = Core.newJson.objectNode();
-                o.put("id", id );
                 //o.put("content", (file.getAbsolutePath() + ":" + getClass().getSimpleName()) );
-                o.put("list", l);        
-                channel.addVertex(o);       
+                o.put("list", l);
+                channel.commit(o);
                 
-                return null;
-
-            }            
-        });
+//                return null;
+//
+//            }
+//        });
         
     }
 

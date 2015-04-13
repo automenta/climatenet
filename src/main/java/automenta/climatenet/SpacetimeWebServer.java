@@ -66,69 +66,6 @@ public class SpacetimeWebServer extends PathHandler {
     private final CachingProxyServer cache;
     private final int cacheProxyPort = 16000;
 
-    abstract public static class ReadOnlyChannel<O> extends Channel {
-
-        public ReadOnlyChannel(String id) {
-            super(id);
-        }
-
-        abstract public O nextValue();
-
-        @Override
-        public ObjectNode commit() {
-            O o = nextValue();
-            if (o instanceof ObjectNode) {
-                return super.commit((ObjectNode) o);
-            } else {
-                return super.commit(json(o));
-            }
-        }
-
-    }
-
-    /**
-     * synchronizes a document with elastic db
-     */
-    public class ElasticChannel extends ReadOnlyChannel {
-
-        private final String eType;
-        private final String eID;
-        boolean readOnly = false;
-
-        public ElasticChannel(String id, String type) {
-            super(id);
-            this.eID = id;
-            this.eType = type;
-        }
-
-        @Override
-        public Object nextValue() {
-            SearchResponse sr = db.searchID(new String[]{eID}, 0, 1, eType);
-            SearchHits hits = sr.getHits();
-            long num = hits.getTotalHits();
-            if (num == 0) {
-                return "Missing";
-            } else if (num > 1) {
-                return "Ambiguous";
-            }
-
-            return hits.getAt(0).sourceAsMap();
-        }
-
-        @Override
-        public synchronized ObjectNode commit(ObjectNode next) {
-
-            if (readOnly) {
-                throw new RuntimeException(this + " is set read-only; unable to commit change to database");
-            }
-
-            db.update(eType, eID, next.toString());
-
-            return super.commit(next);
-        }
-
-    }
-
     /**
      * wraps a channel as an HTTP handler which returns a snapshot (text) JSON
      * representation
@@ -192,7 +129,7 @@ public class SpacetimeWebServer extends PathHandler {
 
                 if (c == null) {
                     //Tag t = new Tag(id, id);
-                    c = new ElasticChannel(id, "tag");
+                    c = new ElasticChannel(db, id, "tag");
                     super.addChannel(c);
                 }
 
@@ -262,7 +199,7 @@ public class SpacetimeWebServer extends PathHandler {
                 sendTags(
                         db.searchID(
                                 getStringArrayParameter(ex, "id"), 0, 60, "tag"
-                        ), 
+                        ),
                         ex);
 
             }
@@ -273,10 +210,10 @@ public class SpacetimeWebServer extends PathHandler {
             @Override
             public void handleRequest(HttpServerExchange ex) throws Exception {
 
-                send( json(
-                        db.searchID(
-                                getStringArrayParameter(ex, "id"), 0, 60, "style"
-                        )) , 
+                send(json(
+                                db.searchID(
+                                        getStringArrayParameter(ex, "id"), 0, 60, "style"
+                                )),
                         ex);
 
             }
@@ -313,7 +250,10 @@ public class SpacetimeWebServer extends PathHandler {
             }
 
         });
+
         addPrefixPath("/wikipedia", new Wikipedia());
+
+
     }
 
 
@@ -346,6 +286,12 @@ public class SpacetimeWebServer extends PathHandler {
         new ClimateViewer(s.db);
         logger.info("Loading Netention (ontology)");
         NOntology.load(s.db);
+
+        //EXAMPLES
+        {
+            //new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention");
+            //new FileTailWindow(s.db, "netlog", "/home/me/.xchat2/scrollback/FreeNode/#netention.txt").start();
+        }
 
         if (peerEnable) {
             final TomPeer peer = new TomPeer(

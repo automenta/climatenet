@@ -7,6 +7,7 @@ package automenta.climatenet.elastic;
 
 import automenta.climatenet.Spacetime;
 import automenta.climatenet.Tag;
+import automenta.knowtention.Core;
 import com.google.common.io.Files;
 import org.apache.log4j.helpers.LogLog;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
@@ -97,7 +98,7 @@ public class ElasticSpacetime implements Spacetime {
      * creates an embedded instance
      */
     public static ElasticSpacetime local(String index, String dbPath, boolean forceInit) throws Exception {
-        EmbeddedES e = new EmbeddedES(dbPath, -1);
+        EmbeddedES e = new EmbeddedES(dbPath, 9300 /*-1*/);
         return new ElasticSpacetime(index, e.getClient(), forceInit);
     }
 
@@ -189,8 +190,7 @@ public class ElasticSpacetime implements Spacetime {
 
                 // MAPPING GOES HERE
                 String featureType = "feature";
-                String tagType = "tag";
-                
+
                 final XContentBuilder mappingBuilder = jsonBuilder().startObject()
                     //TODO mappings for 'tag'
                         /*
@@ -228,6 +228,7 @@ public class ElasticSpacetime implements Spacetime {
                         .endObject()
                         .endObject();
                 createIndexRequestBuilder.addMapping(featureType, mappingBuilder);
+
 
                 // MAPPING DONE
                 createIndexRequestBuilder.execute().actionGet();
@@ -358,20 +359,26 @@ public class ElasticSpacetime implements Spacetime {
         //System.out.println(index + " " + type + " " + n + " " + response.getHeaders());
         return bulkRequest;        
     }
-    
+
+    //TODO use non-string method of updating
     public void update(String type, String id, String json) {
+        if (id == null) id = Core.uuid();
+
         if (debug) {
-            System.out.println(index + " " + type + " " + json);
+            if (logger.isInfoEnabled())
+                logger.info(this + " update: " + index + " " + id + " " + type + " " + json);
         }
 
-        UpdateRequestBuilder u = client.prepareUpdate(index, type, id).setDoc(json);
-                
+        UpdateRequestBuilder u = client.prepareUpdate(index, type, id)
+                .setDoc(json)
+                .setDocAsUpsert(true);
+
+
         UpdateResponse r = u.execute().actionGet();
                 
-        if (debug) {
-            if (!r.getHeaders().isEmpty())
-                System.out.println(r.getHeaders());
-        }
+        if (!r.getHeaders().isEmpty() && logger.isWarnEnabled())
+            logger.warn("update response: " + r.getHeaders());
+
     }
     
     @Override

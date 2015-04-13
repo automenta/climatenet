@@ -88,44 +88,7 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
         return get().deepCopy();
     }
     
-    /** add vertex */
-    public boolean addVertex(ObjectNode vertex) {
-        if (vertex == null) return false;
-        
-        if (!get().has("nodes")) {
-            get().put("nodes", Core.newJson.arrayNode());
-        }
-        
-        ArrayNode node = (ArrayNode) get().get("nodes");
-        
-        if (!vertex.has("id")) {
-            vertex.put("id", Core.uuid());
-        }
-        
-        removeVertex(vertex.get("id").asText());
-        
-        node.add(vertex);
-        
-        commit();
-        return true;
-    }
-    
-    /** wont be necessary if vertex is changed to objectnode, not array */
-    @Deprecated protected void removeVertex(String id) {
-        ArrayNode node = (ArrayNode) get().get("nodes");
-        for (int i = 0; i < node.size(); i++) {
-            JsonNode v = node.get(i);
-            if (v.get("id").asText().equals(id)) {
-                node.remove(i);
-                break;
-            }
-        }
-    }    
-    
-    public void addEdge(ObjectNode edge) {
-        
-    }
-    
+
     /* patch may be null */
     protected void emitChange(JsonNode patch) {
         
@@ -190,6 +153,52 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
     public Iterator<JsonNode> iterator() {
         return get().iterator();
     }
-    
+
+
+    public static class GraphChannel extends Channel {
+
+        public GraphChannel(String id) {
+            super(id);
+        }
+
+        /** add vertex */
+        public synchronized boolean addVertex(ObjectNode vertex) {
+            if (vertex == null) return false;
+
+            if (!get().has("nodes")) {
+                get().put("nodes", Core.newJson.arrayNode());
+            }
+
+            ArrayNode node = (ArrayNode) get().get("nodes");
+
+            if (!vertex.has("id")) {
+                vertex.put("id", Core.uuid());
+            }
+
+            removeVertex(vertex.get("id").asText());
+
+            node.add(vertex);
+
+            commit();
+            return true;
+        }
+
+        /** wont be necessary if vertex is changed to objectnode, not array */
+        @Deprecated protected void removeVertex(String id) {
+            ArrayNode node = (ArrayNode) get().get("nodes");
+            for (int i = 0; i < node.size(); i++) {
+                JsonNode v = node.get(i);
+                if (v.get("id").asText().equals(id)) {
+                    node.remove(i);
+                    break;
+                }
+            }
+        }
+
+        public void addEdge(ObjectNode edge) {
+
+        }
+
+    }
     
 }
