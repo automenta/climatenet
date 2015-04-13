@@ -1,127 +1,160 @@
-<!doctype html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>?</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <style>
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color:black!important;
+            color: gray!important;
+            line-height:1.1!important;
+            font-family:Arial,Helvetica,sans-serif !important;
+        }
+
+        #view {
+            float: right;
+            width: 75%;
+            height: 100%;
+        }
+
+        #sidebar {
+            position: absolute;
+            float: left;
+            height: 100%;
+            width: 25%;
+            font-size: 100%;
+            /*background-color: black;*/
+            z-index: 6000;
+            margin: 0 !important;
+        }
+    </style>
 </head>
+
 <body>
-
-
-<div class="ui left inverted labeled icon wide sidebar menu visible">
-
-    <div class="ui horizontal left inverted icon menu">
-
-        <a class="red item">
-            <i class="mail icon"></i>
-        </a>
-        <a class="teal item">
-            <i class="lab icon"></i>
-        </a>
-        <a class="green item">
-            <i class="star icon"></i>
-        </a>
-
-    </div>
-
-    <a class="ui item">
-        <div class="inverted ui transparent mini icon input">
-            <input type="text" placeholder="..">
-            <i class="search icon"></i>
-        </div>
-    </a>
-
-    <div class="ui grid">
-        <a class="item">
-            <i class="home icon"></i>
-            Home
-        </a>
-        <a class="item">
-            <i class="block layout icon"></i>
-            Topics
-        </a>
-        <a class="item">
-            <i class="smile icon"></i>
-            Friends
-        </a>
-        <a class="item">
-            <i class="calendar icon"></i>
-            History
-        </a>
-        <a class="item">
-            <i class="mail icon"></i>
-            Messages
-        </a>
-        <a class="item">
-            <i class="chat icon"></i>
-            Discussions
-        </a>
-        <a class="item">
-            <i class="trophy icon"></i>
-            Achievements
-        </a>
-        <a class="item">
-            <i class="shop icon"></i>
-            Store
-        </a>
-    </div>
-    <!--<a class="ui item">-->
-        <div class="ui item inverted vertical accordion">
-            <div class="active title">
-                <i class="dropdown icon"></i>
-                title
-            </div>
-            <div class="active content">
-                content
-            </div>
-            <div class="title">
-                <i class="dropdown icon"></i>
-                title
-            </div>
-            <div class="content">
-                content
-            </div>
-            <div class="title">
-                <i class="dropdown icon"></i>
-                title
-            </div>
-            <div class="content">
-                content
-            </div>
-        </div>
-
-    <!--</a>-->
-
-</div>
-
-
-<div class="ui top attached tabular menu">
-    <a class="active item" data-tab="first">First</a>
-    <a class="item" data-tab="second">Second</a>
-    <a class="item" data-tab="third">Third</a>
-</div>
-<div class="ui bottom attached active tab segment" data-tab="first">
-    First
-</div>
-<div class="ui bottom attached tab segment" data-tab="second">
-    Second
-</div>
-<div class="ui bottom attached tab segment" data-tab="third">
-    Third
-</div>
-
+    <div id="sidebar" class="ui inverted menu"></div>
+</body>
 
 <script>
     function ready() {
-        //$('.left.demo.sidebar').sidebar('toggle');
-        //$('.left.demo.sidebar').sidebar('toggle');
-        $('.ui.accordion').accordion();
-        $('.tabular.menu .item').tab();
+
+
+        var app = {
+
+            views: {
+                'graph': new GraphView(),
+                'map2d': new Map2DView(),
+                'map3d': new Map3DView(),
+                'wikipedia': new WikipediaView(),
+                'space1': new HTMLView('Spaces Test', 'lab', 'space.html')
+
+            },
+
+            setView: function(v, cb) {
+
+                if (this.currentView) {
+                    try {
+                        this.currentView.stop();
+                    }
+                    catch (e) {
+                        console.error(e);
+                        notify(JSON.stringify(e));
+                    }
+                    $('#view').remove();
+                }
+
+                this.currentView = this.views[v];
+
+                if (this.currentView) {
+                    var viewTarget = $('<div id="view"></div>');
+                    $('body').append(viewTarget);
+                    try {
+                        this.currentView.start(viewTarget, cb);
+                    }
+                    catch (e) {
+                        console.trace();
+                        console.error(e);
+                        viewTarget.html('ERROR setView(' + v + '): ' + e);
+                    }
+                }
+
+            },
+
+            newViewControl : function() {
+                //http://semantic-ui.com/elements/button.html#colored-group
+                /*<div class="large ui buttons">
+                 <div class="ui button">One</div>
+                 <div class="ui button">Two</div>
+                 <div class="ui button">Three</div>
+                 </div>
+                 */
+                var that = this;
+
+                var d = $('<div class="ui buttons inverted">');
+                _.each(that.views, function(v, k) {
+                    d.append($('<div class="ui icon button"></div>').append($('<i class="' + v.icon + ' icon"></i>'))
+                        /*.attr('data-content', v.name)
+                         .popup()*/
+                            .click(function() {
+                                //setTimeout(function() {
+                                    that.setView(k);
+                                //}, 0);
+                            }));
+                });
+                return d;
+
+            }
+
+        };
+
+        Backbone.Router.extend({
+
+            routes: {
+                "help":                 "help",    // #help
+                "search/:query":        "search",  // #search/kiwis
+                "search/:query/p:page": "search"   // #search/kiwis/p7
+            },
+
+
+            help: function() {
+
+            },
+
+            search: function(query, page) {
+
+            }
+
+        });
+        Backbone.history.start({pushState: true});
+
+
+
+        $('#sidebar').append(app.newViewControl());
+
+        new TagIndex(function (i) {
+            $('#sidebar').append(new TagIndexAccordion(i));
+        });
+
     }
+
+
+
 </script>
-</body>
+
+<link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
+
+<script src="spacegraph.demo.js"></script>
+<script src="view.js"></script>
+<script src="view.wikipedia.js"></script>
+
 
 <link rel="import" onload="ready()" href="head.html">
+<link rel="import" href="head.leaflet.html">
 
 
 </html>

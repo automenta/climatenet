@@ -18,6 +18,7 @@
         "pnotify": "latest",
         "lodash": "latest",
         "semantic": "latest",
-        "backbone": "latest"
+        "backbone": "latest",
+        "es6-shim": "latest"
     }
 }

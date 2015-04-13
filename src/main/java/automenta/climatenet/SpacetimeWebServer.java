@@ -9,6 +9,7 @@ import automenta.climatenet.data.ClimateViewer;
 import automenta.climatenet.data.NOntology;
 import automenta.climatenet.data.SchemaOrg;
 import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.netention.Wikipedia;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import static automenta.knowtention.Core.newJson;
@@ -311,7 +313,7 @@ public class SpacetimeWebServer extends PathHandler {
             }
 
         });
-
+        addPrefixPath("/wikipedia", new Wikipedia());
     }
 
 
@@ -371,6 +373,20 @@ public class SpacetimeWebServer extends PathHandler {
         }
 
         s.start();
+    }
+
+    public static void send(String s, HttpServerExchange ex) {
+        ex.startBlocking();
+
+        ex.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+
+        try {
+            ex.getOutputStream().write(Charset.forName("UTF-8").encode(s).array());
+        } catch (IOException e) {
+            logger.error(e.toString());
+        }
+
+        ex.getResponseSender().close();
     }
 
     public static void send(JsonNode d, HttpServerExchange ex) {

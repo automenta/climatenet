@@ -20,6 +20,33 @@ class NView {
 
 }
 
+/* loads a static HTML file via AJAX URL to the view */
+class HTMLView {
+
+    constructor(name, icon, url) {
+        super(name, icon);
+        this.url = url;
+    }
+
+    start(v, cb) {
+
+        //v.append('<iframe src="" style="width:100%;height100%">');
+
+        $.get(this.url)
+            .done(function (h) {
+                v.html(h);
+            })
+            .fail(function (err) {
+                v.html(err);
+            });
+
+    }
+
+    stop(v) {
+
+    }
+}
+
 /** spacegraph (via cytoscape.js) */
 class GraphView extends NView {
 
@@ -35,6 +62,15 @@ class GraphView extends NView {
 
                 //s.nodeProcessor.push(new ListToText());
                 //s.nodeProcessor.push(new UrlToIFrame());
+
+                var m = newSpacegraphDemoMenu(this);
+                m.css('position', 'absolute');
+                m.css('right', '0');
+                m.css('bottom', '0');
+                m.css('z-index', '10000');
+                m.css('opacity', '0.8');
+
+                v.append(m);
 
                 if (cb) cb();
             }
@@ -68,7 +104,7 @@ class Map2DView extends NView {
     }
 
     stop() {
-        if (this.map!=null) {
+        if (this.map != null) {
             this.map.remove();
             this.map = null;
         }
@@ -91,7 +127,7 @@ class Map3DView extends NView {
 
         var that = this;
 
-        var init = function() {
+        var init = function () {
 
             var u = uuid();
             var d = newDiv(u);
@@ -133,9 +169,9 @@ class Map3DView extends NView {
     }
 
     stop() {
-        if (that.viewer) {
-            that.viewer.destroy()
-            that.viewer = null;
+        if (this.viewer) {
+            this.viewer.destroy()
+            this.viewer = null;
         }
     }
 

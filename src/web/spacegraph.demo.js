@@ -172,14 +172,11 @@ function newSpacegraphDemoMenu(s) {
 
     menu.append('<hr/>');
 
-    menu.append($('<button>CLEAR</button>').click(function () {
+    menu.append($('<button><i class="recycle icon"></i></button>').click(function () {
         s.clear();
     }));
 
-    menu.append('<hr/>');
-
-    menu.append('<i class="random icon"></i>');
-    menu.append($('<a href="#">F</a>').click(function () {
+    menu.append($('<button>F</button>').click(function () {
         s.setLayout({
             name: 'cose',
 
@@ -188,35 +185,35 @@ function newSpacegraphDemoMenu(s) {
             randomize: true
         });
     }));
-    menu.append($('<a href="#">G</a>').click(function () {
+    menu.append($('<button>G</button>').click(function () {
         s.setLayout({
             name: 'grid'
         });
     }));
-    menu.append($('<a href="#">C</a>').click(function () {
+    menu.append($('<button>C</button>').click(function () {
         s.setLayout({
             name: 'concentric'
         });
     }));
-    menu.append($('<a href="#">T</a>').click(function () {
+    menu.append($('<button>T</button>').click(function () {
         s.setLayout({
             name: 'breadthfirst'
         });
     }));
-    menu.append($('<a href="#">t</a>').click(function () {
+    menu.append($('<button>t</button>').click(function () {
         s.setLayout({
             name: 'breadthfirst',
             directed: true,
             boundingBox: {x1: 0, y1: 0, x2: 100, y2: 800} //vertical
         });
     }));
-    menu.append($('<a href="#">S</a>').click(function () {
+    menu.append($('<button>S</button>').click(function () {
         s.setLayout({
             name: 'breadthfirst',
             circle: true
         });
     }));
-    menu.append($('<a href="#">R</a>').click(function () {
+    menu.append($('<button>R</button>').click(function () {
         s.setLayout({
             name: 'random'
         });
