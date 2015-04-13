@@ -27,10 +27,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- *
  * @author me
  */
 public class Wikipedia implements HttpHandler {
@@ -42,13 +44,22 @@ public class Wikipedia implements HttpHandler {
 
     }
 
-    public String returnPage(Document doc) {
+    public final static String[] removedClasses = {
+            "IPA",
+            "search-types",
+            "mw-specialpage-summary",
+            "mw-search-top-table",
+            "#coordinates", "ambox", "noprint", "editlink",
+            "thumbcaption", "magnify", "mw-editsection", "siteNotice",
+            "mw-indicators"
+    };
+
+    public String filterPage(Document doc) {
         String location = doc.location();
         if (location.contains("/"))
-            location = location.substring(location.lastIndexOf("/")+1, location.length());
+            location = location.substring(location.lastIndexOf("/") + 1, location.length());
 
         //String uri = "http://dbpedia.org/resource/" + location;
-
 
 
 //        Vertex v = core.vertex( u(uri), true);
@@ -56,67 +67,70 @@ public class Wikipedia implements HttpHandler {
 //        if ( !core.cached(v, "wikipedia") )  {
 //            core.cache(v, "wikipedia");
 
-            //<link rel="canonical" href="http://en.wikipedia.org/wiki/Lysergic_acid_diethylamide" />
-            Elements cs = doc.getElementsByTag("link");
-            if (cs!=null) {
-                for (Element e : cs) {
-                    if (e.hasAttr("rel") && e.attr("rel").equals("canonical"))
-                        location = e.attr("href");
-                }
+        //<link rel="canonical" href="http://en.wikipedia.org/wiki/Lysergic_acid_diethylamide" />
+        Elements cs = doc.getElementsByTag("link");
+        if (cs != null) {
+            for (Element e : cs) {
+                if (e.hasAttr("rel") && e.attr("rel").equals("canonical"))
+                    location = e.attr("href");
+            }
+        }
+
+        try {
+            //TODO combine all of these into one filter and run through all elements once
+            doc.getElementsByTag("head").remove();
+            doc.getElementsByTag("script").remove();
+            doc.getElementsByTag("link").remove();
+            doc.getElementById("top").remove();
+            doc.getElementById("siteSub").remove();
+            doc.getElementById("contentSub").remove();
+            doc.getElementById("jump-to-nav").remove();
+
+
+            for (String r : removedClasses) {
+                doc.getElementsByClass(r).remove();
             }
 
-            try {
-                doc.getElementsByTag("head").remove();
-                doc.getElementsByTag("script").remove();
-                doc.getElementsByTag("link").remove();
-                doc.getElementById("top").remove();
-                doc.getElementById("siteSub").remove();
-                doc.getElementById("contentSub").remove();
-                doc.getElementById("jump-to-nav").remove();
-                doc.getElementsByClass("IPA").remove();
-                doc.getElementsByClass("search-types").remove();
-                doc.getElementsByClass("mw-specialpage-summary").remove();
-                doc.getElementsByClass("mw-search-top-table").remove();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+
+        removeComments(doc);
+
+        //references and citations consume a lot of space
+        Elements refs = doc.getElementsByClass("references");
+        if (refs != null)
+            refs.remove();
+
+
+        Map<String, Object> m = new HashMap();
+        m.put("url", location);
+
+
+        String metadata = new Gson().toJson(m);
+        doc.getElementById("content").prepend("<div id='_meta'>" + metadata + "</div>");
+
+        String content = doc.getElementById("content").toString();
+
+        Elements catlinks = doc.select(".mw-normal-catlinks li a");
+        List<String> categories = new ArrayList();
+        for (Element e : catlinks) {
+            if (e.tag().getName().equals("a")) {
+                String c = e.attr("href");
+                c = c.substring(c.lastIndexOf('/') + 1, c.length());
+                categories.add(c);
             }
-            catch (Exception e) {
-                System.out.println(e);
-            }
+        }
 
-            removeComments(doc);
+        //v.setProperty("wikipedia_content", content);
+        //for (String s : categories) {
+        //Vertex c = core.vertex("dbpedia.org/resource/" + s, true);
+        //core.uniqueEdge(v, c, "is");
+        //}
+        //core.commit();
 
-            //references and citations consume a lot of space
-            Elements refs = doc.getElementsByClass("references");
-            if (refs!=null)
-                refs.remove();
-
-
-            Map<String,Object> m = new HashMap();
-            m.put("url", location);
-
-
-            String metadata = new Gson().toJson(m);
-            doc.getElementById("content").prepend("<div id='_meta'>" + metadata + "</div>");
-
-            String content = doc.getElementById("content").toString();
-
-            Elements catlinks = doc.select(".mw-normal-catlinks li a");
-            List<String> categories = new ArrayList();
-            for (Element e : catlinks) {
-                if (e.tag().getName().equals("a")) {
-                    String c = e.attr("href");
-                    c = c.substring(c.lastIndexOf('/')+1, c.length());
-                    categories.add(c);
-                }
-            }
-
-            //v.setProperty("wikipedia_content", content);
-            //for (String s : categories) {
-                //Vertex c = core.vertex("dbpedia.org/resource/" + s, true);
-                //core.uniqueEdge(v, c, "is");
-            //}
-            //core.commit();
-
-            //req.response().end(content);
+        //req.response().end(content);
 
 //        else {
 //            System.out.println("wikipedia cached " + uri);
@@ -137,34 +151,36 @@ public class Wikipedia implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange ex) throws Exception {
 
-        System.out.println("wikipedia handle request: " + ex + ex.getQueryString() + " " + ex.getRequestPath());
+        //System.out.println("wikipedia handle request: " + ex + ex.getQueryString() + " " + ex.getRequestPath());
 
         String[] sections = ex.getRequestPath().split("/");
         if (sections.length == 5) {
+            String u = null;
             switch (sections[2]) {
                 case "page":
                     //"/wikipedia/page/:pageID/html"
                     String wikipage = sections[3];
-
-                    String u = "http://en.wikipedia.org/wiki/" + wikipage;
-
-                    Document doc = Jsoup.connect(u).get();
-
-                    String result = returnPage(doc);
-
-                    SpacetimeWebServer.send(result, ex);
+                    u = "http://en.wikipedia.org/wiki/" + wikipage;
                     break;
                 case "search":
-
+                    //"/wikipedia/search/:query/html"
+                    String q = sections[3];
+                    u = "http://en.wikipedia.org/w/index.php?search=" + q;
                     break;
             }
 
+            String result;
+            if (u == null) {
+                result = "Invalid request: " + ex.getRequestPath();
+            }
+            else {
+                Document doc = Jsoup.connect(u).get();
+                result = filterPage(doc);
+            }
 
+            SpacetimeWebServer.send(result, ex);
 
-//                bus.publish(Bus.INTEREST_WIKIPEDIA, wikipage);
-         }
-        //r.get("/wikipedia/search/:query", new WikiSearch(e));
-
+        }
     }
 
 
@@ -218,7 +234,7 @@ public class Wikipedia implements HttpHandler {
 //    }
 //
 
-     public static void removeComments(Node node) {
+    public static void removeComments(Node node) {
         // as we are removing child nodes while iterating, we cannot use a normal foreach over children,
         // or will get a concurrent list modification error.
         int i = 0;

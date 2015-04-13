@@ -688,6 +688,11 @@ function newDiv(id) {
         e.attr('id', id);
     return e;
 }
+function newDivClassed(c) {
+    var d = newDiv();
+    d.addClass(c);
+    return d;
+}
 
 function newEle(e, dom) {
     var d = document.createElement(e);

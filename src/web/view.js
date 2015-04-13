@@ -21,7 +21,7 @@ class NView {
 }
 
 /* loads a static HTML file via AJAX URL to the view */
-class HTMLView {
+class HTMLView extends NView {
 
     constructor(name, icon, url) {
         super(name, icon);

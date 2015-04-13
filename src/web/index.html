@@ -50,7 +50,7 @@
                 'graph': new GraphView(),
                 'map2d': new Map2DView(),
                 'map3d': new Map3DView(),
-                'wikipedia': new WikipediaView(),
+                'wikipedia': new WikipediaView('Happiness'),
                 'space1': new HTMLView('Spaces Test', 'lab', 'space.html')
 
             },
@@ -115,19 +115,19 @@
         Backbone.Router.extend({
 
             routes: {
-                "help":                 "help",    // #help
-                "search/:query":        "search",  // #search/kiwis
-                "search/:query/p:page": "search"   // #search/kiwis/p7
-            },
-
-
-            help: function() {
-
-            },
-
-            search: function(query, page) {
-
+//                "help":                 "help",    // #help
+//                "search/:query":        "search",  // #search/kiwis
+//                "search/:query/p:page": "search"   // #search/kiwis/p7
             }
+
+
+//            help: function() {
+//
+//            },
+//
+//            search: function(query, page) {
+//
+//            }
 
         });
         Backbone.history.start({pushState: true});
@@ -147,9 +147,11 @@
 </script>
 
 <link type="text/css" rel="stylesheet" href="spacegraph.dark.css"/>
-
 <script src="spacegraph.demo.js"></script>
+
 <script src="view.js"></script>
+
+<link type="text/css" rel="stylesheet" href="view.wikipedia.css"/>
 <script src="view.wikipedia.js"></script>
 
 
