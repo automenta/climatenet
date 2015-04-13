@@ -181,6 +181,13 @@ function newWikiBrowser(options) {
                 }
             });
 
+            //remove opaque table backgrounds
+            var tables = br.find('table');
+            tables.css('background', 'transparent');
+            tables.css('border', 'none');
+
+
+            //move page header to top section
             var heading = br.find('#firstHeading');
             heading.detach();
             headerTitle.html(heading);
@@ -205,6 +212,62 @@ function newWikiBrowser(options) {
     return b;
 }
 
+function newSubjectDropdown() {
+
+//<select class="ui search dropdown">
+//    <option value="">State</option>
+//    <option value="AL">Alabama</option>
+    var s = $('<select class="ui search dropdown">');
+    s.append('<option value="">Subject</option>');
+    s.append('<option value="me" selected>Me</option>');
+    s.append('<option value="else">Someone else</option>');
+    return s;
+}
+
+function newWikiTagger(tag) {
+    //http://semantic-ui.com/modules/modal.html#/usage
+    var d = $('<div class="ui modal">');
+    d.append('<i class="close icon"></i>');
+
+
+    var subj = newSubjectDropdown();
+    subj.css('padding', '0');
+
+    d.append($('<div class="header"/>').append('Tag ', subj,  ' with: ', $('<i>' + tag.name + '</em>')));
+
+    var c = $('<div class="content"/>').appendTo(d);
+    c.append('<div class="ui image"><i class="icon tags"></i></div>');
+
+    var cc = $('<div class="description"/>').appendTo(c);
+    //cc.append('<div class="ui header"></div>');
+
+    var option = function(id, label) {
+        cc.append('<div class="ui checkbox"><input type="checkbox" name="' + id + '"><label>' + label + '</label></div>');
+    }
+
+    option('can', 'Can');
+    option('need', 'Need');
+    option('not', 'Not');
+
+
+
+
+    /*
+
+    <div class="description">
+    <div class="ui header">We've auto-chosen a profile image for you.</div>
+    <p>We've grabbed the following image from the <a href="https://www.gravatar.com" target="_blank">gravatar</a> image associated with your registered e-mail address.</p>
+    <p>Is it okay to use this photo?</p>
+    </div>
+        */
+    var tagid = tag.id;
+
+    var a = $('<div class="actions"/>').appendTo(d);;
+    a.append('<div class="ui black button">Cancel</div>');
+    a.append('<div class="ui positive right labeled icon button">Save<i class="checkmark icon"></i></div>');
+
+    return d;
+}
 
 class WikipediaView extends NView {
 
@@ -215,29 +278,19 @@ class WikipediaView extends NView {
 
     start(v, cb) {
 
-
-        function resetView() {
-            v.html('');
-        }
-
         var goWiki = function(page, search) {
-            //resetView();
-
 
             var wiki = newWikiBrowser({ });
 
-            wiki.onSelected = function onSelected(e) {
-                //onWikiTagAdded($('#tagbar'), e);
+            wiki.onSelected = function onSelected(t) {
+                newWikiTagger(t).modal("show");
             };
 
             wiki.onURL = function (u) {
                 //uri = u;
             };
 
-
-
             v.html(wiki);
-            //$('.WikiBrowserHeader').children().detach().appendTo(v); //'#mainmenu #viewmenu');
 
             wiki.gotoTag(page, search);
 
@@ -296,63 +349,63 @@ function newWikiTagTagger(tag) {
 
 
 
-
-function goHome() {
-    resetView();
-
-    uri = '/';
-
-    //$("time.timeago").timeago();
-
-    var log = $('<div></div>').appendTo('#content');
-
-
-    function display(x) {
-        var d = $('<div></div>').addClass('item');
-
-        if (typeof x === "object") {
-            for (var k in x) {
-                if (k === 'id') {
-                    d.append('<h3>' + JSON.stringify(x[k]) + '</h3>');
-                }
-                else {
-                    var e = $('<div/>').addClass('section');
-                    e.append('<h4>' + k + '</h4>');
-                    e.append('<pre>' + JSON.stringify(x[k], null, 4) + '</pre>');
-                    d.append(e);
-                }
-            }
-        }
-        else {
-            d.append('<h3>' + JSON.stringify(x) + '</h3>');
-        }
-
-        //  d.append($('<time>').append($.timeago(new Date())));
-
-        log.prepend(d);
-        return d;
-    }
-
-
-    var publicHandler;
-    bus.registerHandler('say', publicHandler = function (message) {
-        if (!log.is(':visible')) {
-            bus.unregisterHandler('say', publicHandler);
-            return;
-        }
-
-        try {
-            display(JSON.parse(message));
-        }
-        catch (e) {
-            display(message);
-        }
-
-    });
-    later(function () {
-        bus.publish("interest", $N.myself().id);
-    });
-}
+//
+//function goHome() {
+//    resetView();
+//
+//    uri = '/';
+//
+//    //$("time.timeago").timeago();
+//
+//    var log = $('<div></div>').appendTo('#content');
+//
+//
+//    function display(x) {
+//        var d = $('<div></div>').addClass('item');
+//
+//        if (typeof x === "object") {
+//            for (var k in x) {
+//                if (k === 'id') {
+//                    d.append('<h3>' + JSON.stringify(x[k]) + '</h3>');
+//                }
+//                else {
+//                    var e = $('<div/>').addClass('section');
+//                    e.append('<h4>' + k + '</h4>');
+//                    e.append('<pre>' + JSON.stringify(x[k], null, 4) + '</pre>');
+//                    d.append(e);
+//                }
+//            }
+//        }
+//        else {
+//            d.append('<h3>' + JSON.stringify(x) + '</h3>');
+//        }
+//
+//        //  d.append($('<time>').append($.timeago(new Date())));
+//
+//        log.prepend(d);
+//        return d;
+//    }
+//
+//
+//    var publicHandler;
+//    bus.registerHandler('say', publicHandler = function (message) {
+//        if (!log.is(':visible')) {
+//            bus.unregisterHandler('say', publicHandler);
+//            return;
+//        }
+//
+//        try {
+//            display(JSON.parse(message));
+//        }
+//        catch (e) {
+//            display(message);
+//        }
+//
+//    });
+//    later(function () {
+//        bus.publish("interest", $N.myself().id);
+//    });
+//}
 
 //function goTagTable() {
 //    resetView();
@@ -529,17 +582,17 @@ function goHome() {
 //});
 
 
-function selfEdit() {
-    resetView();
-
-    var ps = $('#ProfileSelect');
-    ps.show();
-
-    var modal = $('#ProfileSelect .modal-body');
-    if (modal.children().size() === 0) {
-        modal.html(profileWidget());
-    }
-}
+//function selfEdit() {
+//    resetView();
+//
+//    var ps = $('#ProfileSelect');
+//    ps.show();
+//
+//    var modal = $('#ProfileSelect .modal-body');
+//    if (modal.children().size() === 0) {
+//        modal.html(profileWidget());
+//    }
+//}
 
 //originally from widget.profile.js
 function profileWidget() {

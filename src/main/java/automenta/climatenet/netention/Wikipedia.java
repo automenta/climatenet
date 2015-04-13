@@ -51,7 +51,7 @@ public class Wikipedia implements HttpHandler {
             "mw-search-top-table",
             "#coordinates", "ambox", "noprint", "editlink",
             "thumbcaption", "magnify", "mw-editsection", "siteNotice",
-            "mw-indicators"
+            "mw-indicators", "plainlinks"
     };
 
     public String filterPage(Document doc) {
