@@ -37,7 +37,6 @@ public class SimpleSimulation extends Channel implements Runnable {
 
         while (true) {
             update();
-            commit();
 
             try {
                 Thread.sleep(updatePeriodMS);

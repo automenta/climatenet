@@ -6,37 +6,126 @@
 
     <style>
         body {
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color:black!important;
-            color: gray!important;
-            line-height:1.1!important;
-            font-family:Arial,Helvetica,sans-serif !important;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color:black!important;
+        color: gray!important;
+        line-height:1.1!important;
+        font-family:Arial,Helvetica,sans-serif !important;
         }
 
         #view {
-            float: right;
-            width: 75%;
-            height: 100%;
+        float: right;
+        width: 75%;
+        height: 100%;
         }
 
         #sidebar {
-            position: absolute;
-            float: left;
-            height: 100%;
-            width: 25%;
-            font-size: 100%;
-            /*background-color: black;*/
-            margin: 0 !important;
+        position: absolute;
+        float: left;
+        height: 100%;
+        width: 25%;
+        font-size: 100%;
+        /*background-color: black;*/
+        margin: 0 !important;
         }
+
+
+        /*TODO move to ui.slider.css */
+        input[type=range].tagSlider {
+        -webkit-appearance: none;
+        width: 100%;
+        margin: 9.8px 0;
+        }
+        input[type=range].tagSlider:focus {
+        outline: none;
+        }
+        input[type=range].tagSlider::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 9.4px;
+        cursor: pointer;
+        box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+        background: #484d4d;
+        border-radius: 0px;
+        border: 0px solid #010101;
+        }
+        input[type=range].tagSlider::-webkit-slider-thumb {
+        box-shadow: 0px 0px 1px #670000, 0px 0px 0px #810000;
+        border: 0px solid #ff1e00;
+        height: 29px;
+        width: 18px;
+        border-radius: 0px;
+        background: #8ad445;
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -9.8px;
+        }
+        input[type=range].tagSlider:focus::-webkit-slider-runnable-track {
+        background: #484d4d;
+        }
+        input[type=range].tagSlider::-moz-range-track {
+        width: 100%;
+        height: 9.4px;
+        cursor: pointer;
+        box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+        background: #484d4d;
+        border-radius: 0px;
+        border: 0px solid #010101;
+        }
+        input[type=range].tagSlider::-moz-range-thumb {
+        box-shadow: 0px 0px 1px #670000, 0px 0px 0px #810000;
+        border: 0px solid #ff1e00;
+        height: 29px;
+        width: 18px;
+        border-radius: 0px;
+        background: #8ad445;
+        cursor: pointer;
+        }
+        input[type=range].tagSlider::-ms-track {
+        width: 100%;
+        height: 9.4px;
+        cursor: pointer;
+        background: transparent;
+        border-color: transparent;
+        color: transparent;
+        }
+        input[type=range].tagSlider::-ms-fill-lower {
+        background: #484d4d;
+        border: 0px solid #010101;
+        border-radius: 0px;
+        box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+        }
+        input[type=range].tagSlider::-ms-fill-upper {
+        background: #484d4d;
+        border: 0px solid #010101;
+        border-radius: 0px;
+        box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+        }
+        input[type=range].tagSlider::-ms-thumb {
+        box-shadow: 0px 0px 1px #670000, 0px 0px 0px #810000;
+        border: 0px solid #ff1e00;
+        height: 29px;
+        width: 18px;
+        border-radius: 0px;
+        background: #8ad445;
+        cursor: pointer;
+        height: 9.4px;
+        }
+        input[type=range].tagSlider:focus::-ms-fill-lower {
+        background: #484d4d;
+        }
+        input[type=range].tagSlider:focus::-ms-fill-upper {
+        background: #484d4d;
+        }
+
     </style>
 </head>
 
 <body>
-    <div id="sidebar" class="ui inverted menu"></div>
+<div id="sidebar" class="ui inverted menu"></div>
 </body>
 
 <script>
@@ -44,6 +133,42 @@
 
 
         var app = {
+
+            index: { },
+            focus: { },
+
+            setFocus: function(tag, amount) {
+                var prevFocus = this.focus[tag] || 0;
+                if (prevFocus == amount) return;
+
+                this.focus[tag] = amount;
+
+                var t = this.index.tag.node(tag);
+
+                if (prevFocus == 0) {
+                    //add focus
+
+                    var c = t.newChannel();
+                    t._channel = c; //the default, we'll store there
+
+                    console.log('ON: ', tag, t, c);
+                }
+                else if (amount == 0) {
+                    //remove focus
+                    if (t._channel) {
+                        if (t._channel.off)
+                            t._channel.off();
+                    }
+                    console.log('OFF: ', tag, t, c);
+                    delete this.focus[tag];
+                }
+                else {
+                    //change focus
+                }
+
+                console.log(app.focus);
+
+            },
 
             views: {
                 'graph': new GraphView(),
@@ -111,6 +236,8 @@
 
         };
 
+        window.app = app; //for console access
+
         Backbone.Router.extend({
 
             routes: {
@@ -135,11 +262,30 @@
 
         $('#sidebar').append(app.newViewControl());
 
-        new TagIndex(function (i) {
-            $('#sidebar').append(new TagIndexAccordion(i));
+        app.index = new TagIndex(function (i) {
+
+            var t = new TagIndexAccordion(i);
+
+            t.newElementHeader = function(tag) {
+
+                //http://codepen.io/thehonestape/pen/yjlGi
+                //http://thecodeplayer.com/walkthrough/spicing-up-the-html5-range-slider-input
+
+                var d = newDiv();
+                var ii = $('<input class="tagSlider" type = "range" value="0" min="0" max="100" _onchange="rangevalue.value=value"/>');
+                ii.change(function(c) {
+                    app.setFocus(tag, parseInt(ii.val()) * 0.01);
+                });
+                d.html(ii);
+                return d;
+            };
+
+            $('#sidebar').append(t);
+
         });
 
     }
+
 
 
 

@@ -47,8 +47,7 @@
             
             //TODO scroll to bottom
         }
-        
-        
+
 
         var socketURL = urlQuery('url');
         var channels = urlQuery('channels').split(',');
@@ -58,6 +57,7 @@
         
         var socket = new Websocket(socketURL, {
             onChange: function(c) {
+                wlog('change', c);
                 $('#json').html( JSON.stringify(c.data,null,4) );
             },
             onError: function(e) {

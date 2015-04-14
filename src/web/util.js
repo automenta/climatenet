@@ -5,6 +5,7 @@ class Tag {
     constructor(id, data/*tagJSON*/) {
 
         this.id = id;
+        this.meta = data;
         this.name = data.name;
         this.inh = data.inh;
 
@@ -47,6 +48,40 @@ class Tag {
         x += JSON.stringify(this.inh);
         x += '</div>'
         return x;
+    }
+
+    //creates a new channel object to manage
+    newChannel() {
+        var activation = { };
+        if (this.meta.ws) {
+            var uu = this.meta.ws.split('#');
+            var path = uu[0];
+            var chanID = uu[1];
+
+            var activation = { };
+
+            var s = new Websocket(path, {
+                onOpen: function() {
+
+                    s.on(chanID);
+
+                    console.log('Websocket connect: ' + uu);
+
+                    //activation.channel = new SocketChannel(s, { });
+                },
+                onChange: function(c) {
+                    console.log('change', JSON.stringify(c.data));
+                }
+            });
+
+            activation.off = function() {
+                s.off();
+            };
+        }
+        else {
+
+        }
+        return activation;
     }
 }
 
@@ -445,7 +480,7 @@ class SocketChannel extends Channel {
 
         this.socket = connection;
 
-        var synchPeriodMS = 1500;
+        var synchPeriodMS = 500;
 
         this.commit = _.throttle(function() {
             if (!this.socket || !this.socket.opened) {
@@ -644,11 +679,21 @@ function Websocket(path, conn) {
     };
     
     conn.off = function(channelID) {
-        if (!conn.subs[channelID]) return;
-        
-        delete conn.subs[channelID];
-        
-        conn.send(['off', channelID]);        
+        if (!channelID) {
+            //close everything and stop the wbsocket
+            for (var k in conn.subs) {
+                conn.off(k);
+            }
+            ws.close();
+        }
+        else {
+
+            if (!conn.subs[channelID]) return;
+
+            delete conn.subs[channelID];
+
+            conn.send(['off', channelID]);
+        }
         
     };
 

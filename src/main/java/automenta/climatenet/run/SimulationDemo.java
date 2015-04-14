@@ -2,7 +2,6 @@ package automenta.climatenet.run;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.data.sim.SimpleSimulation;
-import automenta.knowtention.WebSocketCore;
 
 /**
  * Created by me on 4/14/15.
@@ -25,9 +24,10 @@ public class SimulationDemo {
             //new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention");
             //new FileTailWindow(s.db, "netlog", "/home/me/.xchat2/scrollback/FreeNode/#netention.txt").start();
 
-            s.addPrefixPath("/sim", new WebSocketCore(
+            s.add("sim", new SimpleSimulation("x"));
+            /*s.addPrefixPath("/sim", new WebSocketCore(
                     new SimpleSimulation("x")
-            ).handler());
+            ).handler());*/
         }
 
 

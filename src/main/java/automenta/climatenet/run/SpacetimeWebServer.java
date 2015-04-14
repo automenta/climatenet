@@ -51,6 +51,7 @@ abstract public class SpacetimeWebServer extends PathHandler {
     final ElasticSpacetime db;
 
     final String clientPath = "./src/web";
+    private final ReadOnlyChannel<SearchResponse> index;
 
 
     private List<String> paths = new ArrayList();
@@ -97,17 +98,13 @@ abstract public class SpacetimeWebServer extends PathHandler {
                 .setHandler(this)
                 .build();
 
+        this.index = new Index(db);
+
+
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
         addPrefixPath("/", resource(
                 new FileResourceManager(new File(clientPath), 100, true, "/")).
                 setDirectoryListingEnabled(false));
-
-        Channel index = new ReadOnlyChannel<SearchResponse>("index") {
-            @Override
-            public SearchResponse nextValue() {
-                return db.tagRoots();
-            }
-        };
 
         addPrefixPath("/socket", new WebSocketCore(
                 index
@@ -253,6 +250,13 @@ abstract public class SpacetimeWebServer extends PathHandler {
         addPrefixPath("/wikipedia", new Wikipedia());
 
 
+    }
+
+    public void add(String route, Channel c) {
+        db.update("tag", route, "{ws: \"" + route + '#' + c.id + "\"}");
+        addPrefixPath("/" + route, new WebSocketCore(
+                c
+        ).handler());
     }
 
 
@@ -421,4 +425,18 @@ abstract public class SpacetimeWebServer extends PathHandler {
         return ids;
     }
 
+    public static class Index extends ReadOnlyChannel<SearchResponse> {
+        private final ElasticSpacetime db;
+
+        public Index(ElasticSpacetime db) {
+            super("index");
+            this.db = db;
+        }
+
+        @Override
+        public SearchResponse nextValue() {
+            return db.tagRoots();
+        }
+
+    }
 }

@@ -1,4 +1,5 @@
 function TagIndexAccordion(tagIndex) {
+
     var roots = tagIndex.activateRoots(1);
 
     var addChild = function (parent, tag) {
@@ -10,10 +11,11 @@ function TagIndexAccordion(tagIndex) {
         parent.append(y, z);
     }
 
+    var x;
 
     //http://semantic-ui.com/modules/accordion.html#/settings
 
-    var x = $('<div class="ui styled accordion" style="max-height: 100%; overflow: scroll" />').accordion({
+    x = $('<div class="ui styled accordion" style="max-height: 100%; overflow: scroll" />').accordion({
 
         exclusive: false,
 
@@ -25,9 +27,15 @@ function TagIndexAccordion(tagIndex) {
 
             var opened = $(this);
 
-            opened.html(''); //TODO maybe not remove if not changed; will also remove subtrees and this could be expensive
-
             var t = opened.attr('tag');
+
+            if (x.newElementHeader)
+                h = x.newElementHeader(t);
+            else
+                h = '';
+
+            opened.html(h); //TODO maybe not remove if not changed; will also remove subtrees and this could be expensive
+
 
             if (t) {
                 var nodes = [], edges = [];
