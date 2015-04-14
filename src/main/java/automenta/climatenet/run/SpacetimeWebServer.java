@@ -3,14 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet;
+package automenta.climatenet.run;
 
-import automenta.climatenet.data.ClimateViewer;
-import automenta.climatenet.data.NOntology;
-import automenta.climatenet.data.SchemaOrg;
+import automenta.climatenet.ElasticChannel;
+import automenta.climatenet.ImportKML;
+import automenta.climatenet.ReadOnlyChannel;
 import automenta.climatenet.data.elastic.ElasticSpacetime;
-import automenta.climatenet.data.sim.SimpleSimulation;
-import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.p2p.Wikipedia;
 import automenta.climatenet.p2p.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
@@ -26,10 +24,6 @@ import io.undertow.server.handlers.PathHandler;
 import io.undertow.server.handlers.resource.FileResourceManager;
 import io.undertow.util.Headers;
 import io.undertow.websockets.core.WebSocketChannel;
-import net.tomp2p.connection.PeerBean;
-import net.tomp2p.dht.PeerBuilderDHT;
-import net.tomp2p.p2p.PeerBuilder;
-import net.tomp2p.peers.Number160;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -50,7 +44,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  *
  * @author me
  */
-public class SpacetimeWebServer extends PathHandler {
+abstract public class SpacetimeWebServer extends PathHandler {
 
     public static final Logger logger = LoggerFactory.getLogger(SpacetimeWebServer.class);
 
@@ -58,14 +52,12 @@ public class SpacetimeWebServer extends PathHandler {
 
     final String clientPath = "./src/web";
 
-    final String cachePath = "cache";
 
     private List<String> paths = new ArrayList();
     private final Undertow server;
     private final String host;
     private final int port;
-    private final CachingProxyServer cache;
-    private final int cacheProxyPort = 16000;
+
 
     /**
      * wraps a channel as an HTTP handler which returns a snapshot (text) JSON
@@ -98,7 +90,6 @@ public class SpacetimeWebServer extends PathHandler {
 
 
 
-        cache = new CachingProxyServer(cacheProxyPort, cachePath);
 
         server = Undertow.builder()
                 .addHttpListener(port, host)
@@ -111,7 +102,7 @@ public class SpacetimeWebServer extends PathHandler {
                 new FileResourceManager(new File(clientPath), 100, true, "/")).
                 setDirectoryListingEnabled(false));
 
-        Channel sourceIndex = new ReadOnlyChannel<SearchResponse>("/source/index") {
+        Channel index = new ReadOnlyChannel<SearchResponse>("index") {
             @Override
             public SearchResponse nextValue() {
                 return db.tagRoots();
@@ -119,10 +110,18 @@ public class SpacetimeWebServer extends PathHandler {
         };
 
         addPrefixPath("/socket", new WebSocketCore(
-                sourceIndex
+                index
         ).handler());
 
+        addPrefixPath("/tag/index", new ChannelSnapshot(index));
+
+
+
         addPrefixPath("/tag", (new WebSocketCore() {
+
+            final String cachePath = "cache";
+            final int cacheProxyPort = 16000;
+            final CachingProxyServer cache = new CachingProxyServer(cacheProxyPort, cachePath);
 
             @Override
             public synchronized Channel getChannel(WebSocketCore.WebSocketConnection socket, String id) {
@@ -177,7 +176,7 @@ public class SpacetimeWebServer extends PathHandler {
                                     c.commit(nc);
 
                                 }
-                             
+
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -190,7 +189,6 @@ public class SpacetimeWebServer extends PathHandler {
 
         }).handler());
 
-        addPrefixPath("/tag/index", new ChannelSnapshot(sourceIndex));
 
         addPrefixPath("/tag/meta", new HttpHandler() {
 
@@ -219,7 +217,7 @@ public class SpacetimeWebServer extends PathHandler {
 
             }
 
-        });        
+        });
 
         addPrefixPath("/geoCircle", new HttpHandler() {
 
@@ -270,61 +268,6 @@ public class SpacetimeWebServer extends PathHandler {
         return super.addPrefixPath(path, handler);
     }
 
-    public static void main(String[] args) throws Exception {
-        int webPort = 9090;
-        int p2pPort = 9091;
-        String peerID = UUID.randomUUID().toString();
-        final boolean peerEnable = false;
-
-        SpacetimeWebServer s = new SpacetimeWebServer(
-                ElasticSpacetime.serverOrLocal("localhost", "cv", false),
-                webPort);
-
-
-        logger.info("Loading Schema.org (ontology)");
-        SchemaOrg.load(s.db);
-        logger.info("Loading ClimateViewer (ontology)");
-        new ClimateViewer(s.db);
-        logger.info("Loading Netention (ontology)");
-        NOntology.load(s.db);
-
-        //EXAMPLES
-        {
-            //new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention");
-            //new FileTailWindow(s.db, "netlog", "/home/me/.xchat2/scrollback/FreeNode/#netention.txt").start();
-
-            s.addPrefixPath("/sim", new WebSocketCore(
-                    new SimpleSimulation()
-            ).handler());
-        }
-
-        if (peerEnable) {
-            final TomPeer peer = new TomPeer(
-                    new PeerBuilderDHT(new PeerBuilder(Number160.createHash(peerID)).ports(p2pPort).start()).start());
-            peer.add(s.db);
-
-            s.addPrefixPath("/peer/index", new ChannelSnapshot(new ReadOnlyChannel<PeerBean>("/peer/index") {
-                @Override
-                public PeerBean nextValue() {
-                    return peer.peer.peerBean();
-                }
-            }));
-            s.addPrefixPath("/peer/connection", new ChannelSnapshot(new ReadOnlyChannel("/peer/connection") {
-                @Override
-                public Object nextValue() {
-                    return peer.peer.peer().connectionBean();
-                }
-            }));
-            s.addPrefixPath("/peer/route", new ChannelSnapshot(new ReadOnlyChannel("/peer/route") {
-                @Override
-                public Object nextValue() {
-                    return peer.peer.peer().distributedRouting().peerMap();
-                }
-            }));
-        }
-
-        s.start();
-    }
 
     public static void send(String s, HttpServerExchange ex) {
         ex.startBlocking();
@@ -434,7 +377,7 @@ public class SpacetimeWebServer extends PathHandler {
 
     public static ObjectNode json(SearchResponse response) {
         SearchHits result = response.getHits();
-                
+
         ObjectNode o = newJson.objectNode();
         if (result.totalHits() == 0) {
             return o;
@@ -445,7 +388,7 @@ public class SpacetimeWebServer extends PathHandler {
             o.put(h.getId(), p);
 
             Map<String, Object> s = h.getSource();
-            
+
             for (Map.Entry<String, Object> e : s.entrySet()) {
                 try {
                     p.put(e.getKey(), Core.json.convertValue( e.getValue(), JsonNode.class ) );

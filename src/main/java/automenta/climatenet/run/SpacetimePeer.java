@@ -3,22 +3,23 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet;
+package automenta.climatenet.run;
 
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.p2p.TomPeer.Answering;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Map;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.tomp2p.connection.Bindings;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Map;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *

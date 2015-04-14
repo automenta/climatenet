@@ -44,8 +44,22 @@ public class EmbeddedES {
                 .put("http.cors.enabled", true)
                 .put("http.cors.allow-origin ", "http://localhost:8080")
                 .put("http.port", port)
-                .put("http.compression_level", 0) //for now, leave at zero because it will assume local access
-                .put("path.data", dataDirectory);
+                .put("http.compression_level", 0); //for now, leave at zero because it will assume local access
+
+
+        if (dataDirectory!=null)
+            elasticsearchSettings.put("path.data", dataDirectory);
+        else {
+
+            //TODO THIS STILL NEEDS A DISK?
+            elasticsearchSettings.put("path.data", Files.createTempDir().getAbsolutePath());
+
+            //elasticsearchSettings.put("index.store.fs.memory.enabled", "true");
+            //elasticsearchSettings.put("index.store.fs.memory.extensions", "", "del", "gen");
+            elasticsearchSettings.put("index.store.type", "memory");
+            elasticsearchSettings.put("index.gateway.type", "none");
+            elasticsearchSettings.put("config.ignore_system_properties", true); // make sure we get what we set :)
+        }
 
         node = nodeBuilder()
                 .local(true)

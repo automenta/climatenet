@@ -117,7 +117,7 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
         
     }
     
-    public ObjectNode commit() {
+    @Deprecated public ObjectNode commit() {
         return commit(root);
     }
     

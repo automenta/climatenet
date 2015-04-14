@@ -3,7 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet;
+package automenta.climatenet.run;
+
+import automenta.climatenet.Spacetime;
 
 import java.io.BufferedReader;
 import java.io.IOException;

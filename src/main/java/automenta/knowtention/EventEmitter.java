@@ -142,7 +142,7 @@ public class EventEmitter {
 
     public void emit(final Class eventClass, final Object... params) {
         List<EventObserver> observers = events.get(eventClass);
-        
+
         if ((observers == null) || (observers.isEmpty())) return;
 
         int n = observers.size();

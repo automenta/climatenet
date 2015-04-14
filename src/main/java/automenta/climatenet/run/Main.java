@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet;
+package automenta.climatenet.run;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -77,7 +77,7 @@ public class Main {
             
             
             if (e !=null && webPort!=null) {
-                w = new SpacetimeWebServer(e, localhost, webPort);
+                w = new NetentionServer(e, localhost, webPort);
             }
             
             if (e!=null && p2pPort!=null) {

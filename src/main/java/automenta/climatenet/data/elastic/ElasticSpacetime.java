@@ -93,6 +93,10 @@ public class ElasticSpacetime implements Spacetime {
 
         };
     }
+//    public static ElasticSpacetime memory(String index, int port) throws Exception {
+//        final EmbeddedES e = new EmbeddedES(null, port);
+//        return new ElasticSpacetime(index, e.getClient(), true);
+//    }
 
     /**
      * creates an embedded instance
@@ -328,16 +332,15 @@ public class ElasticSpacetime implements Spacetime {
             public void run() {
                 /*if (debug)
                     System.out.println(this + " commiting " + bulkRequest.numberOfActions() + " actions");*/
-                
+
                 BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 
                 if (bulkResponse.hasFailures()) {
                     System.err.println(bulkResponse.buildFailureMessage());
-                }
-                else if (debug)
+                } else if (debug)
                     System.out.println(this + " committed " + bulkRequest.numberOfActions() + " actions");
             }
-            
+
         });
 
     }
@@ -391,4 +394,6 @@ public class ElasticSpacetime implements Spacetime {
     public BulkRequestBuilder addTag(BulkRequestBuilder bulk, Tag t) {
         return add(bulk, "tag", t.id, t.toJSON(false));
     }
+
+
 }

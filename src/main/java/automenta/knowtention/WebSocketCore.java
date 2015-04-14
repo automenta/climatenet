@@ -6,25 +6,20 @@
 package automenta.knowtention;
 
 import automenta.knowtention.Channel.ChannelChange;
-import automenta.knowtention.EventEmitter.EventObserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.fge.jsonpatch.JsonPatch;
-import static io.undertow.Handlers.websocket;
 import io.undertow.server.HttpHandler;
 import io.undertow.websockets.WebSocketConnectionCallback;
-import io.undertow.websockets.core.AbstractReceiveListener;
-import io.undertow.websockets.core.BufferedBinaryMessage;
-import io.undertow.websockets.core.BufferedTextMessage;
-import io.undertow.websockets.core.StreamSourceFrameChannel;
-import io.undertow.websockets.core.WebSocketCallback;
-import io.undertow.websockets.core.WebSocketChannel;
-import io.undertow.websockets.core.WebSockets;
+import io.undertow.websockets.core.*;
 import io.undertow.websockets.extensions.PerMessageDeflateHandshake;
 import io.undertow.websockets.spi.WebSocketHttpExchange;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import static io.undertow.Handlers.websocket;
 
 /**
  * Manages websocket i/o to a channel
@@ -74,15 +69,25 @@ public class WebSocketCore extends Core implements WebSocketConnectionCallback {
                 JsonNode j = Core.json.readValue(message.getData(), JsonNode.class);
                 if (j.isArray()) {
                     if (j.size() > 1) {
-
                         String operation = j.get(0).textValue();
-
-                        switch (operation) {
-                            case "p":  onPatch(j, socket); break;
-                            case "on": onOn(j, socket); break;
-                            case "!": onReload(j, socket); break;                       
-                            case "off": onOff(j, socket); break;
-                            default: onOperation(operation, channel(j), j, socket); break;
+                        if (operation!=null) {
+                            switch (operation) {
+                                case "p":
+                                    onPatch(j, socket);
+                                    break;
+                                case "on":
+                                    onOn(j, socket);
+                                    break;
+                                case "!":
+                                    onReload(j, socket);
+                                    break;
+                                case "off":
+                                    onOff(j, socket);
+                                    break;
+                                default:
+                                    onOperation(operation, channel(j), j, socket);
+                                    break;
+                            }
                         }
                     }
 

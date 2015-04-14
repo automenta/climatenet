@@ -2,6 +2,7 @@ package automenta.climatenet.data.sim;
 
 import automenta.knowtention.Channel;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.geojson.Polygon;
 
 import java.util.ArrayList;
@@ -17,11 +18,14 @@ public class SimpleSimulation extends Channel implements Runnable {
     private final ObjectMapper om = new ObjectMapper();
     long updatePeriodMS = 500;
 
-    public SimpleSimulation() {
-        super("sim");
-        RobotSimulant drone1 = new RobotSimulant("drone1", 0,0,0.1);
-        drone1.velocity.setLatitude(0.001);
-        drone1.velocity.setLongitude(0.001);
+    public SimpleSimulation(String id) {
+        super(id);
+        RobotSimulant drone1 = new RobotSimulant("drone1", 0,0,0.1,
+                new RobotSimulant.GeoSynchOrbitController());
+
+        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE);
+        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT);
+        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS);
 
         obj.add(drone1);
 
@@ -33,6 +37,7 @@ public class SimpleSimulation extends Channel implements Runnable {
 
         while (true) {
             update();
+            commit();
 
             try {
                 Thread.sleep(updatePeriodMS);
@@ -45,14 +50,28 @@ public class SimpleSimulation extends Channel implements Runnable {
         double dt = (now - lastUpdate) / 1000.0;
         lastUpdate = now;
 
-        root.removeAll();
 
+
+
+        ObjectNode next = om.getNodeFactory().objectNode();
         for (RobotSimulant r : obj) {
             Polygon p = r.update(dt);
-            root.set(r.id, om.getNodeFactory().pojoNode(p));
+
+
+            try {
+                ////TODO hack fuck jackson this is ridiculous
+                //TODO avoid using intermediate string repr here
+                String s = om.writeValueAsString(p);
+                ObjectNode vv = om.readValue(s, ObjectNode.class);
+
+                next.put(r.id, vv);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
 
-        commit();
+        commit(next);
     }
 
 }
