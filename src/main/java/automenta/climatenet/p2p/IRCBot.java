@@ -1,7 +1,7 @@
 package automenta.climatenet.p2p;
 
 import automenta.climatenet.ElasticChannel;
-import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.knowtention.Core;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.log4j.Level;

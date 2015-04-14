@@ -8,10 +8,11 @@ package automenta.climatenet;
 import automenta.climatenet.data.ClimateViewer;
 import automenta.climatenet.data.NOntology;
 import automenta.climatenet.data.SchemaOrg;
-import automenta.climatenet.elastic.ElasticSpacetime;
-import automenta.climatenet.netention.Wikipedia;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
+import automenta.climatenet.data.sim.SimpleSimulation;
 import automenta.climatenet.p2p.TomPeer;
-import automenta.climatenet.proxy.CachingProxyServer;
+import automenta.climatenet.p2p.Wikipedia;
+import automenta.climatenet.p2p.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
 import automenta.knowtention.Core;
 import automenta.knowtention.WebSocketCore;
@@ -291,6 +292,10 @@ public class SpacetimeWebServer extends PathHandler {
         {
             //new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention");
             //new FileTailWindow(s.db, "netlog", "/home/me/.xchat2/scrollback/FreeNode/#netention.txt").start();
+
+            s.addPrefixPath("/sim", new WebSocketCore(
+                    new SimpleSimulation()
+            ).handler());
         }
 
         if (peerEnable) {

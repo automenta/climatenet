@@ -7,8 +7,7 @@ package automenta.climatenet.data;
 
 import static automenta.climatenet.ImportKML.fromJSON;
 import automenta.climatenet.Tag;
-import automenta.climatenet.elastic.ElasticSpacetime;
-import automenta.climatenet.proxy.CachingProxyServer;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

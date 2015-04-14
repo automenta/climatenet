@@ -2,7 +2,7 @@ package automenta.climatenet.data;
 
 import au.com.bytecode.opencsv.CSVReader;
 import automenta.climatenet.Tag;
-import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import com.google.common.collect.Lists;
 import java.io.FileReader;
 import java.io.IOException;

@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.knowtention.channel;
+package automenta.climatenet.data;
 
 import automenta.climatenet.ElasticChannel;
-import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.knowtention.Channel;
 import automenta.knowtention.Core;
 import automenta.knowtention.Runner;

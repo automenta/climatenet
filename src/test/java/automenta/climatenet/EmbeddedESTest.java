@@ -5,7 +5,7 @@
  */
 package automenta.climatenet;
 
-import automenta.climatenet.elastic.EmbeddedES;
+import automenta.climatenet.data.elastic.EmbeddedES;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import static org.junit.Assert.assertTrue;

@@ -18,7 +18,7 @@
  *
  **************************************************************************************
  */
-package automenta.climatenet.kml.giscore;
+package automenta.climatenet.data.gis;
 
 /**
  * Container for element and attribute names used in KML

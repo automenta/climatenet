@@ -1,6 +1,6 @@
 package automenta.climatenet;
 
-import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHits;

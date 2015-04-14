@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet.elastic;
+package automenta.climatenet.data.elastic;
 
 import automenta.climatenet.Spacetime;
 import automenta.climatenet.Tag;

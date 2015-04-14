@@ -5,7 +5,7 @@
  */
 package automenta.climatenet;
 
-import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.p2p.TomPeer;
 import automenta.climatenet.p2p.TomPeer.Answering;
 import net.tomp2p.dht.PeerDHT;

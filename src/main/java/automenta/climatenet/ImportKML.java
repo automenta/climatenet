@@ -5,9 +5,9 @@
  */
 package automenta.climatenet;
 
-import automenta.climatenet.elastic.ElasticSpacetime;
-import automenta.climatenet.kml.giscore.KmlReader;
-import automenta.climatenet.kml.giscore.UrlRef;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
+import automenta.climatenet.data.gis.KmlReader;
+import automenta.climatenet.data.gis.UrlRef;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;

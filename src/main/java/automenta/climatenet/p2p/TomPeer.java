@@ -6,7 +6,7 @@
 package automenta.climatenet.p2p;
 
 import automenta.climatenet.Spacetime;
-import automenta.climatenet.elastic.ElasticSpacetime;
+import automenta.climatenet.data.elastic.ElasticSpacetime;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;

@@ -16,7 +16,7 @@
  *
  **************************************************************************************
  */
-package automenta.climatenet.kml.giscore;
+package automenta.climatenet.data.gis;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
