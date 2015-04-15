@@ -51,35 +51,29 @@ class Tag {
     }
 
     //creates a new channel object to manage
-    newChannel() {
-        var activation = { };
+    newChannel(opts) {
+        var activation;
         if (this.meta.ws) {
             var uu = this.meta.ws.split('#');
             var path = uu[0];
             var chanID = uu[1];
 
-            var activation = { };
+            if (!opts) opts = { };
 
-            var s = new Websocket(path, {
-                onOpen: function() {
 
-                    s.on(chanID);
+            opts.onOpen = function() {
 
-                    console.log('Websocket connect: ' + uu);
+                activation.on(chanID);
 
-                    //activation.channel = new SocketChannel(s, { });
-                },
-                onChange: function(c) {
-                    console.log('change', JSON.stringify(c.data));
-                }
-            });
+                console.log('Websocket connect: ' + uu);
 
-            activation.off = function() {
-                s.off();
+                //activation.channel = new SocketChannel(s, { });
             };
+
+            activation = new Websocket(path, opts);
         }
         else {
-
+            activation = { };
         }
         return activation;
     }

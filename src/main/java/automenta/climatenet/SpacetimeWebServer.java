@@ -3,11 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.climatenet.run;
+package automenta.climatenet;
 
-import automenta.climatenet.ElasticChannel;
-import automenta.climatenet.ImportKML;
-import automenta.climatenet.ReadOnlyChannel;
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.p2p.Wikipedia;
 import automenta.climatenet.p2p.proxy.CachingProxyServer;
@@ -48,7 +45,7 @@ abstract public class SpacetimeWebServer extends PathHandler {
 
     public static final Logger logger = LoggerFactory.getLogger(SpacetimeWebServer.class);
 
-    final ElasticSpacetime db;
+    public final ElasticSpacetime db;
 
     final String clientPath = "./src/web";
     private final ReadOnlyChannel<SearchResponse> index;
@@ -253,7 +250,7 @@ abstract public class SpacetimeWebServer extends PathHandler {
     }
 
     public void add(String route, Channel c) {
-        db.update("tag", route, "{ws: \"" + route + '#' + c.id + "\"}");
+        db.update("tag", c.id, "{ws: \"" + route + '#' + c.id + "\"}");
         addPrefixPath("/" + route, new WebSocketCore(
                 c
         ).handler());

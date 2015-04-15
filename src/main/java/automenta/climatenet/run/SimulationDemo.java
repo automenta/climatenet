@@ -24,7 +24,7 @@ public class SimulationDemo {
             //new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention");
             //new FileTailWindow(s.db, "netlog", "/home/me/.xchat2/scrollback/FreeNode/#netention.txt").start();
 
-            s.add("sim", new SimpleSimulation("x"));
+            s.add("demo", new SimpleSimulation("BattleTelemetry"));
             /*s.addPrefixPath("/sim", new WebSocketCore(
                     new SimpleSimulation("x")
             ).handler());*/

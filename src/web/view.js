@@ -47,6 +47,62 @@ class HTMLView extends NView {
     }
 }
 
+class FeedView extends NView {
+
+    constructor(app) {
+        super("Feeds", "cubes");
+        this.app = app;
+    }
+
+    start(v, cb) {
+
+        var a = this.app;
+        setInterval(function() {
+
+            //var vv = $('<div class="ui items" style="background-color: white"></div>');
+
+            v.html('');
+            v.addClass('ui items');
+
+            /*
+             <div class="ui items">
+                 <div class="item">
+                     <div class="ui tiny image">
+                         <img src="/images/wireframe/image.png">
+                     </div>
+                     <div class="middle aligned content">
+                         <a class="header">12 Years a Slave</a>
+                     </div>
+                 </div>
+             */
+            for (var c in a.focus) {
+
+                var ii = $('<div class="item" style="background-color: white"></div>');
+
+                var jj = $('<div class="middle aligned content"></div>');
+                jj.append('<a class="header">' + c + '</a>');
+
+                try {
+                    var chan = app.index.tag.node(c).channel.subs[c].data;
+
+                    jj.append('<pre>' + JSON.stringify(chan, null, 4) + '</pre>');
+                }
+                catch (e) {
+                    jj.append('<i>No data</i>');
+                }
+
+                ii.append('<div class="ui tiny image"><img src="icon/play.png"/></div>', jj);
+                v.append(ii);
+            }
+
+        }, 500);
+    }
+
+    stop() {
+
+    }
+}
+
 /** spacegraph (via cytoscape.js) */
 class GraphView extends NView {
 
