@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+
+
+
+</head>
+<body>
+
+    <div id="theEdit" class="nobjedit" contenteditable="true">
+        I'm describing something <span contenteditable="false">inline widget</span>
+        and somethign else
+        <span contenteditable="false"><button>click</button></span> now what
+        and then <span contenteditable="false"><input type="text" placeholder="type it"/></span>
+
+    </div>
+
+</body>
+
+    <link rel="import" href="head.html">
+
+    <link href="lib/atwho/css/jquery.atwho.css" rel="stylesheet">
+
+    <script src="lib/caret/jquery.caret.js"></script>
+    <script src="lib/atwho/js/jquery.atwho.js"></script>
+        <script>
+            $(document).ready(function() {
+
+
+
+
+
+                $('#theEdit').atwho({
+                    at: "@",
+                    data:[ "one", "two", "three", "four" ]
+                }).on("matched.atwho", function(event, flag, query) {
+                    //console.log(event, "matched " + flag + " and the result is " + query);
+                }).on("shown.atwho", function(event) {
+                    console.log(event, "hide");
+                    var at = $('.atwho-view');
+
+                    if (at.find('.atwho-overlay').length == 0)  {
+
+                        //add when first created
+                        var atb = newDivClassed('atwho-overlay').appendTo(at);
+
+                        $('<button>x</button>').appendTo(atb).css({
+                            left: "-1em"
+                        });
+                        $('<button>y</button>').appendTo(atb).css({
+                            right: "1em"
+                        });
+                        $('<button>w</button>').appendTo(atb).css({
+                            top: "-1em"
+                        });
+                        $('<button>z</button>').appendTo(atb).css({
+                            bottom: "1em"
+                        });
+                    }
+
+                    //at.fadeIn();
+
+                }).on("hidden.atwho", function(event) {
+                    console.log(event, "hide");
+                    var at = $('.atwho-view');
+                    //at.fadeOut();
+
+                }).on("reposition.atwho", function(event,pos) {
+
+                    //center on caret
+                    var at = $('.atwho-view');
+
+                    //pos.left -= at.width()/2;
+                    pos.top -= at.height()/2;
+
+                    at.offset(pos);
+                });
+            });
+        </script>
+<style>
+    body {
+        background-color: black;
+        color: orange;
+        font-family: arial;
+        font-size:250%;
+        margin: 1em;
+    }
+
+    .nobjedit {
+        border: 1px solid gray;
+    }
+
+    [contenteditable="true"] {
+        transition: outline-color 0.75s ease;
+        outline: 3px dashed green;
+        padding: 0.5em;
+    }
+    [contenteditable="true"]:hover {
+        outline-color: #0090D2;
+    }
+
+    [contenteditable="true"] [contenteditable="false"] {
+        border: 1px solid purple;
+        padding: 0.25em;
+        margin: 0.1em;
+    }
+    button {
+        color: black !important;
+    }
+
+    .atwho-view {
+        font-size: 50%;
+        opacity: 0.85;
+
+        _transform: scale(1.0); /* 1/10 of the original size */
+        _transition: transform 0.25s ease-in-out;
+    }
+    .atwho-view:hover {
+        _transform: scale(1.25);
+        opacity: 0.95;
+    }
+
+    .atwho-overlay {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    .atwho-overlay * {
+
+    }
+
+</style>
+</html>

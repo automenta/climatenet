@@ -75,6 +75,7 @@ class FeedView extends NView {
                      </div>
                  </div>
              */
+            var count = 0;
             for (var c in a.focus) {
 
                 var ii = $('<div class="item" style="background-color: white"></div>');
@@ -93,7 +94,13 @@ class FeedView extends NView {
 
                 ii.append('<div class="ui tiny image"><img src="icon/play.png"/></div>', jj);
                 v.append(ii);
+
+                count++;
             }
+
+            if (!count)
+                v.append('Focus empty');
+
 
         }, 500);
     }

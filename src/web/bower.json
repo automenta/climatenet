@@ -19,6 +19,7 @@
         "lodash": "latest",
         "semantic": "latest",
         "backbone": "latest",
-        "es6-shim": "latest"
+        "es6-shim": "latest",
+        "jquery.atwho": "ichord/At.js"
     }
 }
