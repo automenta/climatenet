@@ -113,3 +113,14 @@ input[type=range].tagSlider:focus::-ms-fill-lower {
 input[type=range].tagSlider:focus::-ms-fill-upper {
     background: #484d4d;
 }
+
+/** use with semantic-ui .modal to make a non-modal modal */
+.inlineModal {
+    position: inherit !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0.5em !important;
+    display: block !important;
+
+
+}

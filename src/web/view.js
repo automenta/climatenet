@@ -239,3 +239,24 @@ class Map3DView extends NView {
     }
 
 }
+
+
+
+class NObjectEditView extends NView {
+
+    constructor(name) {
+        super("Edit: " + name, "edit");
+        this.name = name;
+
+    }
+
+    start(v, cb) {
+        /** see edit.js */
+        new NObjectEdit(v, uuid(), this.name);
+    }
+
+    stop(v) {
+        //ask for save?
+    }
+
+}
