@@ -232,7 +232,7 @@ class PopupMenu {
     }
 
     /** position = { left: .. , top: .. }  */
-    show(menu, position) {
+    show(menu, position, target) {
         "use strict";
 
 
@@ -247,7 +247,8 @@ class PopupMenu {
         this.hide();
 
         //add
-        menu.attr('id', this.id).css('position', 'fixed').appendTo($('body'));
+        target = target || $('body');
+        menu.attr('id', this.id).css('position', 'fixed').appendTo(target);
 
         //http://codepen.io/MarcMalignan/full/xlAgJ/
 
