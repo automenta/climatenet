@@ -121,7 +121,7 @@ class GraphView extends NView {
         this.s = spacegraph(v, {
             start: function () {
 
-                newPopupMenu(this);
+                newSpacePopupMenu(this);
 
                 //s.nodeProcessor.push(new ListToText());
                 //s.nodeProcessor.push(new UrlToIFrame());

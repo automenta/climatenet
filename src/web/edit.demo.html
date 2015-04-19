@@ -11,7 +11,7 @@
         <div class="nobjedit header" contenteditable="true">
             <b>nobject title</b>
         </div>
-        <div class="nobjedit" contenteditable="true">
+        <div id="ne1" class="nobjedit" contenteditable="true">
 
             What if I could <span contenteditable="false"><select><option>Explode</option><option>Implode</option><option>Melt</option><option>Disintegrate</option><option>Detonate</option></select></span>
             with <span contenteditable="false">speed <input type="range"/></span>
@@ -46,39 +46,84 @@
         <script>
             $(document).ready(function() {
 
+                var pm = new PopupMenu("editpopup");
+                pm.radius = 140; //pixels
+                pm.onHidden = function() {
+                    //restore opacity
+                    $('#ne1').css('opacity', 1.0);
+                };
 
-                $('.nobjedit').atwho({
+                //$('.nobjedit').atwho({
+                $('#ne1').atwho({
                     at: "@",
                     data:[ "one", "two", "three", "four" ]
-                }).on("matched.atwho", function(event, flag, query) {
-                    //console.log(event, "matched " + flag + " and the result is " + query);
+//                }).on("matched.atwho", function(event, flag, query) {
+//                    //console.log(event, "matched " + flag + " and the result is " + query);
                 }).on("shown.atwho", function(event) {
-                    console.log(event, "hide");
-                    var at = $('.atwho-view');
 
-                    if (at.find('.atwho-overlay').length == 0)  {
 
-                        //add when first created
-                        //var atb = newDivClassed('atwho-overlay').appendTo(at);
+                    var textarea = $(event.target);
 
-                        $('<button class="atwho-overlay">x</button>').appendTo(at).css({
-                            left: "0",
-                            width: "1em",
-                            top: "50%"
+                        //console.log(event, "show");
+
+
+                        var m = $('<div class="circlePopup"></div>').append(
+                            '<a class="closebutton ui button" href="#">X</a>',
+                            list = $('<ul></ul>').append(
+                                '<li><a href="#" action="addText">T</a></li>',
+                                '<li><a href="#" action="addURL">U</a></li>',
+                                '<li><a href="#">Dr</a></li>',
+                                '<li><a href="#">S</a></li>',
+                                '<li><a href="#">E</a></li>'
+                            )
+                        );
+
+                        //var list = $(".atwho-view-ul").clone(true,true).appendTo(m);
+
+                        list.children().each(function() {
+                            $(this).find('a').addClass('ui button');
+                        })
+
+                        $(".atwho-view-ul").find('li').each(function() {
+                            $(this).detach().appendTo(list);
                         });
-                        $('<button class="atwho-overlay">y</button>').appendTo(at).css({
-                            right: "0",
-                            width: "1em",
-                            top:"50%"
-                        });
-                        /*
-                        $('<button>w</button>').appendTo(atb).css({
-                            top: "-1em"
-                        });
-                        $('<button>z</button>').appendTo(atb).css({
-                            bottom: "1em"
-                        });*/
-                    }
+
+                        var pp = textarea.caret('offset');
+                        pp.top += pp.height; //center on line height
+                        //var offset = textarea.offset();
+                        //pp.top += offset.top;
+                        //pp.left += offset.left;
+                        pm.show(m, pp);
+
+
+                    textarea.css('opacity', 0.5);
+
+
+//                    var at = $('.atwho-view');
+//
+//                    if (at.find('.atwho-overlay').length == 0)  {
+//
+//                        //add when first created
+//                        //var atb = newDivClassed('atwho-overlay').appendTo(at);
+//
+//                        $('<button class="atwho-overlay">x</button>').appendTo(at).css({
+//                            left: "0",
+//                            width: "1em",
+//                            top: "50%"
+//                        });
+//                        $('<button class="atwho-overlay">y</button>').appendTo(at).css({
+//                            right: "0",
+//                            width: "1em",
+//                            top:"50%"
+//                        });
+//                        /*
+//                        $('<button>w</button>').appendTo(atb).css({
+//                            top: "-1em"
+//                        });
+//                        $('<button>z</button>').appendTo(atb).css({
+//                            bottom: "1em"
+//                        });*/
+//                    }
 
                     //at.fadeIn();
 
@@ -87,16 +132,23 @@
                     var at = $('.atwho-view');
                     //at.fadeOut();
 
-                }).on("reposition.atwho", function(event,pos) {
-
-                    //center on caret
-                    var at = $('.atwho-view');
-
-                    //pos.left -= at.width()/2;
-                    pos.top -= at.height()/2;
-
-                    at.offset(pos);
+                    pm.hide();
                 });
+
+//                }).on("reposition.atwho", function(event,pos) {
+//                    console.log(event, "reposition");
+//
+//
+//
+//
+////                    //center on caret
+////                    var at = $('.atwho-view');
+////
+////                    //pos.left -= at.width()/2;
+////                    pos.top -= at.height()/2;
+////
+////                    at.offset(pos);
+//                });
             });
         </script>
 <style>
@@ -160,5 +212,60 @@
         position: absolute;
     }
 
+    .atwho-container {
+        display: none !important;
+    }
+
 </style>
+
+<style>
+    .circlePopup {
+        z-index: 5000;
+        position: absolute;
+        opacity: 0.9;
+        overflow: visible !important;
+    }
+    .circlePopup ul {
+        list-style: none;
+    }
+    .circlePopup li, .circlePopup a {
+        position: absolute;
+    }
+
+    .liCircle {
+        color: white;
+        width: 50px;
+        height: 50px;
+        margin-left: 0;
+        background-color: #00f;
+        border-radius: 50%;
+        text-align: center;
+        font-size: 30px;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: none;
+        text-decoration: none;
+        opacity: 0.9;
+    }
+
+    .liCircle:hover {
+        color: white;
+        background-color: #090;
+        text-decoration: none;
+        opacity: 0.95;
+    }
+
+
+    .closebutton {
+        opacity: 0.7;
+        background-color: #aaa;
+    }
+    .closebutton:hover {
+        opacity: 0.9;
+        background-color: #999;
+    }
+
+</style>
+
+
 </html>
