@@ -723,10 +723,15 @@ function notify(x) {
 //faster than $('<div/>');
 function newDiv(id) {
     var e = newEle('div');
-    if (id)
-        e.attr('id', id);
+    if (id) e.attr('id', id);
     return e;
 }
+function newSpan(id) {
+    var e = newEle('span');
+    if (id) e.attr('id', id);
+    return e;
+}
+
 function newDivClassed(c) {
     var d = newDiv();
     d.addClass(c);
