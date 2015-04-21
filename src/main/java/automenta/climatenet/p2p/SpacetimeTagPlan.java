@@ -1,8 +1,7 @@
 package automenta.climatenet.p2p;
 
-import org.apache.commons.math3.ml.clustering.CentroidCluster;
-import org.apache.commons.math3.ml.clustering.DoublePoint;
-import org.apache.commons.math3.ml.clustering.FuzzyKMeansClusterer;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.ml.clustering.*;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
 
 import java.io.Serializable;
@@ -387,9 +386,10 @@ public class SpacetimeTagPlan {
         public void onError(SpacetimeTagPlan plan, Exception e);
     }
 
-    public void update(int numCentroids, int maxIterations, double fuzziness, PlanResult r) {
+
+    public void update(PlanResult r) {
         try {
-            List<Possibility> result = compute(numCentroids, maxIterations, fuzziness);
+            List<Possibility> result = compute();
             r.onFinished(this, result);
             return;
         }
@@ -398,7 +398,7 @@ public class SpacetimeTagPlan {
         }
     }
 
-    protected synchronized List<Possibility> compute(int numCentroids, int maxIterations, double fuzziness) {
+    protected synchronized List<Possibility> compute() {
         goals.clear();
         mapping.reset();
 
@@ -463,8 +463,8 @@ public class SpacetimeTagPlan {
         };
 
         //5. cluster
-        FuzzyKMeansClusterer<Goal> clusterer = new FuzzyKMeansClusterer<Goal>(numCentroids, fuzziness, maxIterations, distanceMetric);
-        List<CentroidCluster<Goal>> centroids = clusterer.cluster(goals);
+
+        List<Cluster<Goal>> centroids = cluster(distanceMetric);
 
         //6. denormalize and return annotated objects
         for (Goal g : goals) {
@@ -473,6 +473,29 @@ public class SpacetimeTagPlan {
 
         return getPossibilities(centroids);
     }
+
+    private List<Cluster<Goal>> cluster(DistanceMeasure distanceMetric) {
+        return clusterDBScan(distanceMetric);
+    }
+
+    private List<Cluster<Goal>> clusterDBScan(DistanceMeasure distanceMetric) {
+        double radius = 1.0; //if all points are normalized
+        DBSCANClusterer<Goal> clusterer = new DBSCANClusterer<Goal>(radius, 1, distanceMetric);
+        return clusterer.cluster(goals);
+    }
+
+    private List<CentroidCluster<Goal>> clusterFuzzyKMeans(DistanceMeasure distanceMetric) {
+
+        //TODO use a clustering class to hold these for the fuzzyKmeans impl
+        int numCentroids = 1;
+        int maxIterations = 2;
+        double fuzziness = 0.5;
+
+        FuzzyKMeansClusterer<Goal> clusterer = new FuzzyKMeansClusterer<Goal>(numCentroids, fuzziness, maxIterations, distanceMetric);
+        List<CentroidCluster<Goal>> centroids = clusterer.cluster(goals);
+        return centroids;
+    }
+
 
     public TagVectorMapping getMapping() {
         return mapping;
@@ -492,11 +515,26 @@ public class SpacetimeTagPlan {
 
     }
 
-    protected List<Possibility> getPossibilities(List<CentroidCluster<Goal>> centroids) {
+    protected List<Possibility> getPossibilities(List<Cluster<Goal>> centroids) {
         List<Possibility> l = new ArrayList(centroids.size());
 
-        for (CentroidCluster<Goal> c : centroids) {
-            double[] point = c.getCenter().getPoint();
+        for (Cluster<Goal> c : centroids) {
+            double[] point;
+            if (c instanceof CentroidCluster) {
+                point = ((CentroidCluster)c).getCenter().getPoint();
+            }
+            else {
+                //find the centroid of the points in the cluster
+                Goal g0 = c.getPoints().get(0);
+
+                ArrayRealVector v = new ArrayRealVector(g0.getPoint().length);
+                for (Goal g : c.getPoints()) {
+                    //TODO avoid allocating new ArrayRealVector here
+                    v.combineToSelf(1, 1, new ArrayRealVector(g.getPoint()));
+                }
+                point = v.getDataRef();
+            }
+
             mapping.denormalize(point);
 
             Possibility p = new Possibility();
