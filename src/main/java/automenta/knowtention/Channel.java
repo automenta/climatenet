@@ -1,7 +1,9 @@
 package automenta.knowtention;
 
 import automenta.knowtention.EventEmitter.EventObserver;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -17,7 +19,12 @@ import java.util.Iterator;
  * @see https://github.com/fge/json-patch
  */
 public class Channel extends EventEmitter implements Serializable, Iterable<JsonNode> {
-    
+
+    public final static ObjectMapper om = new ObjectMapper();
+    static {
+        //om.configure(
+    }
+
     private ObjectNode prev;
     protected ObjectNode root;
     private boolean inTransaction;

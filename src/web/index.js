@@ -17,6 +17,18 @@ class NClient extends EventEmitter {
         };
     }
 
+    data(channel) {
+
+        //try
+        {
+            //TODO this is a mess:
+            return this.index.tag.node(channel).channel.subs[channel].data;
+        }
+        //catch {
+        //    console.error('no data for')
+        //    return null;
+        //}
+    }
     setFocus(tag, amount) {
         var prevFocus = this.focus[tag] || 0;
         if (prevFocus == amount) return;
@@ -35,7 +47,7 @@ class NClient extends EventEmitter {
             else {
                 var c = t.newChannel({
                     onChange: function (cc) {
-                        console.log('change', JSON.stringify(cc.data));
+                        console.log('change', cc.data);
                     }
                 });
                 t.channel = c; //the default, we'll store there
@@ -81,7 +93,7 @@ class NClient extends EventEmitter {
             var viewTarget = $('<div id="view"></div>');
             $('body').append(viewTarget);
             try {
-                this.currentView.start(viewTarget, cb);
+                this.currentView.start(viewTarget, this, cb);
             }
             catch (e) {
                 console.trace();

@@ -54,9 +54,8 @@ class FeedView extends NView {
         this.app = app;
     }
 
-    start(v, cb) {
+    start(v, app, cb) {
 
-        var a = this.app;
         setInterval(function() {
 
             //var vv = $('<div class="ui items" style="background-color: white"></div>');
@@ -76,7 +75,7 @@ class FeedView extends NView {
                  </div>
              */
             var count = 0;
-            for (var c in a.focus) {
+            for (var c in app.focus) {
 
                 var ii = $('<div class="item" style="background-color: white"></div>');
 
@@ -84,7 +83,7 @@ class FeedView extends NView {
                 jj.append('<a class="header">' + c + '</a>');
 
                 try {
-                    var chan = app.index.tag.node(c).channel.subs[c].data;
+                    var chan = app.data(c);
 
                     jj.append('<pre>' + JSON.stringify(chan, null, 4) + '</pre>');
                 }
@@ -117,7 +116,7 @@ class GraphView extends NView {
         super("Graph", "cubes");
     }
 
-    start(v, cb) {
+    start(v, app, cb) {
         this.s = spacegraph(v, {
             start: function () {
 
@@ -156,14 +155,47 @@ class Map2DView extends NView {
         super("Map (2D)", "road");
     }
 
-    start(v, cb) {
+    start(v, app, cb) {
+        var testIcon = L.icon({
+            iconUrl: 'icon/unknown.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
 
         var map = this.map = L.map(v[0]);
-        map.setView([51.505, -0.09], 13);
+        //map.setView([51.505, -0.09], 13);
+        map.setView([35.98909,-84.2566178],13);
+        //map.setView([0,0], 7);
 
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         if (cb) cb();
+
+        var agentIcons = { };
+
+
+        setInterval(function() {
+            for (var c in app.focus) {
+                var d = app.data(c);
+                for (var a in d) {
+                    if (d[a].coordinates) {
+
+                        if (!agentIcons[a]) {
+                            var marker = L.marker([0, 0], {
+                                icon: testIcon
+                            }).addTo(map);
+                            agentIcons[a] = marker;
+                        }
+
+                        //console.log(a, d[a].coordinates[0][0 /* first poly corner */]);
+                        agentIcons[a].setLatLng({
+                            lat: d[a].coordinates[0][0][0],
+                            lng: d[a].coordinates[0][0][1]
+                        });
+                    }
+                }
+            }
+        }, 750);
     }
 
     stop() {
@@ -186,7 +218,7 @@ class Map3DView extends NView {
         super("Map (3D)", "globe");
     }
 
-    start(v, cb) {
+    start(v, app, cb) {
 
         var that = this;
 

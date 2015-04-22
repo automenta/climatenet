@@ -1,12 +1,132 @@
 package automenta.climatenet.run;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
-import automenta.climatenet.data.sim.SimpleSimulation;
+import automenta.climatenet.data.sim.RobotSimulant;
+import automenta.climatenet.p2p.SpacetimeTagPlan;
+import automenta.knowtention.Channel;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.geojson.Polygon;
 
-/**
- * Created by me on 4/14/15.
- */
+import java.util.ArrayList;
+import java.util.List;
+
+
 public class SimulationDemo {
+
+    public static class SimpleSimulation extends Channel implements Runnable {
+
+        List<RobotSimulant> agents = new ArrayList();
+        long lastUpdate = System.currentTimeMillis();
+        long updatePeriodMS = 500;
+        List<SpacetimeTagPlan.Possibility> possibilities = new ArrayList();
+
+
+        public SimpleSimulation(String id) {
+            super(id);
+
+
+            long now = System.currentTimeMillis();
+
+            //y12 gigadeth inc.
+            double cy = 35.98909;
+            double cx = -84.2566178;
+            double b = 0.01;
+
+            agents.add(new RobotSimulant("Megatron Spike", cx, cy, 0,
+                    new RobotSimulant.CircleController()));
+
+            agents.add(new RobotSimulant("Trypticon Perceptor", cx + b, cy + 2 * b, 0)
+                    .know(
+                            new SpacetimeTagPlan.NObject().where(0.2, 0.2).when(now + 10000).tag("Physics", 0.5).tag("Biology"),
+                            new SpacetimeTagPlan.NObject().where(0.15, 0.25).when(now + 20000).tag("Sleep", 0.8)
+                    )
+            );
+
+            agents.add(new RobotSimulant("Skywarp Mindwipe", cx - b, cy, 0)
+                    .know(new SpacetimeTagPlan.NObject().where(0.2, 0.2).when(now + 20000).tag("Physics", 0.75).tag("Chemistry")));
+
+
+            //Dope Freak Ultra
+            //Killa Method Money
+            //Dr-T Bonecrusher
+
+
+
+            new Thread(this).start();
+        }
+
+        int planningPeriods = 4;
+        int c = 0;
+
+        @Override
+        public void run() {
+
+
+            while (true) {
+
+                update();
+
+                c++;
+
+                try {
+                    Thread.sleep(updatePeriodMS);
+                } catch (InterruptedException e) {}
+            }
+        }
+
+        protected synchronized void update() {
+            long now = System.currentTimeMillis();
+            double dt = (now - lastUpdate) / 1000.0;
+            lastUpdate = now;
+
+
+            ObjectNode next = om.getNodeFactory().objectNode();
+            for (RobotSimulant r : agents) {
+                Polygon p = r.update(dt);
+
+
+                try {
+                    ////TODO hack fuck jackson this is ridiculous
+                    //TODO avoid using intermediate string repr here
+                    String s = om.writeValueAsString(p);
+                    ObjectNode vv = om.readValue(s, ObjectNode.class);
+
+                    next.put(r.id, vv);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+
+            if (c % planningPeriods == 0) {
+
+                List<SpacetimeTagPlan.NObject> n= new ArrayList();
+                for (RobotSimulant r : agents) {
+                    n.addAll(r.getMemory());
+                }
+
+                SpacetimeTagPlan p = new SpacetimeTagPlan(n, true, 1000, true, false );
+                possibilities.clear();
+                possibilities.addAll(p.compute());
+            }
+
+            int p = 0;
+            for (SpacetimeTagPlan.Possibility poss : possibilities) {
+                String pid = "p" + p;
+                next.put(pid, om.valueToTree(poss));
+                p++;
+            }
+
+            System.out.println(next);
+
+            commit(next);
+        }
+
+    }
+
 
     public static void main(String[] args) throws Exception {
         int webPort = 9090;

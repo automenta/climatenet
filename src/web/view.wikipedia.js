@@ -232,7 +232,7 @@ class WikipediaView extends NView {
         this.homepage = homepage;
     }
 
-    start(v, cb) {
+    start(v, app, cb) {
 
         var goWiki = function(page, search) {
 
