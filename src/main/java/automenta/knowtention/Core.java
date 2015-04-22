@@ -10,13 +10,14 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatch;
+
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -196,7 +197,12 @@ public class Core extends EventEmitter {
     }
 
     public static String uuid() {
-        return UUID.randomUUID().toString();
+        int bits = 8 * 32;
+        byte[] bytes = new byte[bits/8];
+        for (int i = 0; i < bytes.length; i++)
+            bytes[i] = (byte)(Math.random() * 256); //TODO use xorshfitrandom
+
+        return Base64.getEncoder().encodeToString(bytes);
     }
     
 }

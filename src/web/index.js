@@ -3,10 +3,12 @@
 class NClient extends EventEmitter {
 
     constructor() {
+        super();
+
         this.focus = { };
         this.index = { };
         this.views = {
-            'feed': new FeedView(this),
+            'feed': new FeedView(),
             'graph': new GraphView(),
             'map2d': new Map2DView(),
             'map3d': new Map3DView(),
@@ -19,15 +21,14 @@ class NClient extends EventEmitter {
 
     data(channel) {
 
-        //try
-        {
+        try {
             //TODO this is a mess:
             return this.index.tag.node(channel).channel.subs[channel].data;
         }
-        //catch {
-        //    console.error('no data for')
-        //    return null;
-        //}
+        catch(e) {
+            //console.error('no data for')
+            return null;
+        }
     }
     setFocus(tag, amount) {
         var prevFocus = this.focus[tag] || 0;
@@ -36,6 +37,8 @@ class NClient extends EventEmitter {
         this.focus[tag] = amount;
 
         var t = this.index.tag.node(tag);
+
+        var app = this;
 
         if (prevFocus == 0) {
             //add focus
@@ -46,8 +49,17 @@ class NClient extends EventEmitter {
             }
             else {
                 var c = t.newChannel({
+
+                    onOpen: function() {
+
+                    },
+
+                    //TODO onClose ?
+
                     onChange: function (cc) {
-                        console.log('change', cc.data);
+                        //console.log('change', cc.data);
+                        app.emit( tag + '.change', cc.data);
+                        app.emit('change', this);
                     }
                 });
                 t.channel = c; //the default, we'll store there
@@ -70,6 +82,8 @@ class NClient extends EventEmitter {
         }
 
         console.log('app focus: ', app.focus);
+        
+        app.emit('focus'); //focus change
 
     }
 
@@ -78,7 +92,7 @@ class NClient extends EventEmitter {
 
         if (this.currentView) {
             try {
-                this.currentView.stop();
+                this.currentView.stop(this);
             }
             catch (e) {
                 console.error(e);

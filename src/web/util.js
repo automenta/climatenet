@@ -61,6 +61,7 @@ class Tag {
             if (!opts) opts = { };
 
 
+            var _onOpen = opts.onOpen;
             opts.onOpen = function() {
 
                 activation.on(chanID);
@@ -68,6 +69,8 @@ class Tag {
                 console.log('Websocket connect: ' + uu);
 
                 //activation.channel = new SocketChannel(s, { });
+
+                if (_onOpen) _onOpen(); //chained callback
             };
 
             activation = new Websocket(path, opts);
@@ -311,6 +314,14 @@ class EventEmitter {
         this._events = {}
     }
     on(type, listener) {
+
+        var that = this;
+        if (Array.isArray(type)) {
+            _.each(type, function(t) {
+                that.on(t, listener);
+            });
+        }
+
         if(typeof listener != "function") {
             throw new TypeError()
         }
@@ -340,6 +351,15 @@ class EventEmitter {
         return this.on(type, onceCallback)
     }
     off(type, listener) {
+
+        var that = this;
+        if (Array.isArray(type)) {
+            _.each(type, function(t) {
+                that.off(t, listener);
+            });
+        }
+
+
         if(typeof listener != "function") {
             throw new TypeError()
         }
@@ -359,7 +379,9 @@ class EventEmitter {
         if(!listeners || !listeners.length) {
             return false
         }
-        listeners.forEach(function(fn) { fn.apply(null, args) })
+        for (var i = 0; i < listeners.length; i++)
+            listeners[i].apply(null, args);
+        //listeners.forEach(function(fn) { fn.apply(null, args) })
         return true
     }
     setMaxListeners(newMaxListeners){

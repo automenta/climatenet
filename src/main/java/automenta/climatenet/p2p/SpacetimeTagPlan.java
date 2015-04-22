@@ -26,58 +26,6 @@ public class SpacetimeTagPlan {
     protected double tagWeight = 1.0;  //weight per each individual tag
     protected double minPossibilityTagStrength = 0.02; //minimum strength that a resulting tag must be to be added to a generated Possibility
 
-    public static class NObject {
-
-        TimeRange when = null;
-        SpacePoint where = null;
-        Map<String,Double> tags = new HashMap(); //TODO use a ObjectDouble primitive map structure
-
-        public NObject() {
-
-        }
-
-        public Map<String, Double> getTagStrengths() {
-            return tags;
-        }
-
-        /** timepoint, or -1 if none */
-        public TimeRange getWhen() {
-            return when;
-        }
-
-        public SpacePoint getWhere() {
-            return where;
-        }
-
-        public Collection<String> tagSet() {
-            return tags.keySet();
-        }
-
-        public NObject when(long when) {
-            this.when = new TimeRange(when);
-            return this;
-        }
-
-        public NObject where(double lat, double lng) {
-            return where(new SpacePoint(lat, lng));
-        }
-
-        public NObject where(SpacePoint s) {
-            this.where = s;
-            return this;
-        }
-
-        public NObject tag(String tag) {
-            return tag(tag, 1.0);
-        }
-
-        public NObject tag(String tag, double strength) {
-            tags.put(tag, strength);
-            return this;
-        }
-
-    }
-
     public static class SpacePoint extends LngLatAlt implements Serializable {
         //public String planet = "Earth";
 
@@ -190,7 +138,7 @@ public class SpacetimeTagPlan {
             }
 
             List<Goal> goals = new LinkedList();
-            Map<String,Double> ts = o.getTagStrengths();
+            Map<String,Double> ts = o.getTags();
 
 
             SpacePoint sp = null;
@@ -516,7 +464,8 @@ public class SpacetimeTagPlan {
     public class Possibility extends NObject {
         //private final double[] center;
 
-        public Possibility() {
+        public Possibility(String id) {
+            super(id);
             //this.center = center;
         }
 
@@ -530,6 +479,7 @@ public class SpacetimeTagPlan {
     protected List<Possibility> getPossibilities(List<? extends Cluster<Goal>> centroids) {
         List<Possibility> l = new ArrayList(centroids.size());
 
+        int pID = 0;
         for (Cluster<Goal> c : centroids) {
             double[] point;
             if (c instanceof CentroidCluster) {
@@ -549,7 +499,7 @@ public class SpacetimeTagPlan {
 
             dimensions.denormalize(point);
 
-            Possibility p = new Possibility();
+            Possibility p = new Possibility("p" + (pID++));
             int i = 0;
             if (time) {
                 long when = (long)point[i++];

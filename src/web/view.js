@@ -47,21 +47,74 @@ class HTMLView extends NView {
     }
 }
 
+function newJSONTable(x, withoutKeys, withoutTypes) {
+
+    //http://semantic-ui.com/collections/table.html
+
+    var tt = $('<table class="ui celled striped table"/>');
+
+    for (var k in x) {
+        var v = x[k];
+
+        if (!v) continue; //ignore falsy
+
+        if (withoutKeys)
+            if (_.indexOf(withoutKeys,k)!==-1) continue; //channel will be displayed beneath
+
+        if (withoutTypes)
+            if (_.indexOf(withoutTypes, typeof v)!==-1) continue; //ignore functions
+
+        $('<tr>').appendTo(tt)
+            .append('<td>' + k + '</td>')
+            .append('<td>' + JSON.stringify(v) + '</td>');
+    }
+
+    return tt;
+}
+
+class ChannelSummaryWidget {
+
+    /** meta = channel metadata, data = channel data */
+    constructor(id, meta, data, target) {
+
+        target.append('<h1 class="ui header">' + id + '</h1>');
+
+        if (meta) {
+
+            newJSONTable(meta, ['id', 'channel'], ['function']).appendTo(target);
+
+
+        }
+
+        var content = newDivClassed('ui segment inverted grid').appendTo(target);
+
+        for (var x in data) {
+            var d = data[x];
+
+            if (typeof d !== "object") continue; //ignore string entries
+
+            var e = newDivClassed('three wide column').appendTo(content);
+            e.append('<h3 class="header">' + x + '</h3>');
+            e.append('<div class="ui maxHalfHeight">' + JSON.stringify(d, null, 4) + '</pre>');
+        }
+    }
+}
+
 class FeedView extends NView {
 
-    constructor(app) {
+    constructor() {
         super("Feeds", "cubes");
-        this.app = app;
     }
 
     start(v, app, cb) {
 
-        setInterval(function() {
+        this.app = app;
+        app.on(['focus','change'], function(c) {
 
             //var vv = $('<div class="ui items" style="background-color: white"></div>');
 
             v.html('');
-            v.addClass('ui items');
+            v.addClass('ui items maxFullHeight');
 
             /*
              <div class="ui items">
@@ -77,22 +130,25 @@ class FeedView extends NView {
             var count = 0;
             for (var c in app.focus) {
 
-                var ii = $('<div class="item" style="background-color: white"></div>');
+                var ii = $('<div class="ui segment inverted" style="background-color: white"></div>').appendTo(v);
 
-                var jj = $('<div class="middle aligned content"></div>');
-                jj.append('<a class="header">' + c + '</a>');
+                //var jj = $('<div class="middle aligned content"></div>');
 
-                try {
-                    var chan = app.data(c);
 
-                    jj.append('<pre>' + JSON.stringify(chan, null, 4) + '</pre>');
-                }
-                catch (e) {
-                    jj.append('<i>No data</i>');
-                }
 
-                ii.append('<div class="ui tiny image"><img src="icon/play.png"/></div>', jj);
-                v.append(ii);
+                    var chan, meta;
+                    try {
+                        meta = app.index.tag.node(c);
+                        chan = app.data(c);
+                    }
+                    catch(e) {
+                        meta = null;
+                        chan = 'empty';
+                    }
+
+                    new ChannelSummaryWidget(c, meta, chan, ii);
+
+
 
                 count++;
             }
@@ -101,11 +157,11 @@ class FeedView extends NView {
                 v.append('Focus empty');
 
 
-        }, 500);
+        });
     }
 
-    stop() {
-
+    stop(app) {
+        app.off(['focus','change']);
     }
 }
 

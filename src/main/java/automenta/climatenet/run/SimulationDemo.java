@@ -2,12 +2,11 @@ package automenta.climatenet.run;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.data.sim.RobotSimulant;
+import automenta.climatenet.p2p.NObject;
 import automenta.climatenet.p2p.SpacetimeTagPlan;
 import automenta.knowtention.Channel;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.geojson.Polygon;
+import org.geojson.LngLatAlt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +18,7 @@ public class SimulationDemo {
 
         List<RobotSimulant> agents = new ArrayList();
         long lastUpdate = System.currentTimeMillis();
-        long updatePeriodMS = 500;
+        long updatePeriodMS = 1500;
         List<SpacetimeTagPlan.Possibility> possibilities = new ArrayList();
 
 
@@ -35,17 +34,17 @@ public class SimulationDemo {
             double b = 0.01;
 
             agents.add(new RobotSimulant("Megatron Spike", cx, cy, 0,
-                    new RobotSimulant.CircleController()));
+                    new RobotSimulant.CircleController(new LngLatAlt(cx, cy))));
 
             agents.add(new RobotSimulant("Trypticon Perceptor", cx + b, cy + 2 * b, 0)
                     .know(
-                            new SpacetimeTagPlan.NObject().where(0.2, 0.2).when(now + 10000).tag("Physics", 0.5).tag("Biology"),
-                            new SpacetimeTagPlan.NObject().where(0.15, 0.25).when(now + 20000).tag("Sleep", 0.8)
+                            new NObject().where(0.2, 0.2).when(now + 10000).tag("Physics", 0.5).tag("Biology"),
+                            new NObject().where(0.15, 0.25).when(now + 20000).tag("Sleep", 0.8)
                     )
             );
 
             agents.add(new RobotSimulant("Skywarp Mindwipe", cx - b, cy, 0)
-                    .know(new SpacetimeTagPlan.NObject().where(0.2, 0.2).when(now + 20000).tag("Physics", 0.75).tag("Chemistry")));
+                    .know(new NObject().where(0.2, 0.2).when(now + 20000).tag("Physics", 0.75).tag("Chemistry")));
 
 
             //Dope Freak Ultra
@@ -84,43 +83,46 @@ public class SimulationDemo {
 
             ObjectNode next = om.getNodeFactory().objectNode();
             for (RobotSimulant r : agents) {
-                Polygon p = r.update(dt);
+                //Polygon p = r.update(dt);
+                r.update(dt);
+                //LngLatAlt p = r.position;
 
+//                try {
+//                    ////TODO hack fuck jackson this is ridiculous
+//                    //TODO avoid using intermediate string repr here
+//                    String s = om.writeValueAsString(p);
+//                    ObjectNode vv = om.readValue(s, ObjectNode.class);
+//
+//                    next.put(r.id, vv);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
 
-                try {
-                    ////TODO hack fuck jackson this is ridiculous
-                    //TODO avoid using intermediate string repr here
-                    String s = om.writeValueAsString(p);
-                    ObjectNode vv = om.readValue(s, ObjectNode.class);
-
-                    next.put(r.id, vv);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                next.put(r.getId(), om.valueToTree(r));
             }
 
 
             if (c % planningPeriods == 0) {
 
-                List<SpacetimeTagPlan.NObject> n= new ArrayList();
+                List<NObject> n= new ArrayList();
                 for (RobotSimulant r : agents) {
                     n.addAll(r.getMemory());
                 }
 
+
                 SpacetimeTagPlan p = new SpacetimeTagPlan(n, true, 1000, true, false );
                 possibilities.clear();
                 possibilities.addAll(p.compute());
+
             }
 
             int p = 0;
             for (SpacetimeTagPlan.Possibility poss : possibilities) {
-                String pid = "p" + p;
-                next.put(pid, om.valueToTree(poss));
+                next.put(poss.getId(), om.valueToTree(poss));
                 p++;
             }
 
-            System.out.println(next);
+            //System.out.println(next);
 
             commit(next);
         }
