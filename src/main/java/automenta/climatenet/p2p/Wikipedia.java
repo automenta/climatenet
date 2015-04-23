@@ -19,6 +19,7 @@ package automenta.climatenet.p2p;
 
 import automenta.climatenet.SpacetimeWebServer;
 import automenta.knowtention.Core;
+import com.squareup.okhttp.Response;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jsoup.Jsoup;
@@ -149,7 +150,7 @@ public class Wikipedia implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange ex) throws Exception {
+    public void handleRequest(final HttpServerExchange ex) throws Exception {
 
         //System.out.println("wikipedia handle request: " + ex + ex.getQueryString() + " " + ex.getRequestPath());
 
@@ -169,14 +170,15 @@ public class Wikipedia implements HttpHandler {
                     break;
             }
 
-            String result;
-            if (u == null) {
-                result = "Invalid request: " + ex.getRequestPath();
-            }
-            else {
-                Document doc = Jsoup.connect(u).get();
-                result = filterPage(doc);
-            }
+            final String finalU = u;
+
+            Response response = HttpRequestCached.the.get(u);
+
+            String body = response.body().string();
+
+            Document doc = Jsoup.parse(body, finalU);
+
+            String result = filterPage(doc);
 
             SpacetimeWebServer.send(result, ex);
 

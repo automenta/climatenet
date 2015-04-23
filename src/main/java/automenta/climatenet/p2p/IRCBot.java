@@ -1,7 +1,6 @@
 package automenta.climatenet.p2p;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.pircbotx.Channel;
@@ -10,10 +9,6 @@ import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.*;
-
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * https://code.google.com/p/pircbotx/wiki/Documentation
@@ -25,7 +20,7 @@ public class IRCBot extends ListenerAdapter {
     }
 
     private final PircBotX irc;
-    public final automenta.knowtention.Channel serverChannel;
+    public final automenta.knowtention.Channel.FeedChannel<IRCMessage> serverChannel;
     private final String server;
 
     public IRCBot(ElasticSpacetime db, String nick, String server, String... channels) throws Exception {
@@ -34,7 +29,7 @@ public class IRCBot extends ListenerAdapter {
         this.server = server;
 
         //serverChannel = new ElasticChannel(db, server, "feature");
-        serverChannel = new automenta.knowtention.Channel(server);
+        serverChannel = new automenta.knowtention.Channel.FeedChannel(server, 128);
 
         Configuration.Builder<PircBotX> config = new Configuration.Builder()
                 .setName(nick) //Nick of the bot. CHANGE IN YOUR CODE
@@ -143,8 +138,6 @@ public class IRCBot extends ListenerAdapter {
 //    }
 
 
-    int maxMessages = 128;
-    public LinkedHashMap<String,IRCMessage> messages = new LinkedHashMap();
 
     public static class IRCMessage extends NObject {
 
@@ -167,20 +160,6 @@ public class IRCBot extends ListenerAdapter {
         }
     }
 
-    protected synchronized void add(IRCMessage message) {
-        int overflow = messages.size() - maxMessages;
-        if (overflow > 0) {
-            Iterator<Map.Entry<String,IRCMessage>> ii = messages.entrySet().iterator();
-            for (int i = 0; i < overflow; i++) {
-                Map.Entry<String, IRCMessage> removed = ii.next();
-                ii.remove();
-            }
-
-        }
-
-        messages.put(message.getId(), message);
-
-    }
 
     protected void log(String channel, String nick, Event event, String value) {
         //System.out.println(channel + " " + nick + " " + event + " " + value);
@@ -217,8 +196,7 @@ public class IRCBot extends ListenerAdapter {
         m.when(System.currentTimeMillis());
         m.setMessage(value);
 
-        add(m);
+        serverChannel.append(m);
 
-        serverChannel.commit((ObjectNode) automenta.knowtention.Channel.om.valueToTree( messages ));
     }
 }

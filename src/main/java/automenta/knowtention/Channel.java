@@ -1,7 +1,6 @@
 package automenta.knowtention;
 
-import automenta.knowtention.EventEmitter.EventObserver;
-import com.fasterxml.jackson.core.JsonGenerator;
+import automenta.climatenet.p2p.NObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -10,9 +9,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.diff.JsonDiff;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Holds working data in the form of a JSON symbol tree
@@ -207,5 +209,43 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
         }
 
     }
-    
+
+
+    /** channel with a finite history size */
+    public static class FeedChannel<M extends NObject> extends Channel {
+
+        int maxMessages;
+
+        public LinkedHashMap<String,M> messages = new LinkedHashMap();
+
+        public synchronized void append(M... msgs) {
+            //TODO prevent overflow by using only the # of input msgs below the max capacity
+
+            int s = messages.size();
+            int overflow = s + msgs.length - maxMessages;
+
+            if (overflow > 0) {
+                overflow = Math.min(overflow, s);
+                Iterator<Map.Entry<String, M>> ii = messages.entrySet().iterator();
+                for (int i = 0; i < overflow; i++) {
+                    Map.Entry<String, M> removed = ii.next();
+                    ii.remove();
+                }
+
+            }
+
+            for (M message : msgs) {
+                messages.put(message.getId(), message);
+            }
+
+            commit((ObjectNode) om.valueToTree( messages ));
+
+        }
+
+        public FeedChannel(String id, int maxSize) {
+            super(id);
+            this.maxMessages = maxSize;
+        }
+
+    }
 }
