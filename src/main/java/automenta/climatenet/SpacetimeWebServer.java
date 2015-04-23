@@ -7,7 +7,6 @@ package automenta.climatenet;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.p2p.Wikipedia;
-import automenta.climatenet.p2p.proxy.CachingProxyServer;
 import automenta.knowtention.Channel;
 import automenta.knowtention.Core;
 import automenta.knowtention.WebSocketCore;
@@ -115,7 +114,6 @@ abstract public class SpacetimeWebServer extends PathHandler {
 
             final String cachePath = "cache";
             final int cacheProxyPort = 16000;
-            final CachingProxyServer cache = new CachingProxyServer(cacheProxyPort, cachePath);
 
             @Override
             public synchronized Channel getChannel(WebSocketCore.WebSocketConnection socket, String id) {
@@ -151,15 +149,16 @@ abstract public class SpacetimeWebServer extends PathHandler {
 
                                 System.out.println("Updating " + c);
 
-                                try {
-                                    new ImportKML(db, cache.proxy, c.id, kml).run();
-                                } catch (Exception e) {
-                                    ObjectNode nc = c.getSnapshot();
-                                    meta = (ObjectNode) nc.get("meta");
-                                    meta.put("status", e.toString());
-                                    c.commit(nc);
-                                    throw e;
-                                }
+                                //TODO replace proxy with HttpRequestCached:
+//                                try {
+//                                    new ImportKML(db, cache.proxy, c.id, kml).run();
+//                                } catch (Exception e) {
+//                                    ObjectNode nc = c.getSnapshot();
+//                                    meta = (ObjectNode) nc.get("meta");
+//                                    meta.put("status", e.toString());
+//                                    c.commit(nc);
+//                                    throw e;
+//                                }
 
                                 {
                                     ObjectNode nc = c.getSnapshot();
