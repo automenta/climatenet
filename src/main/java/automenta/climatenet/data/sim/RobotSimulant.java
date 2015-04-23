@@ -51,6 +51,12 @@ public class RobotSimulant extends NObject {
         Collections.addAll(memory, n);
         return this;
     }
+    public RobotSimulant knowHere(NObject... n) {
+        for (NObject x : n)
+            x.where(getWhere());
+        Collections.addAll(memory, n);
+        return this;
+    }
 
     public static class GeoSynchOrbitController implements SimulantController {
 
@@ -80,7 +86,7 @@ public class RobotSimulant extends NObject {
             t += dt;
             double y = Math.sin(radPerSec * t) * radius;
             double x = Math.cos(radPerSec * t) * radius;
-            r.where(y + center.getLatitude(), x + center.getLatitude());
+            r.where(y + center.getLatitude(), x + center.getLongitude());
         }
     }
 

@@ -197,7 +197,7 @@ public class Core extends EventEmitter {
     }
 
     public static String uuid() {
-        int bits = 8 * 32;
+        int bits = 8 * 16;
         byte[] bytes = new byte[bits/8];
         for (int i = 0; i < bytes.length; i++)
             bytes[i] = (byte)(Math.random() * 256); //TODO use xorshfitrandom

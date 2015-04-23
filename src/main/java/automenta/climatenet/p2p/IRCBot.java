@@ -1,18 +1,19 @@
 package automenta.climatenet.p2p;
 
-import automenta.climatenet.ElasticChannel;
 import automenta.climatenet.data.elastic.ElasticSpacetime;
-import automenta.knowtention.Core;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.elasticsearch.common.joda.time.DateTime;
 import org.pircbotx.Channel;
 import org.pircbotx.Configuration;
 import org.pircbotx.PircBotX;
 import org.pircbotx.User;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.*;
+
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * https://code.google.com/p/pircbotx/wiki/Documentation
@@ -24,12 +25,16 @@ public class IRCBot extends ListenerAdapter {
     }
 
     private final PircBotX irc;
-    private final ElasticChannel serverChannel;
+    public final automenta.knowtention.Channel serverChannel;
+    private final String server;
 
     public IRCBot(ElasticSpacetime db, String nick, String server, String... channels) throws Exception {
 
 
-        serverChannel = new ElasticChannel(db, "feature");
+        this.server = server;
+
+        //serverChannel = new ElasticChannel(db, server, "feature");
+        serverChannel = new automenta.knowtention.Channel(server);
 
         Configuration.Builder<PircBotX> config = new Configuration.Builder()
                 .setName(nick) //Nick of the bot. CHANGE IN YOUR CODE
@@ -116,40 +121,104 @@ public class IRCBot extends ListenerAdapter {
         IS, JOIN, LEAVE, MESSAGE, PRIVATE
     }
 
+//    final Map<String,IRCChannel> channels = new HashMap();
+//
+//    public static class IRCChannel extends NObject {
+//        final int maxMessages = 8;
+//
+//        public IRCChannel(String server, String channel) {
+//            super("irc://" + server + "/" + channel, channel);
+//        }
+//
+//        public Collection<ObjectNode> getMessages() {
+//            return messages;
+//        }
+//
+//        public synchronized void addMessage(ObjectNode s) {
+//            messages.add(s);
+//            while (messages.size() > maxMessages) {
+//                messages.remove(0);
+//            }
+//        }
+//    }
+
+
+    int maxMessages = 128;
+    public LinkedHashMap<String,IRCMessage> messages = new LinkedHashMap();
+
+    public static class IRCMessage extends NObject {
+
+        private String author;
+        private String message;
+
+        public void setAuthor(String nick) {
+            this.author = nick;
+        }
+        public void setMessage(String m) {
+            this.message = m;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public String getAuthor() {
+            return author;
+        }
+    }
+
+    protected synchronized void add(IRCMessage message) {
+        int overflow = messages.size() - maxMessages;
+        if (overflow > 0) {
+            Iterator<Map.Entry<String,IRCMessage>> ii = messages.entrySet().iterator();
+            for (int i = 0; i < overflow; i++) {
+                Map.Entry<String, IRCMessage> removed = ii.next();
+                ii.remove();
+            }
+
+        }
+
+        messages.put(message.getId(), message);
+
+    }
+
     protected void log(String channel, String nick, Event event, String value) {
-        System.out.println(channel + " " + nick + " " + event + " " + value);
+        //System.out.println(channel + " " + nick + " " + event + " " + value);
 
 
-        ObjectNode o = Core.newJson.objectNode();
+        IRCMessage m = new IRCMessage();
 
         switch (event) {
             case IS:
-                o.put("inh.Identity", 1);
+                m.tag("Identity", 1);
                 break;
             case JOIN:
-                o.put("inh.Join", 1);
+                m.tag("Join", 1);
                 break;
             case LEAVE:
-                o.put("inh.Leave", 1);
+                m.tag("Leave", 1);
                 break;
             case PRIVATE:
-                o.put("inh.Private", 1);
+                m.tag("Private", 1);
             case MESSAGE:
-                o.put("inh.Message", 1);
+                m.tag("Message", 1);
                 break;
         }
 
         if (channel!=null)
-            o.put("channel", channel);
+            m.tag(server + "/" + channel);
 
         if (nick!=null)
-            o.put("nick", nick);
+            m.setAuthor(nick);
 
         if (value!=null)
-            o.put("description", value);
+            m.setMessage(value);
 
-        o.put("startTime", new DateTime().toString());
+        m.when(System.currentTimeMillis());
+        m.setMessage(value);
 
-        serverChannel.commit(o);
+        add(m);
+
+        serverChannel.commit((ObjectNode) automenta.knowtention.Channel.om.valueToTree( messages ));
     }
 }

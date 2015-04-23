@@ -320,6 +320,7 @@ class EventEmitter {
             _.each(type, function(t) {
                 that.on(t, listener);
             });
+            return;
         }
 
         if(typeof listener != "function") {
@@ -357,6 +358,7 @@ class EventEmitter {
             _.each(type, function(t) {
                 that.off(t, listener);
             });
+            return;
         }
 
 

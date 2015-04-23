@@ -20,6 +20,7 @@
         "semantic": "latest",
         "backbone": "latest",
         "es6-shim": "latest",
-        "jquery.atwho": "ichord/At.js"
+        "jquery.atwho": "ichord/At.js",
+        "fullcalendar": "latest"
     }
 }

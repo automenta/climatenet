@@ -82,7 +82,7 @@ class NClient extends EventEmitter {
         }
 
         console.log('app focus: ', app.focus);
-        
+
         app.emit('focus'); //focus change
 
     }
@@ -91,13 +91,7 @@ class NClient extends EventEmitter {
     setView(v, cb) {
 
         if (this.currentView) {
-            try {
-                this.currentView.stop(this);
-            }
-            catch (e) {
-                console.error(e);
-                notify(JSON.stringify(e));
-            }
+            this.currentView.stop(this);
             $('#view').remove();
         }
 
@@ -106,14 +100,8 @@ class NClient extends EventEmitter {
         if (this.currentView) {
             var viewTarget = $('<div id="view"></div>');
             $('body').append(viewTarget);
-            try {
-                this.currentView.start(viewTarget, this, cb);
-            }
-            catch (e) {
-                console.trace();
-                console.error(e);
-                viewTarget.html('ERROR setView(' + v + '): ' + e);
-            }
+
+            this.currentView.start(viewTarget, this, cb);
         }
 
     }

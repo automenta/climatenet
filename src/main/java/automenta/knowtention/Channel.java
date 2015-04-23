@@ -49,7 +49,7 @@ public class Channel extends EventEmitter implements Serializable, Iterable<Json
         this.root.put("id", id);
     }
     
-    public Channel(ObjectNode node) {
+    @Deprecated public Channel(ObjectNode node) {
         super();
         this.root = node;
         this.id = node.get("id").asText();

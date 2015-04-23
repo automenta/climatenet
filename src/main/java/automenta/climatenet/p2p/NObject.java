@@ -12,7 +12,7 @@ import java.util.Map;
 public class NObject {
 
     String id, name;
-    SpacetimeTagPlan.TimeRange when = null;
+    SpacetimeTagPlan.TimePoint when = null;
     SpacetimeTagPlan.SpacePoint where = null;
     Map<String, Double> tags = new HashMap(); //TODO use a ObjectDouble primitive map structure
 
@@ -45,7 +45,7 @@ public class NObject {
     /**
      * timepoint, or -1 if none
      */
-    public SpacetimeTagPlan.TimeRange getWhen() {
+    public SpacetimeTagPlan.TimePoint getWhen() {
         return when;
     }
 
@@ -58,7 +58,7 @@ public class NObject {
     }
 
     public NObject when(long when) {
-        this.when = new SpacetimeTagPlan.TimeRange(when);
+        this.when = new SpacetimeTagPlan.TimePoint(when);
         return this;
     }
 

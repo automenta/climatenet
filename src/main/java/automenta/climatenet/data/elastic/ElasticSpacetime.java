@@ -102,7 +102,7 @@ public class ElasticSpacetime implements Spacetime {
      * creates an embedded instance
      */
     public static ElasticSpacetime local(String index, String dbPath, boolean forceInit) throws Exception {
-        EmbeddedES e = new EmbeddedES(dbPath, 9300 /*-1*/);
+        EmbeddedES e = new EmbeddedES(dbPath, -1);
         return new ElasticSpacetime(index, e.getClient(), forceInit);
     }
 

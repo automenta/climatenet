@@ -47,58 +47,9 @@ class HTMLView extends NView {
     }
 }
 
-function newJSONTable(x, withoutKeys, withoutTypes) {
-
-    //http://semantic-ui.com/collections/table.html
-
-    var tt = $('<table class="ui celled striped table"/>');
-
-    for (var k in x) {
-        var v = x[k];
-
-        if (!v) continue; //ignore falsy
-
-        if (withoutKeys)
-            if (_.indexOf(withoutKeys,k)!==-1) continue; //channel will be displayed beneath
-
-        if (withoutTypes)
-            if (_.indexOf(withoutTypes, typeof v)!==-1) continue; //ignore functions
-
-        $('<tr>').appendTo(tt)
-            .append('<td>' + k + '</td>')
-            .append('<td>' + JSON.stringify(v) + '</td>');
-    }
-
-    return tt;
-}
-
-class ChannelSummaryWidget {
-
-    /** meta = channel metadata, data = channel data */
-    constructor(id, meta, data, target) {
-
-        target.append('<h1 class="ui header">' + id + '</h1>');
-
-        if (meta) {
-
-            newJSONTable(meta, ['id', 'channel'], ['function']).appendTo(target);
 
 
-        }
 
-        var content = newDivClassed('ui segment inverted grid').appendTo(target);
-
-        for (var x in data) {
-            var d = data[x];
-
-            if (typeof d !== "object") continue; //ignore string entries
-
-            var e = newDivClassed('three wide column').appendTo(content);
-            e.append('<h3 class="header">' + x + '</h3>');
-            e.append('<div class="ui maxHalfHeight">' + JSON.stringify(d, null, 4) + '</pre>');
-        }
-    }
-}
 
 class FeedView extends NView {
 
@@ -108,8 +59,7 @@ class FeedView extends NView {
 
     start(v, app, cb) {
 
-        this.app = app;
-        app.on(['focus','change'], function(c) {
+        app.on(['focus','change'], this.listener = function(c) {
 
             //var vv = $('<div class="ui items" style="background-color: white"></div>');
 
@@ -158,10 +108,12 @@ class FeedView extends NView {
 
 
         });
+
+        this.listener(); //first update
     }
 
     stop(app) {
-        app.off(['focus','change']);
+        app.off(['focus','change'], this.listener);
     }
 }
 
@@ -229,12 +181,16 @@ class Map2DView extends NView {
 
         var agentIcons = { };
 
+        app.on(['focus','change'], this.listener = function(c) {
 
-        setInterval(function() {
+            //TODO remove removed icons
+
             for (var c in app.focus) {
                 var d = app.data(c);
                 for (var a in d) {
-                    if (d[a].coordinates) {
+                    console.log(d[a]);
+
+                    if (d[a].where) {
 
                         if (!agentIcons[a]) {
                             var marker = L.marker([0, 0], {
@@ -243,22 +199,25 @@ class Map2DView extends NView {
                             agentIcons[a] = marker;
                         }
 
+
                         //console.log(a, d[a].coordinates[0][0 /* first poly corner */]);
                         agentIcons[a].setLatLng({
-                            lat: d[a].coordinates[0][0][0],
-                            lng: d[a].coordinates[0][0][1]
+                            lat: d[a].where[0],
+                            lng: d[a].where[1]
                         });
                     }
                 }
             }
-        }, 750);
+        });
     }
 
     stop() {
-        if (this.map != null) {
-            this.map.remove();
-            this.map = null;
-        }
+
+        app.off(['focus','change'], this.listener);
+
+        this.map.remove();
+        this.map = null;
+
     }
 
 }

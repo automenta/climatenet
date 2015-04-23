@@ -1,5 +1,6 @@
 package automenta.climatenet.p2p;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.ml.clustering.*;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
@@ -57,39 +58,52 @@ public class SpacetimeTagPlan {
 //        }
     }
 
+    public static class TimePoint {
+        public long at;
+
+        public TimePoint(long at) {
+            this.at = at;
+        }
+
+        @JsonIgnore public boolean isInstant() { return true; }
+        @JsonIgnore public long getStart() { return at; }
+
+
+    }
+
     /**
      * TODO use a better discretization method (Ex: 1D SOM)
      * @author me
      */
-    public static class TimeRange {
+    public static class TimeRange extends TimePoint {
 
-        public long from, to;
-
-        public TimeRange(long at) {
-            this(at, at);
-        }
+        public long dt;
 
         public TimeRange(long from, long to) {
-            this.from = from;
-            this.to = to;
+            super(from);
+            this.dt = to - from;
         }
 
-        public boolean isInstant() { return from == to; }
+        @JsonIgnore @Override
+        public boolean isInstant() { return dt == 0; }
 
-        public long duration() { return to-from; }
+        public long getDt() { return dt; }
+
+        @JsonIgnore public long getMid() { return at + dt/2; }
+        @JsonIgnore public long getEnd() { return at + dt; }
 
         public List<Long> discretize(long timePeriod) {
             List<Long> l = new ArrayList();
-            long d = duration();
+            long d = getDt();
             if (d < timePeriod) {
                 //mid point
-                l.add( ((from + to)/2) );
+                l.add( getMid() );
             }
             else {
                 //distribute the points evenly
                 long remainder = d % timePeriod;
-                long t = from + remainder/2;
-                while (t < to) {
+                long t = getStart() + remainder/2;
+                while (t < getEnd()) {
                     l.add( (t) );
                     t+=timePeriod;
                 }
@@ -147,9 +161,12 @@ public class SpacetimeTagPlan {
 
             if (get(0).equals("time")) {
                 //convert time ranges to a set of time points
-                TimeRange tr = o.getWhen();
+                TimePoint tr = o.getWhen();
                 if (tr != null) {
-                    times.addAll(tr.discretize(timePeriod));
+                    if (tr instanceof TimeRange)
+                        times.addAll( ((TimeRange)tr).discretize(timePeriod) );
+                    else
+                        times.add(tr.getStart());
                 }
                 else {
 //                    long tp = o.when();

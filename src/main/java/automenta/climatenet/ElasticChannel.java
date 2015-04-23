@@ -15,10 +15,10 @@ public class ElasticChannel extends ReadOnlyChannel {
     private final ElasticSpacetime db;
     boolean readOnly = false;
 
-    /** manages a stream of documents with automatically generated UUID */
-    public ElasticChannel(ElasticSpacetime db, String type) {
-        this(db, null, type);
-    }
+//    /** manages a stream of documents with automatically generated UUID */
+//    public ElasticChannel(ElasticSpacetime db, String type) {
+//        this(db, null, type);
+//    }
 
     /** manages a specific document */
     public ElasticChannel(ElasticSpacetime db, String id, String type) {

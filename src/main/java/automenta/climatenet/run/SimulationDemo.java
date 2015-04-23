@@ -2,6 +2,7 @@ package automenta.climatenet.run;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.data.sim.RobotSimulant;
+import automenta.climatenet.p2p.IRCBot;
 import automenta.climatenet.p2p.NObject;
 import automenta.climatenet.p2p.SpacetimeTagPlan;
 import automenta.knowtention.Channel;
@@ -34,17 +35,17 @@ public class SimulationDemo {
             double b = 0.01;
 
             agents.add(new RobotSimulant("Megatron Spike", cx, cy, 0,
-                    new RobotSimulant.CircleController(new LngLatAlt(cx, cy))));
+                    new RobotSimulant.CircleController(new LngLatAlt(cy, cx))));
 
             agents.add(new RobotSimulant("Trypticon Perceptor", cx + b, cy + 2 * b, 0)
-                    .know(
-                            new NObject().where(0.2, 0.2).when(now + 10000).tag("Physics", 0.5).tag("Biology"),
-                            new NObject().where(0.15, 0.25).when(now + 20000).tag("Sleep", 0.8)
+                    .knowHere(
+                            new NObject().when(now + 10000).tag("Physics", 0.5).tag("Biology"),
+                            new NObject().when(now + 20000).tag("Sleep", 0.8)
                     )
             );
 
             agents.add(new RobotSimulant("Skywarp Mindwipe", cx - b, cy, 0)
-                    .know(new NObject().where(0.2, 0.2).when(now + 20000).tag("Physics", 0.75).tag("Chemistry")));
+                    .knowHere(new NObject().when(now + 20000).tag("Physics", 0.75).tag("Chemistry")));
 
 
             //Dope Freak Ultra
@@ -143,6 +144,12 @@ public class SimulationDemo {
 
         //EXAMPLES
         {
+            s.add("irc",
+                    new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention", "#nars"
+                            /*"#archlinux", "#jquery"*/).serverChannel
+            );
+
+
             //new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention");
             //new FileTailWindow(s.db, "netlog", "/home/me/.xchat2/scrollback/FreeNode/#netention.txt").start();
 
