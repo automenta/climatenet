@@ -9,8 +9,8 @@ function TagIndexAccordion(tagIndex) {
         var id = tag.id;
         var label = tag.name || tag.content || id;
 
-        var y = $('<div class="title small"/>').text(label);
-        var z = $('<div class="content"/>').attr('tag', id);
+        var y = $('<a class="ui item title" style="width: 100%"/>').text(label);
+        var z = $('<div class="ui segment inverted content"/>').attr('tag', id);
         parent.append(y, z);
     }
 
@@ -18,7 +18,7 @@ function TagIndexAccordion(tagIndex) {
 
     //http://semantic-ui.com/modules/accordion.html#/settings
 
-    x = $('<div class="ui styled accordion" style="max-height: 100%; overflow: scroll" />').accordion({
+    x = $('<div class="ui inverted accordion" style="max-height: 100%; overflow: scroll" />').accordion({
 
         exclusive: false,
 

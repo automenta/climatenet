@@ -13,6 +13,7 @@ class NClient extends EventEmitter {
             'map2d': new Map2DView(),
             'map3d': new Map3DView(),
             'wikipedia': new WikipediaView('Happiness'),
+            'time': new TimeView(),
 
             'edit1': new NObjectEditView('New NObject')
             //'space1': new HTMLView('Spaces Test', 'lab', 'space.html')
