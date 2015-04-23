@@ -18,7 +18,7 @@ package automenta.climatenet.p2p;
 
 
 import automenta.climatenet.SpacetimeWebServer;
-import com.google.gson.Gson;
+import automenta.knowtention.Core;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jsoup.Jsoup;
@@ -108,7 +108,7 @@ public class Wikipedia implements HttpHandler {
         m.put("url", location);
 
 
-        String metadata = new Gson().toJson(m);
+        String metadata = Core.toJSON(m);
         doc.getElementById("content").prepend("<div id='_meta'>" + metadata + "</div>");
 
         String content = doc.getElementById("content").toString();

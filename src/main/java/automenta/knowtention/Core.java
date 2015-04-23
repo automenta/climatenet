@@ -89,6 +89,7 @@ public class Core extends EventEmitter {
         
     
     final public static JsonNodeFactory newJson = new JsonNodeFactory(false);
+
     
     public static String toJSON(Object o) {
         try {
@@ -204,5 +205,6 @@ public class Core extends EventEmitter {
 
         return Base64.getEncoder().encodeToString(bytes);
     }
-    
+
+
 }
