@@ -68,9 +68,24 @@
         </dependency>
         <dependency>
             <groupId>net.tomp2p</groupId>
+            <artifactId>tomp2p-dht</artifactId>
+            <version>5.0-Beta7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mapdb</groupId>
+            <artifactId>mapdb</artifactId>
+            <!--<version>2.0-alpha1</version>-->
+            <version>1.0.6</version>
+        </dependency>
+
+        <!--
+        <dependency>
+            <groupId>net.tomp2p</groupId>
             <artifactId>tomp2p-all</artifactId>
             <version>5.0-Beta7</version>
         </dependency>
+        -->
 
         <dependency>
             <groupId>org.opensextant</groupId>
@@ -181,11 +196,6 @@
             <version>1.1.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.squareup.okhttp</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>2.3.0</version>
-        </dependency>
 
 
         <dependency>

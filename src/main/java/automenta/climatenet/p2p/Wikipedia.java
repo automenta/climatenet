@@ -19,7 +19,6 @@ package automenta.climatenet.p2p;
 
 import automenta.climatenet.SpacetimeWebServer;
 import automenta.knowtention.Core;
-import com.squareup.okhttp.Response;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jsoup.Jsoup;
@@ -28,6 +27,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,13 +170,11 @@ public class Wikipedia implements HttpHandler {
                     break;
             }
 
-            final String finalU = u;
 
-            Response response = HttpRequestCached.the.get(u);
 
-            String body = response.body().string();
+            byte[] response = HttpCache.the.get(u);
 
-            Document doc = Jsoup.parse(body, finalU);
+            Document doc = Jsoup.parse(new java.io.ByteArrayInputStream(response), Charset.defaultCharset().name(), u);
 
             String result = filterPage(doc);
 

@@ -100,7 +100,8 @@ public class SimulationDemo {
 //                    e.printStackTrace();
 //                }
 
-                next.put(r.getId(), om.valueToTree(r));
+
+                next.set(r.getId(), om.valueToTree(r));
             }
 
 
@@ -120,7 +121,7 @@ public class SimulationDemo {
 
             int p = 0;
             for (SpacetimeTagPlan.Possibility poss : possibilities) {
-                next.put(poss.getId(), om.valueToTree(poss));
+                next.set(poss.getId(), om.valueToTree(poss));
                 p++;
             }
 

@@ -1,6 +1,6 @@
 package automenta.climatenet.data;
 
-import automenta.climatenet.p2p.HttpRequestCached;
+import automenta.climatenet.p2p.HttpCache;
 import automenta.climatenet.p2p.NObject;
 import automenta.knowtention.Channel;
 import com.rometools.modules.georss.GeoRSSModule;
@@ -10,7 +10,7 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
-import com.squareup.okhttp.Response;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
 import java.util.List;
 
@@ -39,11 +39,11 @@ public class RSS extends Channel.FeedChannel<RSS.RSSItem> {
 
     public void update() throws Exception {
 
-        Response response = HttpRequestCached.the.get(url);
+        byte[] response = HttpCache.the.get(url);
         SyndFeedInput input = new SyndFeedInput();
         SyndFeed feed = null;
         try {
-            feed = input.build(new XmlReader(response.body().byteStream()));
+            feed = input.build(new XmlReader(new ByteInputStream(response, response.length)));// response.body().byteStream()));
         } catch (FeedException e) {
             e.printStackTrace();
             return;
