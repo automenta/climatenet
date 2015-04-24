@@ -10,8 +10,8 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 
@@ -43,7 +43,7 @@ public class RSS extends Channel.FeedChannel<RSS.RSSItem> {
         SyndFeedInput input = new SyndFeedInput();
         SyndFeed feed = null;
         try {
-            feed = input.build(new XmlReader(new ByteInputStream(response, response.length)));// response.body().byteStream()));
+            feed = input.build(new XmlReader(new ByteArrayInputStream(response, 0, response.length)));// response.body().byteStream()));
         } catch (FeedException e) {
             e.printStackTrace();
             return;
