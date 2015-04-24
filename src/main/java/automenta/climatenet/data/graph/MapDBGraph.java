@@ -1,5 +1,7 @@
 package automenta.climatenet.data.graph;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.mapdb.*;
 
 import java.io.DataInput;
@@ -313,13 +315,21 @@ public class MapDBGraph/*<V extends NObject>*/ {// implements DirectedGraph<V, S
                 throw new RuntimeException("Direction BOTH unsupported"); //ExceptionFactory.bothIsNotSupported();
         }
 
+        public Vertex source() { return getVertex(Direction.OUT);         }
+        public Vertex target() { return getVertex(Direction.IN);        }
+
         
         public String getLabel() {
             return label;
         }
 
+        @Override
+        public String toString() {
 
-        
+
+            return getVertex(Direction.OUT) + "->" + label + "[" + id + "]->" + getVertex(Direction.IN);
+        }
+
         public void remove() {
             Long recid = edgeRecid(id);
             if(!edges.contains(recid)) throw new IllegalStateException("edge not found");
@@ -616,12 +626,32 @@ public class MapDBGraph/*<V extends NObject>*/ {// implements DirectedGraph<V, S
         return engine.get(recid, VERTEX_SERIALIZER);
     }
 
+    public Vertex getVertex(Object id, boolean addIfNonExisting) {
+        Vertex v = getVertex(id);
+        if (v == null) {
+             v = addVertex(id);
+        }
+        return v;
+    }
     
     public void removeVertex(Vertex vertex) {
         vertex.remove();
     }
 
-    
+
+    public List<Vertex> getVertexList() {
+        return Lists.newArrayList(getVertices());
+    }
+    public Set<Vertex> getVertexSet() {
+        return Sets.newHashSet(getVertices());
+    }
+    public List<Edge> getEdgeList() {
+        return Lists.newArrayList(getEdges());
+    }
+    public Set<Edge> getEdgeSet() {
+        return Sets.newHashSet(getEdges());
+    }
+
     public Iterable<Vertex> getVertices() {
         return new Iterable<Vertex>() {
 
