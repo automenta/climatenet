@@ -2,6 +2,7 @@ package automenta.climatenet.p2p;
 
 import automenta.knowtention.Core;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,11 +10,11 @@ import java.util.Map;
 /**
  * Created by me on 4/22/15.
  */
-public class NObject {
+public class NObject implements Serializable {
 
     String id, name;
-    SpacetimeTagPlan.TimePoint when = null;
-    SpacetimeTagPlan.SpacePoint where = null;
+    TimePoint when = null;
+    SpacePoint where = null;
     Map<String, Double> tags = new HashMap(); //TODO use a ObjectDouble primitive map structure
 
     public NObject() {
@@ -45,11 +46,11 @@ public class NObject {
     /**
      * timepoint, or -1 if none
      */
-    public SpacetimeTagPlan.TimePoint getWhen() {
+    public TimePoint getWhen() {
         return when;
     }
 
-    public SpacetimeTagPlan.SpacePoint getWhere() {
+    public SpacePoint getWhere() {
         return where;
     }
 
@@ -58,15 +59,15 @@ public class NObject {
     }
 
     public NObject when(long when) {
-        this.when = new SpacetimeTagPlan.TimePoint(when);
+        this.when = new TimePoint(when);
         return this;
     }
 
     public NObject where(double lat, double lng) {
-        return where(new SpacetimeTagPlan.SpacePoint(lat, lng));
+        return where(new SpacePoint(lat, lng));
     }
 
-    public NObject where(SpacetimeTagPlan.SpacePoint s) {
+    public NObject where(SpacePoint s) {
         this.where = s;
         return this;
     }

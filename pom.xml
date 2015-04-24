@@ -9,8 +9,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <geotools.version>12.1</geotools.version>
         <geotk.version>4.x-SNAPSHOT</geotk.version>
         <junit.version>4.10</junit.version>
@@ -193,6 +193,13 @@
             <artifactId>spatial4j</artifactId>
             <version>0.4.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+
 
         <dependency>
             <groupId>com.vividsolutions</groupId>

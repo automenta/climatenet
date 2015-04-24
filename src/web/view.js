@@ -170,7 +170,11 @@ class Map2DView extends NView {
             iconAnchor: [16, 16]
         });
 
-        var map = this.map = L.map(v[0]);
+        var map = this.map = L.map(v[0], {
+            // This map option disables world wrapping. by default, it is false.
+            continuousWorld: true,
+            worldCopyJump: true
+        });
         //map.setView([51.505, -0.09], 13);
         map.setView([35.98909,-84.2566178],13);
         //map.setView([0,0], 7);
@@ -188,7 +192,7 @@ class Map2DView extends NView {
             for (var c in app.focus) {
                 var d = app.data(c);
                 for (var a in d) {
-                    console.log(d[a]);
+                    //console.log(d[a]);
 
                     if (d[a].where) {
 

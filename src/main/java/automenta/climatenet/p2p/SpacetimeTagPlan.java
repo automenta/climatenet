@@ -1,12 +1,9 @@
 package automenta.climatenet.p2p;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.ml.clustering.*;
 import org.apache.commons.math3.ml.distance.DistanceMeasure;
-import org.geojson.LngLatAlt;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -26,92 +23,6 @@ public class SpacetimeTagPlan {
     protected double altWeight = 1.0; //meters
     protected double tagWeight = 1.0;  //weight per each individual tag
     protected double minPossibilityTagStrength = 0.02; //minimum strength that a resulting tag must be to be added to a generated Possibility
-
-    public static class SpacePoint extends LngLatAlt implements Serializable {
-        //public String planet = "Earth";
-
-
-        public SpacePoint(double lat, double lon) {
-            super(lon, lat);
-        }
-
-        public SpacePoint(double lat, double lon, double alt) {
-            super(lon, lat, alt);
-        }
-
-//        public GeoHash getGeoHash(int bits) {
-//            /**
-//             * This method uses the given number of characters as the desired precision
-//             * value. The hash can only be 64bits long, thus a maximum precision of 12
-//             * characters can be achieved.
-//             */
-//            return GeoHash.withBitPrecision(lat,lon, bits);
-//        }
-
-//        public String toString() {
-//            String s = String.format("%.2f", lat) + "," + String.format("%.2f", lon);
-//
-//            if (!Double.isNaN(alt)) {
-//                s += "," + alt;
-//            }
-//            return s;
-//        }
-    }
-
-    public static class TimePoint {
-        public long at;
-
-        public TimePoint(long at) {
-            this.at = at;
-        }
-
-        @JsonIgnore public boolean isInstant() { return true; }
-        @JsonIgnore public long getStart() { return at; }
-
-
-    }
-
-    /**
-     * TODO use a better discretization method (Ex: 1D SOM)
-     * @author me
-     */
-    public static class TimeRange extends TimePoint {
-
-        public long dt;
-
-        public TimeRange(long from, long to) {
-            super(from);
-            this.dt = to - from;
-        }
-
-        @JsonIgnore @Override
-        public boolean isInstant() { return dt == 0; }
-
-        public long getDt() { return dt; }
-
-        @JsonIgnore public long getMid() { return at + dt/2; }
-        @JsonIgnore public long getEnd() { return at + dt; }
-
-        public List<Long> discretize(long timePeriod) {
-            List<Long> l = new ArrayList();
-            long d = getDt();
-            if (d < timePeriod) {
-                //mid point
-                l.add( getMid() );
-            }
-            else {
-                //distribute the points evenly
-                long remainder = d % timePeriod;
-                long t = getStart() + remainder/2;
-                while (t < getEnd()) {
-                    l.add( (t) );
-                    t+=timePeriod;
-                }
-            }
-            return l;
-        }
-
-    }
 
     //internal
     private final boolean time;
