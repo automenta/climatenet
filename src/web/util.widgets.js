@@ -9,7 +9,14 @@ function TagIndexAccordion(tagIndex) {
         var id = tag.id;
         var label = tag.name || tag.content || id;
 
+
+
         var y = $('<a class="ui item title" style="width: 100%"/>').text(label);
+
+        if (tag.icon) {
+            y.prepend($("<img style='display: inline'/>").attr('src', tag.icon));
+        }
+
         var z = $('<div class="ui segment inverted content"/>').attr('tag', id);
         parent.append(y, z);
     }
@@ -32,6 +39,7 @@ function TagIndexAccordion(tagIndex) {
 
             var t = opened.attr('tag');
             var h;
+
 
             if (x.newElementHeader)
                 h = x.newElementHeader(t);

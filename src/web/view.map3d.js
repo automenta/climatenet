@@ -68,7 +68,7 @@ class Map3DView extends NView {
 
             terrainProviders.push(({
                 name: 'WGS84 Ellipsoid',
-                iconUrl: Cesium.buildModuleUrl('Widgets/Images/TerrainProviders/Ellipsoid.png'),
+                icon: ('Widgets/Images/TerrainProviders/Ellipsoid.png'),
                 tooltip: 'WGS84 standard ellipsoid, also known as EPSG:4326',
                 newCesiumLayer: function () {
                     return new Cesium.EllipsoidTerrainProvider();
@@ -77,7 +77,7 @@ class Map3DView extends NView {
 
             terrainProviders.push(({
                 name: 'STK World Terrain meshes',
-                iconUrl: Cesium.buildModuleUrl('Widgets/Images/TerrainProviders/STK.png'),
+                icon: ('Widgets/Images/TerrainProviders/STK.png'),
                 tooltip: 'High-resolution, mesh-based terrain for the entire globe. Free for use on the Internet. Closed-network options are available.\nhttp://www.agi.com',
                 newCesiumLayer: function () {
                     return new Cesium.CesiumTerrainProvider({
@@ -257,11 +257,12 @@ class Map3DView extends NView {
 
         var clock = this.clock;
 
+        var ip = 'lib/cesium/';
         return [
 
         ({
             name: 'Stamen Toner',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/stamenToner.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/stamenToner.png'),
             tooltip: 'A high contrast black and white map.\nhttp://maps.stamen.com',
             newCesiumLayer: function () {
                 return new Cesium.OpenStreetMapImageryProvider({
@@ -273,7 +274,7 @@ class Map3DView extends NView {
 
         ({
             name: 'Stamen Watercolor',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/stamenWatercolor.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/stamenWatercolor.png'),
             tooltip: 'Reminiscent of hand drawn maps, Stamen watercolor maps apply raster effect \
     area washes and organic edges over a paper texture to add warm pop to any map.\nhttp://maps.stamen.com',
             newCesiumLayer: function () {
@@ -286,7 +287,7 @@ class Map3DView extends NView {
 
         ({
             name: 'Open\u00adStreet\u00adMap',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/openStreetMap.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/openStreetMap.png'),
             tooltip: 'OpenStreetMap (OSM) is a collaborative project to create a free editable map \
     of the world.\nhttp://www.openstreetmap.org',
             newCesiumLayer: function () {
@@ -298,7 +299,7 @@ class Map3DView extends NView {
 
         ({
             name: 'MapQuest Open\u00adStreet\u00adMap',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/mapQuestOpenStreetMap.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/mapQuestOpenStreetMap.png'),
             tooltip: 'OpenStreetMap (OSM) is a collaborative project to create a free editable \
     map of the world.\nhttp://www.openstreetmap.org',
             newCesiumLayer: function () {
@@ -310,7 +311,7 @@ class Map3DView extends NView {
 
         ({
             name: 'Bing Maps Aerial',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/bingAerial.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/bingAerial.png'),
             tooltip: 'Bing Maps aerial imagery \nhttp://www.bing.com/maps',
             newCesiumLayer: function () {
                 return new Cesium.BingMapsImageryProvider({
@@ -322,7 +323,7 @@ class Map3DView extends NView {
 
         ({
             name: 'Bing Maps Aerial with Labels',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/bingAerialLabels.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/bingAerialLabels.png'),
             tooltip: 'Bing Maps aerial imagery with label overlays \nhttp://www.bing.com/maps',
             newCesiumLayer: function () {
                 return new Cesium.BingMapsImageryProvider({
@@ -334,7 +335,7 @@ class Map3DView extends NView {
 
         ({
             name: 'Bing Maps Roads',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/bingRoads.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/bingRoads.png'),
             tooltip: 'Bing Maps standard road maps\nhttp://www.bing.com/maps',
             newCesiumLayer: function () {
                 return new Cesium.BingMapsImageryProvider({
@@ -346,18 +347,18 @@ class Map3DView extends NView {
 
         ({
             name: 'Natural Earth\u00a0II',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/naturalEarthII.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/naturalEarthII.png'),
             tooltip: 'Natural Earth II, darkened for contrast.\nhttp://www.naturalearthdata.com/',
             newCesiumLayer: function () {
                 return new Cesium.TileMapServiceImageryProvider({
-                    url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
+                    url: ip + ('Assets/Textures/NaturalEarthII')
                 });
             }
         }),
 
         ({
             name: 'ESRI World Imagery',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/esriWorldImagery.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/esriWorldImagery.png'),
             tooltip: '\
     World Imagery provides one meter or better satellite and aerial imagery in many parts of the world and lower resolution \
     satellite imagery worldwide.  The map includes NASA Blue Marble: Next Generation 500m resolution imagery at small scales \
@@ -375,7 +376,7 @@ class Map3DView extends NView {
 
         ({
             name: 'ESRI World Street Map',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/esriWorldStreetMap.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/esriWorldStreetMap.png'),
             tooltip: '\
     This worldwide street map presents highway-level data for the world. Street-level data includes the United States; much of \
     Canada; Japan; most countries in Europe; Australia and New Zealand; India; parts of South America including Argentina, Brazil, \
@@ -390,7 +391,7 @@ class Map3DView extends NView {
 
         ({
             name: 'ESRI National Geographic',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/esriNationalGeographic.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/esriNationalGeographic.png'),
             tooltip: '\
     This web map contains the National Geographic World Map service. This map service is designed to be used as a general reference map \
     for informational and educational purposes as well as a basemap by GIS professionals and other users for creating web maps and web \
@@ -404,7 +405,7 @@ class Map3DView extends NView {
 
         ({
             name: 'The Black Marble',
-            iconUrl: Cesium.buildModuleUrl('Widgets/Images/ImageryProviders/blackMarble.png'),
+            icon: ip + ('Widgets/Images/ImageryProviders/blackMarble.png'),
             tooltip: 'The lights of cities and villages trace the outlines of civilization in this global view of the \
     Earth at night as seen by NASA/NOAA\'s Suomi NPP satellite.',
             newCesiumLayer: function () {
@@ -420,7 +421,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra CR (True Color)',
-            iconUrl: 'img/terra-true-color.png',
+            icon: ip + 'img/terra-true-color.png',
             tooltip: 'MODIS Terra Corrected Reflectance True Color\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -441,7 +442,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra CR (Bands 721)',
-            iconUrl: 'img/terra-721.png',
+            icon: ip + 'img/terra-721.png',
             tooltip: 'MODIS Terra Corrected Reflectance Bands 7-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -462,7 +463,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra CR (Bands 367)',
-            iconUrl: 'img/terra-367.png',
+            icon: ip + 'img/terra-367.png',
             tooltip: 'MODIS Terra Corrected Reflectance Bands 3-6-7\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -483,7 +484,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra SR (Bands 121)',
-            iconUrl: 'img/terra-121.png',
+            icon: ip + 'img/terra-121.png',
             tooltip: 'MODIS Terra Land Surface Reflectance Bands 1-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -504,7 +505,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua CR (True Color)',
-            iconUrl: 'img/terra-true-color.png',
+            icon: ip + 'img/terra-true-color.png',
             tooltip: 'MODIS Aqua Corrected Reflectance True Color\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -525,7 +526,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua CR (Bands 721)',
-            iconUrl: 'img/terra-721.png',
+            icon: ip + 'img/terra-721.png',
             tooltip: 'MODIS Aqua Corrected Reflectance Bands 7-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -546,7 +547,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua SR (Bands 721)',
-            iconUrl: 'img/terra-721.png',
+            icon: ip + 'img/terra-721.png',
             tooltip: 'MODIS Aqua Land Surface Reflectance Bands 7-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -567,7 +568,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua SR (Bands 121)',
-            iconUrl: 'img/terra-121.png',
+            icon: ip + 'img/terra-121.png',
             tooltip: 'MODIS Aqua Land Surface Reflectance Bands 1-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
