@@ -59,7 +59,7 @@ class Map3DView extends NView {
             var ii = that.imagery();
             _.each(ii, function(i) {
                 if (!i.id) i.id = i.name.replace(/ /g, '_');
-                i.cesiumLayer = i.newCesiumLayer();
+                i.cesiumLayerProvider = i.newCesiumLayer();
             });
             app.addTag(ii);
 
@@ -190,19 +190,38 @@ class Map3DView extends NView {
                  }));
                  */
 
-                //TODO remove only those which are no longer in app.focus
-                that.layers.removeAll(true);
+                //remove only those which are no longer in app.focus
+                var toRemove = [];
+                for (var i = 0; i < that.layers.length; i++) {
+                    var l = that.layers.get(i);
+                    if (!l.tag || !app.focus[l.tag])
+                        toRemove.push(l);
+                }
+                _.each(toRemove, function(l) {
+                    that.layers.remove(l);
+                });
 
                 for (var c in app.focus) {
                     var x = app.data(c);
-                    console.log('layer', x, app.focus[c]);
 
                     //if x is a layer..
 
-                    if (x.newCesiumLayer) {
-                        var l = that.layers.addImageryProvider( x.cesiumLayer );
+
+                    if (x.cesiumLayerProvider) {
+                        var l = x.cesiumLayer; //try to use existing layer
+                        if (!l) {
+                            console.log('new layer', c);
+                            l = that.layers.addImageryProvider(x.cesiumLayerProvider);
+                            x.cesiumLayer = l;
+                        }
+                        else {
+                            console.log('existing layer', c);
+                        }
+                        l.tag = c;
                         l.alpha = app.focus[c]; //alpha = focus level
                     }
+
+
                 }
             });
 
