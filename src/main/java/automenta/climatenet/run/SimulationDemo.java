@@ -3,7 +3,6 @@ package automenta.climatenet.run;
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.data.geo.USGSEarthquakes;
 import automenta.climatenet.data.sim.RobotSimulant;
-import automenta.climatenet.p2p.IRCBot;
 import automenta.climatenet.p2p.NObject;
 import automenta.climatenet.p2p.SpacetimeTagPlan;
 import automenta.knowtention.Channel;
@@ -146,10 +145,10 @@ public class SimulationDemo {
 
         //EXAMPLES
         {
-            s.add("irc",
-                    new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention", "#nars"
-                            /*"#archlinux", "#jquery"*/).serverChannel
-            );
+//            s.add("irc",
+//                    new IRCBot(s.db, "RAWinput", "irc.freenode.net", "#netention", "#nars"
+//                            /*"#archlinux", "#jquery"*/).serverChannel
+//            );
 
             s.add("eq", new USGSEarthquakes());
 

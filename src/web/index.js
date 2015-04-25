@@ -22,14 +22,19 @@ class NClient extends EventEmitter {
 
     data(channel) {
 
-        try {
-            //TODO this is a mess:
-            return this.index.tag.node(channel).channel.subs[channel].data;
+        var d = this.index.tag.node(channel);
+        if (d.channel) {
+            try {
+                //TODO this is a mess:
+                return d.channel.subs[channel].data;
+            }
+            catch (e) {
+                console.error('no channel data for channel', channel, e)
+                return d;
+            }
         }
-        catch(e) {
-            //console.error('no data for')
-            return null;
-        }
+
+        return d;
     }
     setFocus(tag, amount) {
         var prevFocus = this.focus[tag] || 0;
@@ -48,7 +53,7 @@ class NClient extends EventEmitter {
                 //already open??? this shouldnt happen normally
                 console.error('newly focused tag', t, 'already has channel opened');
             }
-            else {
+            else if (t.newChannel) {
                 var c = t.newChannel({
 
                     onOpen: function() {
@@ -132,6 +137,15 @@ class NClient extends EventEmitter {
 
     }
 
+    addTag(tags) {
+        if (!Array.isArray(tags)) tags = [tags];
+
+        for (var i = 0; i < tags.length; i++)
+            this.index.tag.setNode(tags[i].id, tags[i]);
+
+        this.emit('index.change', [tags /* additions */, null /* removals */]);
+    }
+
 }
 
 function ready() {
@@ -168,23 +182,37 @@ function ready() {
 
     app.index = new TagIndex(function (i) {
 
-        var t = new TagIndexAccordion(i);
+        //called after index has been loaded, but this won't be necessary when events are used
 
-        t.newElementHeader = function(tag) {
+        function newIndex() {
+            var t = new TagIndexAccordion(app.index);
 
-            //http://codepen.io/thehonestape/pen/yjlGi
-            //http://thecodeplayer.com/walkthrough/spicing-up-the-html5-range-slider-input
+            t.newElementHeader = function(tag) {
 
-            var d = newDiv();
-            var ii = $('<input class="tagSlider" type = "range" value="0" min="0" max="100" _onchange="rangevalue.value=value"/>');
-            ii.change(function(c) {
-                app.setFocus(tag, parseInt(ii.val()) * 0.01);
-            });
-            d.html(ii);
-            return d;
-        };
+                //http://codepen.io/thehonestape/pen/yjlGi
+                //http://thecodeplayer.com/walkthrough/spicing-up-the-html5-range-slider-input
 
-        $('#sidebar').append(t);
+                var d = newDiv();
+                var ii = $('<input class="tagSlider" type = "range" value="0" min="0" max="100" _onchange="rangevalue.value=value"/>');
+                ii.change(function(c) {
+                    app.setFocus(tag, parseInt(ii.val()) * 0.01);
+                });
+                d.html(ii);
+                return d;
+            };
+
+            t.addClass('tagIndexAccordion');
+            $('#sidebar').append(t);
+
+        }
+
+        newIndex();
+
+        //TODO make this part of TagIndexAccordion when it is refactored as a class
+        app.on('index.change', function() {
+            $('.' + 'tagIndexAccordion').remove();
+            newIndex();
+        });
 
     });
 

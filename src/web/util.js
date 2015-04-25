@@ -226,7 +226,7 @@ class TagIndex {
                     height: 120
                 },
                 widget: {
-                 html: t.getPanelHTML(),
+                 html: t.getPanelHTML ? t.getPanelHTML() : null,
                  style: {},
                  scale: 0.9,
                  pixelScale: 160.0,

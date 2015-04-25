@@ -1,3 +1,6 @@
+//DEPRECATED
+"do not use"
+
 /** this is the system of menus and views in which Spacegraph(s) can be viewed and controlled */
 /*function Spacegrapher(e) {
  
