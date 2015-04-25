@@ -389,13 +389,16 @@ terrainProviders.push(new Cesium.ProviderViewModel({
 */  
 
 
-var viewer = new Cesium.Viewer('cesiumContainer',
-    {timeline: false, imageryProvider: false,
+
+var viewer = new Cesium.Viewer('cesiumContainer', {
+        timeline: false, 
+        imageryProvider: false,
         baseLayerPicker: false,
         animation: false,
         clock:clock,
         skyAtmosphere: false,
-        terrainProvider: false  });
+        terrainProvider: false  
+    });
 
 //viewer.timeline.zoomTo(startTime, endTime);
 
