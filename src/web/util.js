@@ -176,10 +176,11 @@ class TagIndex {
         var nn = this.tag.nodes();
         for (var i = 0; i < nn.length; i++) {
             var t = this.tag.node(nn[i]);
+            if (!t) continue;
 
             //TODO temporary - should be filtered by server
-            if (!t || !t.id || t.id.indexOf(' ')!=-1) {
-                console.error('invalid tag ID: ' + id);
+            if (!t.id || t.id.indexOf(' ')!=-1) {
+                console.error('invalid tag', t);
                 continue;
             }
 

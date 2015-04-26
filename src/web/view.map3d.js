@@ -55,13 +55,43 @@ class Map3DView extends NView {
 
 
             //add the included imagery layers to the index
+            {
+                var cesiumProviders = that.imagery();
+                _.each(cesiumProviders, function (i) {
+                    if (!i.id) i.id = i.name.replace(/ /g, '_');
 
-            var ii = that.imagery();
-            _.each(ii, function(i) {
-                if (!i.id) i.id = i.name.replace(/ /g, '_');
-                i.cesiumLayerProvider = i.newCesiumLayer();
-            });
-            app.addTag(ii);
+                });
+
+
+
+
+                /*
+                var leafletProviders = _.each(new MapTileLayers(app).tags, function(l) {
+                    l.newCesiumLayer = function () {
+                        var turl = l.tileURL;
+
+                        var tms = new Cesium.TileMapServiceImageryProvider({
+                            url: turl
+                        });
+
+
+                        tms.requestImage = function(x, y, level) {
+                            var url = turl.replace("{z}", level).replace("{y}", this._yFlip ? y : (1 << level) - y - 1).replace("{x}", x);
+                            return Cesium.ImageryProvider.loadImage(tms, url);
+                        };
+                        return tms;
+                    };
+
+                });
+                */
+
+                app.addTag(_.flatten([
+                    cesiumProviders,
+                    //leafletProviders
+                ]));
+
+            }
+
 
 
             var terrainProviders = [];
@@ -162,33 +192,11 @@ class Map3DView extends NView {
             that.viewer = viewer;
             that.layers = viewer.imageryLayers;
 
-            app.on(['focus','change'], that.listener = function(c) {
+            app.on(['focus','change'], that.listener = function() {
 
                 //http://cesiumjs.org/Cesium/Build/Documentation/ImageryLayerCollection.html
                 //http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Imagery%20Layers.html&label=undefined
 
-                /*
-                 var viewer = new Cesium.Viewer('cesiumContainer', {
-                 imageryProvider : new Cesium.ArcGisMapServerImageryProvider({
-                 url : '//server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer'
-                 }),
-                 baseLayerPicker : false
-                 });
-
-                 var layers = viewer.imageryLayers;
-                 var blackMarble = layers.addImageryProvider(new Cesium.TileMapServiceImageryProvider({
-                 url : '//cesiumjs.org/blackmarble',
-                 maximumLevel : 8,
-                 credit : 'Black Marble imagery courtesy NASA Earth Observatory'
-                 }));
-                 blackMarble.alpha = 0.5;
-                 blackMarble.brightness = 2.0;
-
-                 layers.addImageryProvider(new Cesium.SingleTileImageryProvider({
-                 url : '../images/Cesium_Logo_overlay.png',
-                 rectangle : Cesium.Rectangle.fromDegrees(-75.0, 28.0, -67.0, 29.75)
-                 }));
-                 */
 
                 //remove only those which are no longer in app.focus
                 var toRemove = [];
@@ -206,16 +214,17 @@ class Map3DView extends NView {
 
                     //if x is a layer..
 
+                    if (x.newCesiumLayer) {
 
-                    if (x.cesiumLayerProvider) {
                         var l = x.cesiumLayer; //try to use existing layer
                         if (!l) {
-                            console.log('new layer', c);
+                            //console.log('new layer', c);
+                            x.cesiumLayerProvider = x.cesiumLayerProvider || x.newCesiumLayer();
                             l = that.layers.addImageryProvider(x.cesiumLayerProvider);
                             x.cesiumLayer = l;
                         }
                         else {
-                            console.log('existing layer', c);
+                            //console.log('existing layer', c);
                         }
                         l.tag = c;
                         l.alpha = app.focus[c]; //alpha = focus level
@@ -421,7 +430,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra CR (True Color)',
-            icon: ip + 'img/terra-true-color.png',
+            icon: 'img/terra-true-color.png',
             tooltip: 'MODIS Terra Corrected Reflectance True Color\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -442,7 +451,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra CR (Bands 721)',
-            icon: ip + 'img/terra-721.png',
+            icon: 'img/terra-721.png',
             tooltip: 'MODIS Terra Corrected Reflectance Bands 7-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -463,7 +472,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra CR (Bands 367)',
-            icon: ip + 'img/terra-367.png',
+            icon: 'img/terra-367.png',
             tooltip: 'MODIS Terra Corrected Reflectance Bands 3-6-7\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -484,7 +493,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Terra SR (Bands 121)',
-            icon: ip + 'img/terra-121.png',
+            icon: 'img/terra-121.png',
             tooltip: 'MODIS Terra Land Surface Reflectance Bands 1-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -505,7 +514,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua CR (True Color)',
-            icon: ip + 'img/terra-true-color.png',
+            icon: 'img/terra-true-color.png',
             tooltip: 'MODIS Aqua Corrected Reflectance True Color\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -526,7 +535,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua CR (Bands 721)',
-            icon: ip + 'img/terra-721.png',
+            icon: 'img/terra-721.png',
             tooltip: 'MODIS Aqua Corrected Reflectance Bands 7-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -547,7 +556,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua SR (Bands 721)',
-            icon: ip + 'img/terra-721.png',
+            icon: 'img/terra-721.png',
             tooltip: 'MODIS Aqua Land Surface Reflectance Bands 7-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -568,7 +577,7 @@ class Map3DView extends NView {
 
         ({ // start push
             name: 'Aqua SR (Bands 121)',
-            icon: ip + 'img/terra-121.png',
+            icon: 'img/terra-121.png',
             tooltip: 'MODIS Aqua Land Surface Reflectance Bands 1-2-1\n Adjust time slider to desired date before selecting this layer to view satellite data on that date. \n credit: NASA Earth Observing System Data and Information System (EOSDIS) Global Imagery Browse Services (GIBS)',
             newCesiumLayer: function () {
                 var isoDateTime = clock.currentTime.toString();
@@ -590,37 +599,4 @@ class Map3DView extends NView {
     ]; }
 }
 
-
-
-function isoDate(string) {
-    var match;
-    if (typeof string.getTime === "function")
-        return string;
-    else if (match = string.match(/^(\d{4})(-?(\d{2})(-?(\d{2})(T(\d{2}):?(\d{2})(:?(\d{2})(\.(\d+))?)?(Z|((\+|-)(\d{2}):?(\d{2}))))?)?)?$/)) {
-        var date = new Date(
-            Number(match[1]), // year
-            (Number(match[3]) - 1) || 0, // month
-            Number(match[5]) || 0, // day
-            Number(match[7]) || 0, // hour
-            Number(match[8]) || 0, // minute
-            Number(match[10]) || 0, // second
-            Number(match[12]) || 0);
-
-        if (match[13] && match[13] !== "Z") {
-            var h = Number(match[16]) || 0,
-                m = Number(match[17]) || 0;
-
-            h *= 3600000;
-            m *= 60000;
-
-            var offset = h + m;
-            if (match[15] == "+")
-                offset = -offset;
-
-            date = new Date(date.valueOf() - offset);
-        }
-
-        return date;
-    } else
-        throw new Error("Invalid ISO 8601 date given.", __filename);
-};
+function isoDate(isoDateTime) {return isoDateTime.split("T")[0];};

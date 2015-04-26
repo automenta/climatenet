@@ -33,6 +33,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 
 import static automenta.knowtention.Core.newJson;
+import static io.undertow.Handlers.header;
 import static io.undertow.Handlers.resource;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -96,11 +97,18 @@ abstract public class SpacetimeWebServer extends PathHandler {
 
         this.index = new Index(db);
 
+        //CORS fucking sucks
+        /*  .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+            .header("Access-Control-Allow-Credentials", "true")
+            .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+            .header("Access-Control-Max-Age", "1209600")
+         */
 
         //https://github.com/undertow-io/undertow/blob/master/examples/src/main/java/io/undertow/examples/sessionhandling/SessionServer.java
-        addPrefixPath("/", resource(
+        addPrefixPath("/", header(resource(
                 new FileResourceManager(new File(clientPath), 100, true, "/")).
-                setDirectoryListingEnabled(false));
+                setDirectoryListingEnabled(false), "Access-Control-Allow-Origin", "*"));
 
         addPrefixPath("/socket", new WebSocketCore(
                 index
