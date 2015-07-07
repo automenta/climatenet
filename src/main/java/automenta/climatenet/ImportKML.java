@@ -14,61 +14,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.opensextant.geodesy.Geodetic2DPoint;
+import org.opensextant.giscore.events.*;
+import org.opensextant.giscore.events.SimpleField.Type;
+import org.opensextant.giscore.geometry.Geometry;
+import org.opensextant.giscore.geometry.Point;
+import org.opensextant.giscore.utils.Color;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayDeque;
-import java.util.Base64;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.io.IOUtils;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.common.xcontent.XContentBuilder;
+
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import org.opensextant.geodesy.Geodetic2DPoint;
-import org.opensextant.giscore.events.ContainerEnd;
-import org.opensextant.giscore.events.ContainerStart;
-import org.opensextant.giscore.events.DocumentStart;
-import org.opensextant.giscore.events.Feature;
-import org.opensextant.giscore.events.IGISObject;
-import org.opensextant.giscore.events.Pair;
-import org.opensextant.giscore.events.Schema;
-import org.opensextant.giscore.events.SimpleField;
-import org.opensextant.giscore.events.SimpleField.Type;
-import org.opensextant.giscore.events.Style;
-import org.opensextant.giscore.events.StyleMap;
-import org.opensextant.giscore.events.StyleSelector;
-import org.opensextant.giscore.geometry.Geometry;
-import org.opensextant.giscore.geometry.Point;
-import org.opensextant.giscore.utils.Color;
 
 /**
  *
  * TODO - remove null descriptions - store HTML content separately so it does
  * not get indexed - max token size
  *
- * @see https://github.com/OpenSextant/giscore/wiki
+ * see https://github.com/OpenSextant/giscore/wiki
  * @author me
  */
-public class ImportKML implements Runnable {
+public class ImportKML {
 
     static final HtmlCompressor compressor = new HtmlCompressor();
-
     private final Proxy proxy;
+
 
     public static String getSerial(String layer, int serial) {
         return (Base64.getEncoder().encodeToString(BigInteger.valueOf(serial).add(BigInteger.valueOf(layer.hashCode()).shiftRight(32)).toByteArray()));
     }
     private final ElasticSpacetime st;
     private final String id;
-    private final String url;
+
     int serial;
 
     int numFeatures = 0;
@@ -88,13 +73,12 @@ public class ImportKML implements Runnable {
         public void end();
     }
 
-    Deque<String> path = new ArrayDeque();
+    final Deque<String> path = new ArrayDeque();
 
-    public void transformKML(String layer, String urlString, ElasticSpacetime st, final GISVisitor visitor) throws Exception {
-        URL url = new URL(urlString);
+    public void transformKML(KmlReader reader, String layer, ElasticSpacetime st, final GISVisitor visitor) throws Exception {
+
         this.layer = layer;
 
-        KmlReader reader = new KmlReader(url, proxy);
         reader.setRewriteStyleUrls(true);
 
         SimpleField layerfield = new SimpleField("layer", Type.STRING);
@@ -155,7 +139,7 @@ public class ImportKML implements Runnable {
         } while (true);
 
 // get list of network links that were retrieved from step above
-        Set<URI> networkLinks = new HashSet(reader.getNetworkLinks());
+        Set<URI> networkLinks = new LinkedHashSet(reader.getNetworkLinks());
 
         reader.close();
 
@@ -216,28 +200,28 @@ public class ImportKML implements Runnable {
 
     }
 
-    public static void exec(String cmd) {
-        try {
-            String[] cmdParm = {"/bin/sh", "-c", cmd};
-
-            Process proc = Runtime.getRuntime().exec(cmdParm);
-            IOUtils.copy(proc.getInputStream(), System.out);
-            IOUtils.copy(proc.getErrorStream(), System.err);
-            proc.waitFor();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public static void toPostgres(String layerName, String inputFile, String host, String user, String db) {
-        exec("ogr2ogr -update -append -skipFailures -f \"PostgreSQL\" PG:\"host=" + host + " user=" + user + " dbname=" + db + "\" " + inputFile + " -nln " + layerName);
-    }
-
-    public static void toGeoJSON(String inputFile, String outputFile) {
-//        ogr2ogr -f "GeoJSON" output.json input.kml
-        exec("rm -f " + outputFile);
-        exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
-    }
+//    public static void exec(String cmd) {
+//        try {
+//            String[] cmdParm = {"/bin/sh", "-c", cmd};
+//
+//            Process proc = Runtime.getRuntime().exec(cmdParm);
+//            IOUtils.copy(proc.getInputStream(), System.out);
+//            IOUtils.copy(proc.getErrorStream(), System.err);
+//            proc.waitFor();
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//        }
+//    }
+//
+//    public static void toPostgres(String layerName, String inputFile, String host, String user, String db) {
+//        exec("ogr2ogr -update -append -skipFailures -f \"PostgreSQL\" PG:\"host=" + host + " user=" + user + " dbname=" + db + "\" " + inputFile + " -nln " + layerName);
+//    }
+//
+//    public static void toGeoJSON(String inputFile, String outputFile) {
+////        ogr2ogr -f "GeoJSON" output.json input.kml
+//        exec("rm -f " + outputFile);
+//        exec("ogr2ogr -f GeoJSON -skipFailures " + outputFile + " " + inputFile);
+//    }
 
     final public static ObjectMapper json = new ObjectMapper()
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
@@ -248,7 +232,6 @@ public class ImportKML implements Runnable {
 
     public static ObjectNode fromJSON(String x) {
         try {
-
             return json.readValue(x, ObjectNode.class);
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -256,287 +239,302 @@ public class ImportKML implements Runnable {
         }
     }
 
-    public ImportKML(ElasticSpacetime st, Proxy proxy, String id, String url) {
+    public ImportKML(ElasticSpacetime st, String id) {
+        this(st, null, id);
+    }
+
+    public ImportKML(ElasticSpacetime st, Proxy proxy, String id) {
         this.st = st;
         this.proxy = proxy;
         this.id = id;
-        this.url = url;
     }
 
-    @Override
-    public void run() {
-        try {
-            final Map<String, Style> styles = new HashMap();
 
-            //1. pre-process: collect style information
-            transformKML(id, url, st, new GISVisitor() {
 
-                Map<String, String> styleMap = new HashMap();
+    public Runnable task(String url, Proxy proxy) throws IOException {
+        return task(new KmlReader(new URL(url), proxy));
+    }
+    public Runnable task(File file) throws IOException {
+        return task(new KmlReader(file));
+    }
 
-                @Override
-                public void start(String layer) {
-                }
+    public Runnable task(KmlReader reader) {
+        return () -> {
+            try {
+                final Map<String, Style> styles = new LinkedHashMap();
 
-                protected void onStyle(Style s) {
-                    String id = s.getId();
-                    styles.put(id, s);
-                }
 
-                protected void onStyleMap(StyleMap ss) {
+                //1. pre-process: collect style information
+                transformKML(reader, id, st, new GISVisitor() {
 
-                    String ssid = ss.getId();
-                    if (ssid == null) {
-                        System.err.println("null id: " + ss);
-                        return;
-                    }
-                    Pair p = ss.getPair(StyleMap.NORMAL);
-                    if (p.getStyleSelector() instanceof Style) {
-                        styles.put(ssid, ((Style) p.getStyleSelector()));
-                    } else if (p.getStyleSelector() instanceof StyleMap) {
-                        //System.out.println("Unmanaged StyleMap: " + p);
-                        styleMap.put(ssid, p.getStyleUrl());
+                    final Map<String, String> styleMap = new LinkedHashMap();
+
+                    @Override
+                    public void start(String layer) {
                     }
 
-                    //TODO highlight?
-                }
-
-                @Override
-                public boolean on(IGISObject go, String[] path) throws IOException {
-
-                    if (go instanceof Style) {
-                        onStyle((Style) go);
-                    } else if (go instanceof StyleMap) {
-                        onStyleMap((StyleMap) go);
+                    protected void onStyle(Style s) {
+                        String id = s.getId();
+                        styles.put(id, s);
                     }
-                    if (go instanceof ContainerStart) {
-                        ContainerStart cs = (ContainerStart) go;
 
-                        for (StyleSelector ss : cs.getStyles()) {
-                            if (ss instanceof Style) {
-                                onStyle((Style) ss);
-                            } else if (ss instanceof StyleMap) {
-                                onStyleMap((StyleMap) ss);
-                            }
+                    protected void onStyleMap(StyleMap ss) {
+
+                        String ssid = ss.getId();
+                        if (ssid == null) {
+                            System.err.println("null id: " + ss);
+                            return;
                         }
-                    }
-
-                    return true;
-                }
-
-                @Override
-                public void end() {
-                    for (Map.Entry<String, String> e : styleMap.entrySet()) {
-                        String from = e.getKey();
-                        String to = e.getValue();
-                        Style toStyle = styles.get(to);
-                        if (toStyle == null) {
-                            System.err.println("Missing style: " + to);
-                            continue;
+                        Pair p = ss.getPair(StyleMap.NORMAL);
+                        if (p.getStyleSelector() instanceof Style) {
+                            styles.put(ssid, ((Style) p.getStyleSelector()));
+                        } else if (p.getStyleSelector() instanceof StyleMap) {
+                            //System.out.println("Unmanaged StyleMap: " + p);
+                            styleMap.put(ssid, p.getStyleUrl());
                         }
-                        styles.put(from, toStyle);
-                    }
-                }
 
-            });
-
-            System.out.println(layer + " STYLES:  \n" + styles.keySet());
-
-            //2. process features
-            transformKML(id, url, st, new GISVisitor() {
-
-                private BulkRequestBuilder bulk = null;
-
-                @Override
-                public void start(String layer) {
-                    bulk = st.newBulk();
-                }
-
-                @Override
-                public boolean on(IGISObject go, String[] path) throws IOException {
-                    if (go == null) {
-                        return false;
+                        //TODO highlight?
                     }
 
-                    if (st == null) {
-                        return false;
-                    }
+                    @Override
+                    public boolean on(IGISObject go, String[] path) throws IOException {
 
-                    if (go instanceof ContainerStart) {
-                        ContainerStart cs = (ContainerStart) go;
-                        //TODO startTime?
-                        //System.out.println(cs + " " + cs.getId());
+                        if (go instanceof Style) {
+                            onStyle((Style) go);
+                        } else if (go instanceof StyleMap) {
+                            onStyleMap((StyleMap) go);
+                        }
+                        if (go instanceof ContainerStart) {
+                            ContainerStart cs = (ContainerStart) go;
 
-                        XContentBuilder d;
-                        d = jsonBuilder().startObject().field("name", cs.getName());
-
-                        /*String styleUrl = cs.getStyleUrl();
-                         if (styleUrl != null) {
-                         if (styleUrl.startsWith("#")) {
-                         styleUrl = styleUrl.substring(1);
-                         }
-                         styleUrl = layer + "_" + styleUrl;
-                         System.err.println("Container styleUrl: " + styleUrl);
-                         d.field("styleUrl", styleUrl);
-                         }
-                         */
-                        String desc = cs.getDescription();
-                        if ((desc != null) && (desc.length() > 0)) {
-                            //filter 
-                            desc = filterHTML(desc);
-                            if (desc.length() > 0) {
-                                d.field("description", desc);
+                            for (StyleSelector ss : cs.getStyles()) {
+                                if (ss instanceof Style) {
+                                    onStyle((Style) ss);
+                                } else if (ss instanceof StyleMap) {
+                                    onStyleMap((StyleMap) ss);
+                                }
                             }
                         }
 
-                        d.field("path", path).endObject();
-
-                        String i = getSerial(layer, serial);
-                        bulk = st.add(bulk, "tag", i, d);
-
-                        bulk = updateBulk();
+                        return true;
                     }
 
-                    if (go instanceof Feature) {
-                        Feature f = (Feature) go;
-
-                        XContentBuilder fb = jsonBuilder().startObject();
-                        fb.field("name", f.getName());
-
-                        String desc = f.getDescription();
-                        if ((desc != null) && (desc.length() > 0)) {
-                            //filter 
-                            desc = filterHTML(desc);
-                            if (desc.length() > 0) {
-                                fb.field("description", desc);
+                    @Override
+                    public void end() {
+                        for (Map.Entry<String, String> e : styleMap.entrySet()) {
+                            String from = e.getKey();
+                            String to = e.getValue();
+                            Style toStyle = styles.get(to);
+                            if (toStyle == null) {
+                                System.err.println("Missing style: " + to);
+                                continue;
                             }
+                            styles.put(from, toStyle);
+                        }
+                    }
+
+                });
+
+                System.out.println(layer + " STYLES:  \n" + styles.keySet());
+
+                //2. process features
+                transformKML(reader, id, st, new GISVisitor() {
+
+                    private BulkRequestBuilder bulk = null;
+
+                    @Override
+                    public void start(String layer) {
+                        bulk = st.newBulk();
+                    }
+
+                    @Override
+                    public boolean on(IGISObject go, String[] path) throws IOException {
+                        if (go == null) {
+                            return false;
                         }
 
-                        if (f.getSnippet() != null) {
-                            if (f.getSnippet().length() > 0) {
-                                fb.field("snippet", f.getSnippet());
-                            }
-                        }
-                        if (f.getStartTime() != null) {
-                            fb.field("startTime", f.getStartTime().getTime());
-                        }
-                        if (f.getEndTime() != null) {
-                            fb.field("endTime", f.getEndTime().getTime());
+                        if (st == null) {
+                            return false;
                         }
 
-                        Geometry geo = f.getGeometry();
-                        if (geo != null) {
-                            if (geo instanceof Point) {
-                                Point pp = (Point) geo;
-                                Geodetic2DPoint c = pp.getCenter();
-                                double lat = c.getLatitudeAsDegrees();
-                                double lon = c.getLongitudeAsDegrees();
+                        if (go instanceof ContainerStart) {
+                            ContainerStart cs = (ContainerStart) go;
+                            //TODO startTime?
+                            //System.out.println(cs + " " + cs.getId());
 
-                                //http://geojson.org/
-                                fb.startObject("geom").field("type", "point").field("coordinates", new double[]{lon, lat}).endObject();
+                            XContentBuilder d;
+                            d = jsonBuilder().startObject().field("name", cs.getName());
 
-                            } else if (geo instanceof org.opensextant.giscore.geometry.Line) {
-                                org.opensextant.giscore.geometry.Line l = (org.opensextant.giscore.geometry.Line) geo;
-
-                                List<Point> lp = l.getPoints();
-                                double[][] points = toArray(lp);
-
-                                fb.startObject("geom").field("type", "linestring").field("coordinates", points).endObject();
-
-                            } else if (geo instanceof org.opensextant.giscore.geometry.Polygon) {
-                                org.opensextant.giscore.geometry.Polygon p = (org.opensextant.giscore.geometry.Polygon) geo;
-                                
-                                double[][] outerRing = toArray(p.getOuterRing().getPoints());
-                                //TODO handle inner rings
-
-                                fb.startObject("geom").field("type", "polygon").field("coordinates", new double[][][] {outerRing /* inner rings */}).endObject();
-                            }
-                            
-                            //TODO other types
-                        }
-
-                        Style styleInline = null;
-                        if (f.getStyle() != null) {
-
-                            if (f.getStyle() instanceof Style) {
-
-                                Style ss = (Style) f.getStyle();
-                                styleInline = ss;
-
-                            } else if (f.getStyle() instanceof StyleMap) {
-                                StyleMap ss = (StyleMap) f.getStyle();
-                                styleInline = styles.get(ss.getId());
-                                if (styleInline == null) {
-                                    System.err.println("Missing: " + ss.getId());
+                            /*String styleUrl = cs.getStyleUrl();
+                             if (styleUrl != null) {
+                             if (styleUrl.startsWith("#")) {
+                             styleUrl = styleUrl.substring(1);
+                             }
+                             styleUrl = layer + "_" + styleUrl;
+                             System.err.println("Container styleUrl: " + styleUrl);
+                             d.field("styleUrl", styleUrl);
+                             }
+                             */
+                            String desc = cs.getDescription();
+                            if ((desc != null) && (desc.length() > 0)) {
+                                //filter
+                                desc = filterHTML(desc);
+                                if (desc.length() > 0) {
+                                    d.field("description", desc);
                                 }
                             }
 
+                            d.field("path", path).endObject();
+
+                            String i = getSerial(layer, serial);
+                            bulk = st.add(bulk, "tag", i, d);
+
+                            bulk = commit();
                         }
 
-                        if ((f.getStyleUrl() != null) || (styleInline != null)) {
+                        if (go instanceof Feature) {
+                            Feature f = (Feature) go;
 
-                            fb.startObject("style");
+                            XContentBuilder fb = jsonBuilder().startObject();
+                            fb.field("name", f.getName());
 
-                            if (f.getStyleUrl() != null) {
-                                String su = f.getStyleUrl();
-                                if (su.startsWith("#")) {
-                                    su = su.substring(1);
-                                }
-
-                                Style s = styles.get(su);
-                                if (s == null) {
-                                    //System.err.println("Missing: " + f.getStyleUrl());
-                                } else {
-                                    styleJson(fb, s);
+                            String desc = f.getDescription();
+                            if ((desc != null) && (desc.length() > 0)) {
+                                //filter
+                                desc = filterHTML(desc);
+                                if (desc.length() > 0) {
+                                    fb.field("description", desc);
                                 }
                             }
 
-                            if (styleInline != null) {
-                                styleJson(fb, styleInline);
+                            if (f.getSnippet() != null) {
+                                if (f.getSnippet().length() > 0) {
+                                    fb.field("snippet", f.getSnippet());
+                                }
+                            }
+                            if (f.getStartTime() != null) {
+                                fb.field("startTime", f.getStartTime().getTime());
+                            }
+                            if (f.getEndTime() != null) {
+                                fb.field("endTime", f.getEndTime().getTime());
                             }
 
-                            fb.endObject();
+                            Geometry geo = f.getGeometry();
+                            if (geo != null) {
+                                if (geo instanceof Point) {
+                                    Point pp = (Point) geo;
+                                    Geodetic2DPoint c = pp.getCenter();
+                                    double lat = c.getLatitudeAsDegrees();
+                                    double lon = c.getLongitudeAsDegrees();
 
+                                    //http://geojson.org/
+                                    fb.startObject("geom").field("type", "point").field("coordinates", new double[]{lon, lat}).endObject();
+
+                                } else if (geo instanceof org.opensextant.giscore.geometry.Line) {
+                                    org.opensextant.giscore.geometry.Line l = (org.opensextant.giscore.geometry.Line) geo;
+
+                                    List<Point> lp = l.getPoints();
+                                    double[][] points = toArray(lp);
+
+                                    fb.startObject("geom").field("type", "linestring").field("coordinates", points).endObject();
+
+                                } else if (geo instanceof org.opensextant.giscore.geometry.Polygon) {
+                                    org.opensextant.giscore.geometry.Polygon p = (org.opensextant.giscore.geometry.Polygon) geo;
+
+                                    double[][] outerRing = toArray(p.getOuterRing().getPoints());
+                                    //TODO handle inner rings
+
+                                    fb.startObject("geom").field("type", "polygon").field("coordinates", new double[][][]{outerRing /* inner rings */}).endObject();
+                                }
+
+                                //TODO other types
+                            }
+
+                            Style styleInline = null;
+                            if (f.getStyle() != null) {
+
+                                if (f.getStyle() instanceof Style) {
+
+                                    Style ss = (Style) f.getStyle();
+                                    styleInline = ss;
+
+                                } else if (f.getStyle() instanceof StyleMap) {
+                                    StyleMap ss = (StyleMap) f.getStyle();
+                                    styleInline = styles.get(ss.getId());
+                                    if (styleInline == null) {
+                                        System.err.println("Missing: " + ss.getId());
+                                    }
+                                }
+
+                            }
+
+                            if ((f.getStyleUrl() != null) || (styleInline != null)) {
+
+                                fb.startObject("style");
+
+                                if (f.getStyleUrl() != null) {
+                                    String su = f.getStyleUrl();
+                                    if (su.startsWith("#")) {
+                                        su = su.substring(1);
+                                    }
+
+                                    Style s = styles.get(su);
+                                    if (s == null) {
+                                        //System.err.println("Missing: " + f.getStyleUrl());
+                                    } else {
+                                        styleJson(fb, s);
+                                    }
+                                }
+
+                                if (styleInline != null) {
+                                    styleJson(fb, styleInline);
+                                }
+
+                                fb.endObject();
+
+                            }
+
+                            fb.field("path", path);
+
+                            String fid = getSerial(layer, serial);
+                            bulk = st.add(bulk, "feature", fid, fb.endObject());
+                            numFeatures++;
+
+                            bulk = commit();
                         }
 
-                        fb.field("path", path);
+                        if (go instanceof Schema) {
+                            //..
+                        }
 
-                        String fid = getSerial(layer, serial);
-                        bulk = st.add(bulk, "feature", fid, fb.endObject());
-                        numFeatures++;
-
-                        bulk = updateBulk();
+                        return true;
                     }
 
-                    if (go instanceof Schema) {
-                        //..
-                    }
-
-                    return true;
-                }
-
-                @Override
-                public void end() {
-                    st.commit(bulk);
-                    bulk = null;
-                }
-
-                private BulkRequestBuilder updateBulk() {
-                    if (bulk.numberOfActions() < BULK_SIZE) {
-                        return bulk;
-                    } else {
+                    @Override
+                    public void end() {
                         st.commit(bulk);
                         bulk = null;
-                        return null;
                     }
-                }
 
-            });
+                    private BulkRequestBuilder commit() {
+                        System.out.println("commit: " + bulk.numberOfActions());
 
-        } catch (Throwable e) {
-            //e.printStackTrace();;
-            System.err.println(e);
-        }
+                        if (bulk.numberOfActions() < BULK_SIZE) {
+                            return bulk;
+                        } else {
+                            st.commit(bulk);
+                            bulk = null;
+                            return null;
+                        }
+                    }
 
+                });
+
+            } catch (Throwable e) {
+                //e.printStackTrace();;
+                System.err.println(e);
+            }
+        };
     }
 
     static {

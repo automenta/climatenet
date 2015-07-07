@@ -93,10 +93,14 @@ public class ElasticSpacetime implements Spacetime {
 
         };
     }
-//    public static ElasticSpacetime memory(String index, int port) throws Exception {
-//        final EmbeddedES e = new EmbeddedES(null, port);
-//        return new ElasticSpacetime(index, e.getClient(), true);
-//    }
+    public static ElasticSpacetime memory(String index) throws Exception {
+        return memory(index, -1);
+    }
+
+    public static ElasticSpacetime memory(String index, int port) throws Exception {
+        final EmbeddedES e = new EmbeddedES(null, port);
+        return new ElasticSpacetime(index, e.getClient(), true);
+    }
 
     /**
      * creates an embedded instance
@@ -142,6 +146,7 @@ public class ElasticSpacetime implements Spacetime {
     }
 
     public static ElasticSpacetime server(String index, String host, int port, boolean forceInit) throws Exception {
+
         Client c = new TransportClient()
                 .addTransportAddress(new InetSocketTransportAddress(host, port));
         return new ElasticSpacetime(index, c, forceInit);
