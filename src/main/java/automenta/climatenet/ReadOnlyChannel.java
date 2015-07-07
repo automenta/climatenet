@@ -1,6 +1,6 @@
 package automenta.climatenet;
 
-import automenta.knowtention.Channel;
+import automenta.climatenet.knowtention.Channel;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**

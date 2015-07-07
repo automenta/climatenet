@@ -1,4 +1,4 @@
-package automenta.knowtention;
+package automenta.climatenet.knowtention;
 
 import automenta.climatenet.p2p.NObject;
 import com.fasterxml.jackson.databind.JsonNode;

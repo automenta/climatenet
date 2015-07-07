@@ -7,9 +7,9 @@ package automenta.climatenet;
 
 import automenta.climatenet.data.elastic.ElasticSpacetime;
 import automenta.climatenet.p2p.Wikipedia;
-import automenta.knowtention.Channel;
-import automenta.knowtention.Core;
-import automenta.knowtention.WebSocketCore;
+import automenta.climatenet.knowtention.Channel;
+import automenta.climatenet.knowtention.Core;
+import automenta.climatenet.knowtention.WebSocketCore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.*;
 
-import static automenta.knowtention.Core.newJson;
+import static automenta.climatenet.knowtention.Core.newJson;
 import static io.undertow.Handlers.header;
 import static io.undertow.Handlers.resource;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;

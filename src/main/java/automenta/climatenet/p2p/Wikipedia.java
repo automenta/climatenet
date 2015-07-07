@@ -18,7 +18,7 @@ package automenta.climatenet.p2p;
 
 
 import automenta.climatenet.SpacetimeWebServer;
-import automenta.knowtention.Core;
+import automenta.climatenet.knowtention.Core;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jsoup.Jsoup;

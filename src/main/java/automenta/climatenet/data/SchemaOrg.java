@@ -3,7 +3,6 @@ package automenta.climatenet.data;
 import au.com.bytecode.opencsv.CSVReader;
 import automenta.climatenet.Tag;
 import automenta.climatenet.data.elastic.ElasticSpacetime;
-import automenta.climatenet.data.graph.MapDBGraph;
 import com.google.common.collect.Lists;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -49,38 +48,6 @@ abstract public class SchemaOrg {
         db.commit(bulk);
 
     }
-
-    public static void load(final MapDBGraph db) throws IOException {
-
-
-            new SchemaOrg() {
-
-                @Override
-                public void onClass(String id, String label, List<String> supertypes, String comment) {
-
-                    Tag t = new Tag(id, label);
-                    t.setDescription(comment);
-
-                    MapDBGraph.Vertex subj = db.getVertex(id, true);
-                    for (String s : supertypes) {
-                        t.inh.put(s, 1.0);
-                        MapDBGraph.Vertex obj = db.getVertex(s, true);
-                        db.addEdge(subj, obj, "inh");
-                    }
-
-                }
-
-                @Override
-                public void onProperty(String id, String label, List<String> domains, List<String> ranges, String comment) {
-                }
-
-            };
-
-
-
-
-    }
-
 
     public SchemaOrg() throws IOException {
 

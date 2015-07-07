@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.knowtention;
+package automenta.climatenet.knowtention;
 
-import automenta.knowtention.Channel.ChannelChange;
+import automenta.climatenet.knowtention.Channel.ChannelChange;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;

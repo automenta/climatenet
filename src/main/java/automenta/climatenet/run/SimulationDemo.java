@@ -5,7 +5,7 @@ import automenta.climatenet.data.geo.USGSEarthquakes;
 import automenta.climatenet.data.sim.RobotSimulant;
 import automenta.climatenet.p2p.NObject;
 import automenta.climatenet.p2p.SpacetimeTagPlan;
-import automenta.knowtention.Channel;
+import automenta.climatenet.knowtention.Channel;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.geojson.LngLatAlt;
 

@@ -6,14 +6,14 @@
     <artifactId>climatenet</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
+    <prerequisites>
+        <maven>3.3.3</maven>
+    </prerequisites>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <geotools.version>12.1</geotools.version>
-        <geotk.version>4.x-SNAPSHOT</geotk.version>
-        <junit.version>4.10</junit.version>
         <!--<vaadin.version>7.5.0.alpha1</vaadin.version>-->
     </properties>
 
@@ -43,8 +43,9 @@
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>1.5.1</version>
+            <version>1.6.0</version>
         </dependency>
+
 
         <!--
         <dependency>
@@ -65,21 +66,15 @@
         <dependency>
             <groupId>net.tomp2p</groupId>
             <artifactId>tomp2p-core</artifactId>
-            <version>5.0-Beta7</version>
+            <version>5.0-Beta8</version>
 
         </dependency>
         <dependency>
             <groupId>net.tomp2p</groupId>
             <artifactId>tomp2p-dht</artifactId>
-            <version>5.0-Beta7</version>
+            <version>5.0-Beta8</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.mapdb</groupId>
-            <artifactId>mapdb</artifactId>
-            <!--<version>2.0-alpha1</version>-->
-            <version>1.0.6</version>
-        </dependency>
 
         <!--
         <dependency>
@@ -136,7 +131,7 @@
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
-            <version>1.2.1.Final</version>
+            <version>1.3.0.Beta2</version>
         </dependency>
 
         <dependency>
@@ -227,7 +222,7 @@
         <dependency>
             <groupId>de.grundid.opendatalab</groupId>
             <artifactId>geojson-jackson</artifactId>
-            <version>1.3</version>
+            <version>1.5.1</version>
         </dependency>
 
         <!--
@@ -248,7 +243,7 @@
         <dependency>
             <groupId>com.rometools</groupId>
             <artifactId>rome-modules</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.1</version>
         </dependency>
 
 
@@ -347,9 +342,27 @@
 
     </repositories>
 
-    <build>
+   <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <allowIncrementalUpdates>true</allowIncrementalUpdates>
+                    <allowMajorUpdates>true</allowMajorUpdates>
+                    <!--...-->
+                    <!--<includes>-->
+                        <!--<include>org.codehaus.plexus:*</include>-->
+                        <!--<include>junit:junit</include>-->
+                    <!--</includes>-->
+                    <!--...-->
+                    <!--<excludes>-->
+                        <!--<exclude>org.codehaus.plexus:plexus-utils</exclude>-->
+                    <!--</excludes>-->
+                    <!--...-->
+                </configuration>
+            </plugin>            <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <!-- NB! Set <version> to the latest released version of frontend-maven-plugin, like in README.md -->

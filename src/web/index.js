@@ -8,12 +8,12 @@ class NClient extends EventEmitter {
         this.focus = { };
         this.index = { };
         this.views = {
-        //    'feed': new FeedView(),
-        //    'graph': new GraphView(),
-            'map2d': new Map2DView(),
-            'map3d': new Map3DView()
-        //    'wikipedia': new WikipediaView('Happiness'),
-        //    'time': new TimeView(),
+        'feed': new FeedView(),
+        'graph': new GraphView(),
+        'map2d': new Map2DView(),
+        'map3d': new Map3DView(),
+        'wikipedia': new WikipediaView('Happiness'),
+        'time': new TimeView()
 
         //    'edit1': new NObjectEditView('New NObject')
             //'space1': new HTMLView('Spaces Test', 'lab', 'space.html')

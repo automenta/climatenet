@@ -7,9 +7,9 @@ package automenta.climatenet.data;
 
 import automenta.climatenet.ElasticChannel;
 import automenta.climatenet.data.elastic.ElasticSpacetime;
-import automenta.knowtention.Channel;
-import automenta.knowtention.Core;
-import automenta.knowtention.Runner;
+import automenta.climatenet.knowtention.Channel;
+import automenta.climatenet.knowtention.Core;
+import automenta.climatenet.knowtention.Runner;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 

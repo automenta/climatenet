@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.knowtention.example;
+package automenta.climatenet.knowtention.example;
 
-import automenta.knowtention.Channel;
-import automenta.knowtention.Channel.ChannelChange;
-import automenta.knowtention.Core;
-import automenta.knowtention.WebSocketCore;
-import automenta.knowtention.model.JSONObjectMetrics;
+import automenta.climatenet.knowtention.Channel;
+import automenta.climatenet.knowtention.Channel.ChannelChange;
+import automenta.climatenet.knowtention.Core;
+import automenta.climatenet.knowtention.WebSocketCore;
+import automenta.climatenet.knowtention.model.JSONObjectMetrics;
 import com.github.fge.jsonpatch.JsonPatch;
 
 /**

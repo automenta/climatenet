@@ -1,8 +1,8 @@
 package automenta.climatenet.data;
 
+import automenta.climatenet.knowtention.Channel;
 import automenta.climatenet.p2p.HttpCache;
 import automenta.climatenet.p2p.NObject;
-import automenta.knowtention.Channel;
 import com.rometools.modules.georss.GeoRSSModule;
 import com.rometools.modules.georss.GeoRSSUtils;
 import com.rometools.rome.feed.synd.SyndEntry;
@@ -37,9 +37,12 @@ public class RSS extends Channel.FeedChannel<RSS.RSSItem> {
         }
     }
 
+
+
     public void update() throws Exception {
 
         byte[] response = HttpCache.the.get(url);
+
         SyndFeedInput input = new SyndFeedInput();
         SyndFeed feed = null;
         try {

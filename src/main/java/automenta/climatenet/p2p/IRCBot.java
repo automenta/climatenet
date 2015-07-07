@@ -20,7 +20,7 @@ public class IRCBot extends ListenerAdapter {
     }
 
     private final PircBotX irc;
-    public final automenta.knowtention.Channel.FeedChannel<IRCMessage> serverChannel;
+    public final automenta.climatenet.knowtention.Channel.FeedChannel<IRCMessage> serverChannel;
     private final String server;
 
     public IRCBot(ElasticSpacetime db, String nick, String server, String... channels) throws Exception {
@@ -29,7 +29,7 @@ public class IRCBot extends ListenerAdapter {
         this.server = server;
 
         //serverChannel = new ElasticChannel(db, server, "feature");
-        serverChannel = new automenta.knowtention.Channel.FeedChannel(server, 128);
+        serverChannel = new automenta.climatenet.knowtention.Channel.FeedChannel(server, 128);
 
         Configuration.Builder<PircBotX> config = new Configuration.Builder()
                 .setName(nick) //Nick of the bot. CHANGE IN YOUR CODE

@@ -7,7 +7,7 @@ package automenta.climatenet.data.elastic;
 
 import automenta.climatenet.Spacetime;
 import automenta.climatenet.Tag;
-import automenta.knowtention.Core;
+import automenta.climatenet.knowtention.Core;
 import com.google.common.io.Files;
 import org.apache.log4j.helpers.LogLog;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;

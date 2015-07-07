@@ -1,6 +1,6 @@
 package automenta.climatenet.p2p;
 
-import automenta.knowtention.Core;
+import automenta.climatenet.knowtention.Core;
 
 import java.io.Serializable;
 import java.util.Collection;

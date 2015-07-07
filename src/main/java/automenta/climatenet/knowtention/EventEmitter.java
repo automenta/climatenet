@@ -1,5 +1,5 @@
 
-package automenta.knowtention;
+package automenta.climatenet.knowtention;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

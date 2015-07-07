@@ -3,16 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package automenta.knowtention.model;
+package automenta.climatenet.knowtention.model;
 
-import automenta.knowtention.Channel;
+import automenta.climatenet.knowtention.Channel;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Calculate measurements of a JSON object
